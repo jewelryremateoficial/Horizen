@@ -3,8 +3,8 @@
 // Supabase auth + utilities compartidos en todas las páginas
 // ============================================================
 
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://upcbznfkpswtxiffgsgj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_2rL4lnWnN_6c3h2KMRt8TA_yz2Bb8yZ';
 const PAYPAL_CLIENT_ID = 'YOUR_PAYPAL_CLIENT_ID';
 
 // PayPal Plan IDs (crear en PayPal Dashboard → Subscriptions → Plans)
