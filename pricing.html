@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elige tu plan — FinancialOS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--p:#00d4aa;--p2:#00a884;--sec:#6366f1;--bg:#060b18;--bg2:#0d1526;--bg3:#111827;--border:rgba(255,255,255,0.08);--text:#f0f4f8;--muted:rgba(240,244,248,0.55);--ok:#10b981;--warn:#f59e0b;--danger:#f43f5e}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100vh}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
+a{text-decoration:none;color:inherit}
+
+/* NAV */
+.topbar{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;border-bottom:1px solid var(--border);background:var(--bg2)}
+.logo{font-size:1.25rem;font-weight:900;letter-spacing:-.5px}
+.logo span{color:var(--p)}
+.topbar-user{display:flex;align-items:center;gap:.75rem;font-size:.85rem;color:var(--muted)}
+.avatar-sm{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--sec));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.75rem;color:#060b18}
+.btn-skip{background:none;border:none;color:var(--muted);font-size:.82rem;cursor:pointer;font-family:'Inter',sans-serif;padding:.4rem .75rem;border-radius:6px;transition:all .2s}
+.btn-skip:hover{color:var(--text);background:rgba(255,255,255,.06)}
+
+/* HERO */
+.hero{text-align:center;padding:3.5rem 2rem 2.5rem;position:relative}
+.hero::before{content:'';position:absolute;width:700px;height:500px;background:radial-gradient(circle,rgba(0,212,170,.07) 0%,transparent 65%);top:-100px;left:50%;transform:translateX(-50%);pointer-events:none}
+.badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.2);color:var(--p);padding:.35rem .85rem;border-radius:50px;font-size:.78rem;font-weight:700;margin-bottom:1.25rem;letter-spacing:.3px}
+.badge::before{content:'';width:6px;height:6px;background:var(--p);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;letter-spacing:-1.5px;margin-bottom:.75rem}
+.hero-sub{color:var(--muted);font-size:1rem;max-width:500px;margin:0 auto 2rem;line-height:1.6}
+
+/* Toggle anual/mensual */
+.billing-toggle{display:inline-flex;align-items:center;gap:1rem;background:var(--bg2);border:1px solid var(--border);border-radius:50px;padding:.4rem .6rem .4rem 1.2rem}
+.billing-toggle span{font-size:.85rem;font-weight:600}
+.toggle-wrap{position:relative}
+.toggle-input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{display:flex;cursor:pointer;width:44px;height:24px;background:rgba(255,255,255,.1);border-radius:50px;transition:.3s;align-items:center;padding:2px}
+.toggle-slider::after{content:'';width:20px;height:20px;background:#fff;border-radius:50%;transition:.3s}
+.toggle-input:checked + .toggle-slider{background:var(--p)}
+.toggle-input:checked + .toggle-slider::after{transform:translateX(20px)}
+.save-badge{background:rgba(16,185,129,.15);color:var(--ok);font-size:.72rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-left:.25rem}
+
+/* PLANS */
+.plans-wrap{max-width:1100px;margin:2.5rem auto;padding:0 1.5rem 4rem}
+.plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;align-items:start}
+.plan-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:2rem;transition:all .3s;position:relative}
+.plan-card:hover{border-color:rgba(0,212,170,.2);transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.plan-card.featured{border-color:rgba(0,212,170,.4);background:rgba(0,212,170,.03);transform:scale(1.04)}
+.plan-card.featured:hover{transform:scale(1.04) translateY(-4px)}
+.popular-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--p),var(--sec));color:#060b18;font-size:.65rem;font-weight:800;letter-spacing:.8px;padding:.35rem 1.25rem;border-radius:50px;white-space:nowrap}
+
+.plan-name{font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:.75rem}
+.plan-price{margin-bottom:.25rem}
+.plan-price .amount{font-size:2.8rem;font-weight:900;letter-spacing:-2px;line-height:1}
+.plan-price .period{font-size:.9rem;font-weight:400;color:var(--muted)}
+.plan-price .annual-price{font-size:.8rem;color:var(--ok);font-weight:600;margin-top:.2rem;display:none}
+.annual-active .annual-price{display:block}
+.plan-desc{font-size:.85rem;color:var(--muted);margin:.75rem 0 1.5rem;line-height:1.5}
+
+.features-list{display:flex;flex-direction:column;gap:.6rem;margin-bottom:2rem}
+.feat{display:flex;align-items:flex-start;gap:.6rem;font-size:.85rem;line-height:1.4}
+.feat .icon{flex-shrink:0;margin-top:1px}
+.feat .icon.check{color:var(--ok)}
+.feat .icon.x{color:var(--muted);opacity:.4}
+.feat.muted{color:var(--muted);opacity:.6}
+
+.divider{height:1px;background:var(--border);margin:1.25rem 0}
+.limit-row{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;margin-bottom:.5rem}
+.limit-label{color:var(--muted)}
+.limit-val{font-weight:700}
+
+.paypal-btn-container{margin-top:auto}
+.paypal-placeholder{background:rgba(0,212,170,.08);border:1px dashed rgba(0,212,170,.2);border-radius:10px;height:48px;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:var(--muted);cursor:pointer;transition:all .2s}
+.paypal-placeholder:hover{background:rgba(0,212,170,.12);border-color:rgba(0,212,170,.35)}
+.trial-note{text-align:center;font-size:.75rem;color:var(--muted);margin-top:.75rem}
+
+/* Comparison table */
+.compare-wrap{max-width:900px;margin:0 auto 4rem;padding:0 1.5rem}
+.compare-title{text-align:center;font-size:1.3rem;font-weight:800;letter-spacing:-.5px;margin-bottom:2rem}
+.compare-table{width:100%;border-collapse:collapse}
+.compare-table th{font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:.75rem 1rem;text-align:center;border-bottom:1px solid var(--border)}
+.compare-table th:first-child{text-align:left}
+.compare-table th.featured-col{color:var(--p)}
+.compare-table td{padding:.65rem 1rem;font-size:.85rem;text-align:center;border-bottom:1px solid rgba(255,255,255,.04)}
+.compare-table td:first-child{text-align:left;color:var(--muted)}
+.compare-table tr:last-child td{border-bottom:none}
+.check-icon{color:var(--ok);font-size:1rem}
+.x-icon{color:rgba(255,255,255,.2);font-size:.9rem}
+
+/* FAQ */
+.faq-wrap{max-width:700px;margin:0 auto 4rem;padding:0 1.5rem}
+.faq-title{text-align:center;font-size:1.3rem;font-weight:800;letter-spacing:-.5px;margin-bottom:2rem}
+.faq-item{border:1px solid var(--border);border-radius:12px;margin-bottom:.75rem;overflow:hidden}
+.faq-q{padding:1rem 1.25rem;font-weight:600;font-size:.9rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .2s}
+.faq-q:hover{background:rgba(255,255,255,.03)}
+.faq-q .arrow{transition:transform .3s;color:var(--muted)}
+.faq-item.open .faq-q .arrow{transform:rotate(180deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease;font-size:.88rem;color:var(--muted);line-height:1.7}
+.faq-item.open .faq-a{max-height:200px}
+.faq-a-inner{padding:0 1.25rem 1.25rem}
+
+/* Security badge */
+.security-bar{display:flex;align-items:center;justify-content:center;gap:2rem;padding:1.5rem 2rem;background:var(--bg2);border-top:1px solid var(--border);flex-wrap:wrap;gap:1.5rem}
+.sec-item{display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:var(--muted)}
+.sec-item svg{color:var(--p)}
+
+@media(max-width:900px){
+  .plans-grid{grid-template-columns:1fr}
+  .plan-card.featured{transform:none}
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .4s ease}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:2.5rem;max-width:480px;width:100%;position:relative}
+.modal h3{font-size:1.3rem;font-weight:800;margin-bottom:.5rem}
+.modal p{color:var(--muted);font-size:.9rem;margin-bottom:1.5rem}
+.modal-close{position:absolute;top:1.25rem;right:1.25rem;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.25rem;line-height:1}
+.modal-close:hover{color:var(--text)}
+#paypalContainer{min-height:48px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">Financial<span>OS</span></div>
+  <div class="topbar-user">
+    <div class="avatar-sm" id="userInitial">?</div>
+    <span id="userEmail">Cargando...</span>
+    <button class="btn-skip" onclick="skipForNow()">Continuar con trial →</button>
+  </div>
+</div>
+
+<div class="hero fade-in">
+  <div class="badge">✦ Elige tu plan</div>
+  <h1>Inteligencia financiera que<br>se paga sola</h1>
+  <p class="hero-sub">Empieza gratis 14 días. Sin tarjeta de crédito. Cancela cuando quieras.</p>
+  <div class="billing-toggle">
+    <span>Mensual</span>
+    <label class="toggle-wrap">
+      <input type="checkbox" class="toggle-input" id="billingToggle" onchange="toggleBilling()">
+      <div class="toggle-slider"></div>
+    </label>
+    <span>Anual <span class="save-badge">Ahorra 20%</span></span>
+  </div>
+</div>
+
+<div class="plans-wrap">
+  <div class="plans-grid fade-in" id="plansGrid">
+
+    <!-- BÁSICO -->
+    <div class="plan-card">
+      <div class="plan-name">Básico</div>
+      <div class="plan-price">
+        <div class="amount" data-monthly="990" data-annual="792">$990</div>
+        <span class="period"> MXN / mes</span>
+        <div class="annual-price">$9,504 MXN / año (ahorras $1,386)</div>
+      </div>
+      <div class="plan-desc">Para emprendedores y empresas en etapa temprana que quieren orden financiero.</div>
+      <div class="divider"></div>
+      <div class="limit-row"><span class="limit-label">Usuarios</span><span class="limit-val">1</span></div>
+      <div class="limit-row"><span class="limit-label">Empresas</span><span class="limit-val">1</span></div>
+      <div class="limit-row"><span class="limit-label">Meses histórico</span><span class="limit-val">12</span></div>
+      <div class="divider"></div>
+      <div class="features-list">
+        <div class="feat"><span class="icon check">✓</span> Dashboard P&L en tiempo real</div>
+        <div class="feat"><span class="icon check">✓</span> Balance general automatizado</div>
+        <div class="feat"><span class="icon check">✓</span> Cash Flow básico</div>
+        <div class="feat"><span class="icon check">✓</span> Cálculo ISR provisional</div>
+        <div class="feat"><span class="icon x">✕</span><span style="color:var(--muted)"> Integración SAT / CFDI</span></div>
+        <div class="feat"><span class="icon x">✕</span><span style="color:var(--muted)"> Análisis Nova AI</span></div>
+        <div class="feat"><span class="icon x">✕</span><span style="color:var(--muted)"> Reportes ejecutivos PDF</span></div>
+      </div>
+      <div id="paypal-basico" class="paypal-btn-container"></div>
+      <div class="trial-note">14 días gratis, luego $990/mes</div>
+    </div>
+
+    <!-- PRO (featured) -->
+    <div class="plan-card featured">
+      <div class="popular-badge">MÁS POPULAR</div>
+      <div class="plan-name" style="color:var(--p)">Pro</div>
+      <div class="plan-price">
+        <div class="amount" data-monthly="1990" data-annual="1592">$1,990</div>
+        <span class="period"> MXN / mes</span>
+        <div class="annual-price">$19,104 MXN / año (ahorras $2,784)</div>
+      </div>
+      <div class="plan-desc">Para PYMEs en crecimiento que necesitan visibilidad financiera completa y cumplimiento fiscal.</div>
+      <div class="divider"></div>
+      <div class="limit-row"><span class="limit-label">Usuarios</span><span class="limit-val">3</span></div>
+      <div class="limit-row"><span class="limit-label">Empresas</span><span class="limit-val">3</span></div>
+      <div class="limit-row"><span class="limit-label">Meses histórico</span><span class="limit-val">36</span></div>
+      <div class="divider"></div>
+      <div class="features-list">
+        <div class="feat"><span class="icon check">✓</span> Todo lo de Básico</div>
+        <div class="feat"><span class="icon check">✓</span> Integración SAT / CFDI automática</div>
+        <div class="feat"><span class="icon check">✓</span> IVA trasladado vs acreditable</div>
+        <div class="feat"><span class="icon check">✓</span> Análisis Nova AI ilimitado</div>
+        <div class="feat"><span class="icon check">✓</span> Reportes ejecutivos PDF</div>
+        <div class="feat"><span class="icon check">✓</span> Cálculo IMSS / INFONAVIT</div>
+        <div class="feat"><span class="icon x">✕</span><span style="color:var(--muted)"> API / Integraciones ERP</span></div>
+      </div>
+      <div id="paypal-pro" class="paypal-btn-container"></div>
+      <div class="trial-note">14 días gratis, luego $1,990/mes</div>
+    </div>
+
+    <!-- EMPRESA -->
+    <div class="plan-card">
+      <div class="plan-name">Empresa</div>
+      <div class="plan-price">
+        <div class="amount" data-monthly="3990" data-annual="3192">$3,990</div>
+        <span class="period"> MXN / mes</span>
+        <div class="annual-price">$38,304 MXN / año (ahorras $5,576)</div>
+      </div>
+      <div class="plan-desc">Para grupos empresariales y despachos contables que manejan múltiples entidades.</div>
+      <div class="divider"></div>
+      <div class="limit-row"><span class="limit-label">Usuarios</span><span class="limit-val">Ilimitados</span></div>
+      <div class="limit-row"><span class="limit-label">Empresas</span><span class="limit-val">10</span></div>
+      <div class="limit-row"><span class="limit-label">Meses histórico</span><span class="limit-val">Ilimitado</span></div>
+      <div class="divider"></div>
+      <div class="features-list">
+        <div class="feat"><span class="icon check">✓</span> Todo lo de Pro</div>
+        <div class="feat"><span class="icon check">✓</span> API REST + webhooks</div>
+        <div class="feat"><span class="icon check">✓</span> Integraciones ERP (SAP, CONTPAQi)</div>
+        <div class="feat"><span class="icon check">✓</span> Consolidación multi-empresa</div>
+        <div class="feat"><span class="icon check">✓</span> SSO empresarial</div>
+        <div class="feat"><span class="icon check">✓</span> SLA 99.9% uptime</div>
+        <div class="feat"><span class="icon check">✓</span> Onboarding dedicado</div>
+      </div>
+      <div id="paypal-empresa" class="paypal-btn-container"></div>
+      <div class="trial-note">14 días gratis, luego $3,990/mes</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FAQ -->
+<div class="faq-wrap">
+  <div class="faq-title">Preguntas frecuentes</div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">¿Puedo cambiar de plan después? <span class="arrow">▾</span></div>
+    <div class="faq-a"><div class="faq-a-inner">Sí, puedes subir o bajar de plan en cualquier momento desde tu cuenta. El cambio aplica en el siguiente ciclo de facturación.</div></div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">¿Cómo funciona el período de prueba? <span class="arrow">▾</span></div>
+    <div class="faq-a"><div class="faq-a-inner">Tienes 14 días completos con acceso a todas las funciones del plan elegido. No te cobramos nada hasta que termine el trial. Puedes cancelar antes sin costo alguno.</div></div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">¿Cómo proceso mis pagos? <span class="arrow">▾</span></div>
+    <div class="faq-a"><div class="faq-a-inner">Usamos PayPal para procesar pagos de forma segura. Puedes pagar con tarjeta de crédito/débito o tu saldo de PayPal. Todos los precios son en MXN.</div></div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">¿Mis datos están seguros? <span class="arrow">▾</span></div>
+    <div class="faq-a"><div class="faq-a-inner">Sí. Usamos encriptación AES-256 para datos en reposo y TLS 1.3 para datos en tránsito. Tus datos financieros nunca son compartidos con terceros.</div></div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">¿Puedo cancelar en cualquier momento? <span class="arrow">▾</span></div>
+    <div class="faq-a"><div class="faq-a-inner">Sí, sin penalizaciones. Si cancelas, mantienes acceso hasta el final del período pagado. Puedes exportar todos tus datos en cualquier momento.</div></div>
+  </div>
+</div>
+
+<!-- Security bar -->
+<div class="security-bar">
+  <div class="sec-item"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Datos encriptados AES-256</div>
+  <div class="sec-item"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>Pagos vía PayPal (PCI DSS)</div>
+  <div class="sec-item"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Uptime 99.9%</div>
+  <div class="sec-item"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>Cancela cuando quieras</div>
+</div>
+
+<!-- PayPal Modal -->
+<div class="modal-overlay" id="paypalModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3 id="modalTitle">Suscripción Básico</h3>
+    <p id="modalDesc">Estás a un paso de comenzar tu inteligencia financiera.</p>
+    <div id="paypalContainer"></div>
+    <p style="text-align:center;font-size:.75rem;color:var(--muted);margin-top:1rem">🔒 Pago seguro procesado por PayPal · 14 días gratis</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+let currentUser = null;
+let annualMode = false;
+
+// Init
+(async () => {
+  const session = await getSession();
+  if (!session) { window.location.href = '/login.html'; return; }
+  currentUser = session.user;
+  const profile = await getProfile(currentUser.id);
+  if (profile?.subscription_status === 'active') { window.location.href = '/dashboard.html'; return; }
+  const name = profile?.full_name || currentUser.email || '';
+  document.getElementById('userEmail').textContent = name;
+  document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
+  loadPayPalButtons();
+})();
+
+function toggleBilling() {
+  annualMode = document.getElementById('billingToggle').checked;
+  document.querySelectorAll('.plan-price').forEach(el => {
+    const amt = el.querySelector('.amount');
+    const price = annualMode ? amt.dataset.annual : amt.dataset.monthly;
+    amt.textContent = '$' + parseInt(price).toLocaleString('es-MX');
+    el.classList.toggle('annual-active', annualMode);
+  });
+}
+
+function loadPayPalButtons() {
+  // PayPal SDK — reemplazar YOUR_PAYPAL_CLIENT_ID con ID real
+  const script = document.createElement('script');
+  script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&vault=true&intent=subscription&currency=MXN`;
+  script.setAttribute('data-sdk-integration-source', 'button-factory');
+  script.onload = renderPayPalButtons;
+  document.head.appendChild(script);
+}
+
+function renderPayPalButtons() {
+  const plans = [
+    { id: 'basico',  containerId: 'paypal-basico',  planKey: 'basico'  },
+    { id: 'pro',     containerId: 'paypal-pro',     planKey: 'pro'     },
+    { id: 'empresa', containerId: 'paypal-empresa', planKey: 'empresa' }
+  ];
+
+  plans.forEach(({ id, containerId, planKey }) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Mostrar botón placeholder hasta que se cargue PayPal real
+    container.innerHTML = `
+      <div class="paypal-placeholder" onclick="openPayPalModal('${planKey}')">
+        <svg width="80" height="20" viewBox="0 0 80 20" fill="none">
+          <text x="0" y="16" font-family="Arial" font-size="14" font-weight="bold" fill="#00b4d8">Pay</text>
+          <text x="24" y="16" font-family="Arial" font-size="14" font-weight="bold" fill="#003087">Pal</text>
+        </svg>
+        &nbsp;— Suscribirse
+      </div>`;
+
+    // Intentar renderizar botón real de PayPal si está disponible
+    if (window.paypal && PAYPAL_PLANS[planKey] !== 'YOUR_PAYPAL_PLAN_ID_' + planKey.toUpperCase()) {
+      container.innerHTML = '';
+      window.paypal.Buttons({
+        style: { shape: 'rect', color: 'gold', layout: 'vertical', label: 'subscribe' },
+        createSubscription: (data, actions) => actions.subscription.create({ plan_id: PAYPAL_PLANS[planKey] }),
+        onApprove: (data) => handlePayPalSuccess(data, planKey),
+        onError: (err) => { console.error(err); toast('Error al procesar el pago. Intenta de nuevo.', 'error'); }
+      }).render(`#${containerId}`);
+    }
+  });
+}
+
+async function handlePayPalSuccess(data, plan) {
+  if (!currentUser) return;
+  // Guardar suscripción en Supabase
+  await db.from('profiles').update({
+    plan,
+    subscription_status: 'active',
+    paypal_subscription_id: data.subscriptionID,
+    subscription_started_at: new Date().toISOString()
+  }).eq('id', currentUser.id);
+
+  await db.from('payments').insert({
+    user_id: currentUser.id,
+    paypal_subscription_id: data.subscriptionID,
+    plan,
+    amount: PLANS[plan].price,
+    currency: 'MXN',
+    status: 'active'
+  });
+
+  toast('¡Suscripción activada! Bienvenido a FinancialOS 🎉', 'success');
+  setTimeout(() => window.location.href = '/dashboard.html', 2000);
+}
+
+function openPayPalModal(plan) {
+  const p = PLANS[plan];
+  document.getElementById('modalTitle').textContent = `Plan ${p.name} — $${p.price.toLocaleString('es-MX')} MXN/mes`;
+  document.getElementById('modalDesc').textContent = 'Configura tu PayPal Client ID en app.js para habilitar pagos reales.';
+  document.getElementById('paypalModal').className = 'modal-overlay show';
+}
+
+function closeModal() { document.getElementById('paypalModal').className = 'modal-overlay'; }
+
+async function skipForNow() {
+  if (!currentUser) return;
+  window.location.href = '/dashboard.html';
+}
+
+function toggleFaq(el) {
+  const item = el.parentElement;
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+</script>
+</body>
+</html>

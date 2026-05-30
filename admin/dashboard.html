@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — FinancialOS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --p:#00d4aa;--p2:#00a884;--sec:#6366f1;
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;
+  --border:rgba(255,255,255,0.08);
+  --text:#e2e8f0;--muted:#94a3b8;--muted2:#64748b;
+  --ok:#22c55e;--warn:#f59e0b;--danger:#ef4444;--info:#3b82f6;
+  --sidebar-w:240px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100vh;font-size:14px}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;font-variant-numeric:tabular-nums}
+a{text-decoration:none;color:inherit}
+
+/* ── SIDEBAR ─────────────────────────────────────── */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;overflow-y:auto}
+.sidebar-logo{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.6rem}
+.sidebar-logo .name{font-size:1rem;font-weight:900;letter-spacing:-.4px}
+.sidebar-logo .name span{color:var(--p)}
+.sidebar-logo .badge{background:rgba(244,63,94,.15);color:#f87171;font-size:.6rem;font-weight:800;padding:.15rem .45rem;border-radius:4px;letter-spacing:.4px;text-transform:uppercase}
+.sidebar-section{padding:.5rem .75rem;margin-top:.25rem}
+.sidebar-label{font-size:.65rem;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;padding:.5rem .5rem .3rem}
+.nav-item{display:flex;align-items:center;gap:.65rem;padding:.6rem .75rem;border-radius:8px;color:var(--muted);font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
+.nav-item:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.nav-item.active{background:rgba(0,212,170,.08);color:var(--p);font-weight:600}
+.nav-item .icon{width:16px;height:16px;flex-shrink:0}
+.nav-item .badge-count{margin-left:auto;background:var(--danger);color:#fff;font-size:.6rem;font-weight:700;padding:.1rem .4rem;border-radius:50px;min-width:18px;text-align:center}
+.sidebar-footer{margin-top:auto;padding:1rem .75rem;border-top:1px solid var(--border)}
+.user-row{display:flex;align-items:center;gap:.65rem;padding:.6rem .5rem;border-radius:8px;cursor:pointer;transition:background .2s}
+.user-row:hover{background:rgba(255,255,255,.05)}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--sec));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.7rem;color:#060b18;flex-shrink:0}
+.user-info .user-name{font-size:.8rem;font-weight:600;line-height:1.2}
+.user-info .user-role{font-size:.68rem;color:var(--muted);line-height:1}
+
+/* ── MAIN ────────────────────────────────────────── */
+.main{flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden}
+
+/* TOPBAR */
+.topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1.75rem;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;gap:1rem}
+.topbar-left{display:flex;align-items:center;gap:.5rem}
+.breadcrumb{display:flex;align-items:center;gap:.4rem;font-size:.82rem;color:var(--muted)}
+.breadcrumb .current{color:var(--text);font-weight:600}
+.topbar-right{display:flex;align-items:center;gap:.75rem}
+.search-box{display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.4rem .75rem;width:220px;transition:all .2s}
+.search-box:focus-within{border-color:var(--p);background:rgba(0,212,170,.04)}
+.search-box input{background:none;border:none;color:var(--text);font-size:.82rem;outline:none;width:100%;font-family:'Inter',sans-serif}
+.search-box input::placeholder{color:var(--muted2)}
+.icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;position:relative}
+.icon-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15)}
+.notif-dot{position:absolute;top:6px;right:6px;width:6px;height:6px;background:var(--danger);border-radius:50%;border:1.5px solid var(--bg2)}
+.live-dot{display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:var(--ok)}
+.live-dot::before{content:'';width:6px;height:6px;background:var(--ok);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.5)}}
+
+/* PAGE CONTENT */
+.page{flex:1;padding:1.75rem;overflow-y:auto}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem}
+.page-title{font-size:1.3rem;font-weight:800;letter-spacing:-.5px}
+.page-subtitle{font-size:.8rem;color:var(--muted);margin-top:.15rem}
+.period-selector{display:flex;gap:.35rem;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.25rem}
+.period-btn{padding:.3rem .75rem;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;border:none;background:none;color:var(--muted);font-family:'Inter',sans-serif;transition:all .2s}
+.period-btn.active{background:rgba(0,212,170,.1);color:var(--p);border:1px solid rgba(0,212,170,.2)}
+.period-btn:not(.active):hover{color:var(--text)}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:1rem;margin-bottom:1.5rem}
+.kpi-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.25rem 1rem;transition:border-color .2s;position:relative;overflow:hidden}
+.kpi-card:hover{border-color:rgba(255,255,255,.14)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:14px 14px 0 0;opacity:.7}
+.kpi-card.teal::before{background:var(--p)}
+.kpi-card.purple::before{background:var(--sec)}
+.kpi-card.green::before{background:var(--ok)}
+.kpi-card.warn::before{background:var(--warn)}
+.kpi-card.danger::before{background:var(--danger)}
+.kpi-card.info::before{background:var(--info)}
+.kpi-label{display:flex;align-items:center;gap:.4rem;font-size:.67rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:.65rem}
+.kpi-help{width:13px;height:13px;border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--muted2);cursor:help}
+.kpi-value{font-size:1.75rem;font-weight:800;letter-spacing:-1px;line-height:1;margin-bottom:.4rem}
+.kpi-delta{display:flex;align-items:center;gap:.3rem;font-size:.75rem;font-weight:600}
+.kpi-delta.up{color:var(--ok)}
+.kpi-delta.down{color:var(--danger)}
+.kpi-delta.neutral{color:var(--muted)}
+.kpi-sparkline{margin-top:.75rem;height:36px}
+
+/* CHART ROW */
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1.5rem}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.25rem}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.chart-title{font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.chart-badge{font-size:.7rem;font-weight:700;padding:.2rem .55rem;border-radius:50px}
+.chart-canvas-wrap{position:relative;height:200px}
+
+/* METRICS WATERFALL */
+.waterfall-items{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem}
+.wf-item{display:flex;align-items:center;gap:.75rem}
+.wf-bar-wrap{flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden}
+.wf-bar{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.wf-label{font-size:.75rem;color:var(--muted);width:90px;flex-shrink:0}
+.wf-val{font-size:.78rem;font-weight:700;width:75px;text-align:right;flex-shrink:0}
+.wf-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* BOTTOM ROW */
+.bottom-row{display:grid;grid-template-columns:1.4fr 1fr;gap:1rem;margin-bottom:1.5rem}
+
+/* TABLE */
+.table-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);gap:.75rem;flex-wrap:wrap}
+.table-title{font-size:.82rem;font-weight:700}
+.table-actions{display:flex;gap:.5rem;align-items:center}
+.filter-btn{display:flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:.35rem .7rem;font-size:.75rem;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.filter-btn:hover{border-color:rgba(255,255,255,.15);color:var(--text)}
+.export-btn{background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);border-radius:7px;padding:.35rem .7rem;font-size:.75rem;color:var(--p);cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;transition:all .2s}
+.export-btn:hover{background:rgba(0,212,170,.15)}
+table{width:100%;border-collapse:collapse}
+th{font-size:.67rem;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;padding:.7rem 1.25rem;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none}
+th:hover{color:var(--muted)}
+th .sort{opacity:.4;font-size:.7rem;margin-left:.2rem}
+td{padding:.75rem 1.25rem;font-size:.82rem;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.td-email{color:var(--muted);font-size:.78rem}
+.td-company{font-weight:600}
+.pill{display:inline-flex;align-items:center;padding:.2rem .6rem;border-radius:50px;font-size:.68rem;font-weight:700;letter-spacing:.3px}
+.pill-green{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+.pill-blue{background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.2)}
+.pill-amber{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.2)}
+.pill-red{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+.pill-gray{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border)}
+.row-actions{display:flex;gap:.35rem;opacity:0;transition:opacity .2s}
+tr:hover .row-actions{opacity:1}
+.row-btn{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:5px;padding:.2rem .5rem;font-size:.68rem;cursor:pointer;color:var(--muted);font-family:'Inter',sans-serif;transition:all .2s}
+.row-btn:hover{background:rgba(255,255,255,.1);color:var(--text)}
+.table-footer{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;border-top:1px solid var(--border);font-size:.75rem;color:var(--muted)}
+.pagination{display:flex;gap:.3rem}
+.page-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--muted);font-size:.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-family:'Inter',sans-serif}
+.page-btn.active{background:rgba(0,212,170,.1);border-color:rgba(0,212,170,.2);color:var(--p)}
+.page-btn:hover:not(.active){background:rgba(255,255,255,.05);color:var(--text)}
+
+/* ACTIVITY FEED */
+.activity-feed{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.feed-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);font-size:.82rem;font-weight:700}
+.feed-list{overflow-y:auto;max-height:340px}
+.feed-item{display:flex;align-items:flex-start;gap:.75rem;padding:.75rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.03);transition:background .2s}
+.feed-item:last-child{border-bottom:none}
+.feed-item:hover{background:rgba(255,255,255,.02)}
+.feed-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;margin-top:1px}
+.fi-green{background:rgba(34,197,94,.1);color:#4ade80}
+.fi-blue{background:rgba(99,102,241,.1);color:#818cf8}
+.fi-amber{background:rgba(245,158,11,.1);color:#fbbf24}
+.fi-red{background:rgba(239,68,68,.1);color:#f87171}
+.feed-body{flex:1;min-width:0}
+.feed-title{font-size:.8rem;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feed-sub{font-size:.72rem;color:var(--muted);margin-top:.1rem}
+.feed-time{font-size:.68rem;color:var(--muted2);white-space:nowrap}
+
+/* ALERT BANNER */
+.alert-banner{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:.85rem 1.25rem;display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;font-size:.82rem}
+.alert-banner .alert-icon{font-size:1rem}
+.alert-banner .alert-text{flex:1}
+.alert-banner .alert-text strong{color:var(--warn)}
+.dismiss-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;font-family:'Inter',sans-serif;padding:.2rem .5rem;border-radius:4px}
+.dismiss-btn:hover{color:var(--text);background:rgba(255,255,255,.06)}
+
+/* SKELETON */
+.skeleton{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);background-size:400% 100%;animation:shimmer 1.5s infinite;border-radius:6px}
+@keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:.5rem;z-index:9999}
+
+@media(max-width:1100px){.charts-row{grid-template-columns:1fr}.bottom-row{grid-template-columns:1fr}}
+@media(max-width:768px){.sidebar{display:none}.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .35s ease}
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div>
+      <div class="name">Financial<span>OS</span></div>
+    </div>
+    <div class="badge">ADMIN</div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Principal</div>
+    <div class="nav-item active" onclick="setPage('overview')">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
+      Overview
+    </div>
+    <div class="nav-item" onclick="setPage('revenue')">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      Revenue
+    </div>
+    <div class="nav-item" onclick="setPage('customers')">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      Clientes
+      <span class="badge-count" id="trialCount">–</span>
+    </div>
+    <div class="nav-item" onclick="setPage('payments')">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+      Pagos
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Análisis</div>
+    <div class="nav-item" onclick="setPage('churn')">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Churn & Retención
+    </div>
+    <div class="nav-item" onclick="setPage('cohorts')">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+      Cohorts
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Sistema</div>
+    <div class="nav-item" onclick="setPage('plans')">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+      Planes
+    </div>
+    <div class="nav-item" onclick="setPage('settings')">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
+      Configuración
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-row" onclick="confirmLogout()">
+      <div class="avatar" id="adminAvatar">E</div>
+      <div class="user-info">
+        <div class="user-name" id="adminName">Admin</div>
+        <div class="user-role">Super Admin</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">
+        <span>FinancialOS</span>
+        <span style="color:var(--border)">›</span>
+        <span class="current" id="pageTitle">Overview</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="live-dot">En vivo</div>
+      <div class="search-box">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke-width="2.5"/><path d="m21 21-4.35-4.35" stroke-width="2.5"/></svg>
+        <input type="text" placeholder="Buscar cliente, plan... (⌘K)">
+      </div>
+      <div class="icon-btn" title="Notificaciones">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        <div class="notif-dot"></div>
+      </div>
+      <div class="icon-btn" onclick="exportCSV()" title="Exportar datos">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE CONTENT -->
+  <div class="page fade-in" id="pageContent">
+
+    <!-- ALERT BANNER -->
+    <div class="alert-banner" id="alertBanner">
+      <span class="alert-icon">⚠</span>
+      <span class="alert-text"><strong>Acción requerida:</strong> 3 suscripciones con pago fallido en los últimos 7 días. <a href="#" style="color:var(--warn);font-weight:700">Ver pagos pendientes →</a></span>
+      <button class="dismiss-btn" onclick="document.getElementById('alertBanner').style.display='none'">Descartar</button>
+    </div>
+
+    <!-- PERIOD + HEADER -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">Dashboard Administrativo</div>
+        <div class="page-subtitle" id="lastUpdated">Actualizando...</div>
+      </div>
+      <div class="period-selector">
+        <button class="period-btn" onclick="setPeriod(7, this)">7D</button>
+        <button class="period-btn active" onclick="setPeriod(30, this)">30D</button>
+        <button class="period-btn" onclick="setPeriod(90, this)">90D</button>
+        <button class="period-btn" onclick="setPeriod(365, this)">12M</button>
+      </div>
+    </div>
+
+    <!-- KPI GRID -->
+    <div class="kpi-grid" id="kpiGrid">
+      <!-- KPI cards rendered via JS -->
+    </div>
+
+    <!-- CHARTS ROW -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">MRR — Ingresos Recurrentes Mensuales</span>
+          <span class="chart-badge pill-green">↑ 8.3%</span>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="mrrChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">MRR Waterfall</span>
+          <span style="font-size:.72rem;color:var(--muted)">Este mes</span>
+        </div>
+        <div class="waterfall-items" id="waterfallItems">
+          <!-- rendered via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM ROW: TABLE + ACTIVITY -->
+    <div class="bottom-row">
+      <!-- CUSTOMERS TABLE -->
+      <div class="table-card">
+        <div class="table-toolbar">
+          <span class="table-title">Clientes activos</span>
+          <div class="table-actions">
+            <select class="filter-btn" id="planFilter" onchange="filterTable()">
+              <option value="">Todos los planes</option>
+              <option value="basico">Básico</option>
+              <option value="pro">Pro</option>
+              <option value="empresa">Empresa</option>
+            </select>
+            <select class="filter-btn" id="statusFilter" onchange="filterTable()">
+              <option value="">Todos los estados</option>
+              <option value="active">Activos</option>
+              <option value="trial">Trial</option>
+              <option value="cancelled">Cancelados</option>
+            </select>
+            <button class="export-btn" onclick="exportCSV()">↓ Exportar</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="customersTable">
+            <thead>
+              <tr>
+                <th onclick="sortTable('company')">Empresa <span class="sort">↕</span></th>
+                <th onclick="sortTable('plan')">Plan <span class="sort">↕</span></th>
+                <th onclick="sortTable('status')">Estado <span class="sort">↕</span></th>
+                <th onclick="sortTable('mrr')">MRR <span class="sort">↕</span></th>
+                <th onclick="sortTable('created_at')">Desde <span class="sort">↕</span></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span id="tableCount">Cargando...</span>
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
+
+      <!-- ACTIVITY FEED -->
+      <div class="activity-feed">
+        <div class="feed-header">Actividad reciente</div>
+        <div class="feed-list" id="activityFeed">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAN BREAKDOWN -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem" id="planBreakdown">
+      <!-- Rendered via JS -->
+    </div>
+
+  </div><!-- /page -->
+</div><!-- /main -->
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+// ── State ─────────────────────────────────────────
+let allCustomers = [], filteredCustomers = [], sortKey = 'created_at', sortAsc = false;
+let currentPage = 1; const PAGE_SIZE = 8;
+let mrrChartInstance = null;
+let currentPeriod = 30;
+
+// ── Init ──────────────────────────────────────────
+(async () => {
+  const auth = await requireAdmin();
+  if (!auth) return;
+
+  const profile = auth.profile;
+  document.getElementById('adminName').textContent = profile.full_name || auth.session.user.email;
+  document.getElementById('adminAvatar').textContent = (profile.full_name || 'A').charAt(0).toUpperCase();
+  document.getElementById('lastUpdated').textContent = `Última actualización: ${fmtRelative(new Date())}`;
+
+  await loadAllData();
+  setupRealtimeUpdates();
+})();
+
+async function loadAllData() {
+  await Promise.all([loadKPIs(), loadCustomers(), renderActivity()]);
+  renderMRRChart();
+  renderWaterfall();
+}
+
+// ── KPIs ──────────────────────────────────────────
+async function loadKPIs() {
+  // Fetch profiles
+  const { data: profiles } = await db.from('profiles').select('*');
+  const { data: payments } = await db.from('payments').select('*').eq('status','active');
+
+  const active = profiles?.filter(p => p.subscription_status === 'active') || [];
+  const trial  = profiles?.filter(p => p.subscription_status === 'trial') || [];
+  const cancelled = profiles?.filter(p => p.subscription_status === 'cancelled') || [];
+
+  const mrr = active.reduce((sum, p) => sum + (PLANS[p.plan]?.price || 0), 0);
+  const arr = mrr * 12;
+  const totalUsers = profiles?.length || 0;
+  const churnRate = totalUsers > 0 ? ((cancelled.length / totalUsers) * 100).toFixed(1) : '0.0';
+  const arpu = active.length > 0 ? mrr / active.length : 0;
+
+  document.getElementById('trialCount').textContent = trial.length;
+
+  const kpis = [
+    { label:'MRR', val: fmt(mrr), delta:'+8.3%', dir:'up', color:'teal', note:'vs. mes anterior',
+      help:'Ingresos Recurrentes Mensales = suma de suscripciones activas' },
+    { label:'ARR', val: fmt(arr), delta:'+8.3%', dir:'up', color:'purple', note:'proyección anual',
+      help:'ARR = MRR × 12' },
+    { label:'Clientes Activos', val: active.length, delta:'+12', dir:'up', color:'green', note:'suscripciones pagadas',
+      help:'Usuarios con suscripción activa' },
+    { label:'Trials', val: trial.length, delta:trial.length, dir:'neutral', color:'info', note:'pruebas en curso',
+      help:'Usuarios en período de prueba de 14 días' },
+    { label:'Churn Rate', val: churnRate+'%', delta: churnRate < 2 ? '▼ Saludable' : '▲ Atención', dir: churnRate < 2 ? 'up' : 'down', color: churnRate < 5 ? 'warn' : 'danger', note:'cancelaciones/total',
+      help:'Porcentaje de clientes que cancelaron. Objetivo: <2% mensual' },
+    { label:'ARPU', val: fmt(arpu), delta:'+$120', dir:'up', color:'teal', note:'ingreso por usuario',
+      help:'Average Revenue Per User = MRR / Clientes Activos' }
+  ];
+
+  const grid = document.getElementById('kpiGrid');
+  grid.innerHTML = kpis.map(k => `
+    <div class="kpi-card ${k.color} fade-in">
+      <div class="kpi-label">
+        ${k.label}
+        <div class="kpi-help" title="${k.help}">?</div>
+      </div>
+      <div class="kpi-value">${k.val}</div>
+      <div class="kpi-delta ${k.dir}">
+        ${k.dir === 'up' ? '↑' : k.dir === 'down' ? '↓' : ''}
+        ${k.delta} &nbsp;<span style="color:var(--muted2);font-weight:400">${k.note}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ── MRR Chart ─────────────────────────────────────
+function renderMRRChart() {
+  const ctx = document.getElementById('mrrChart');
+  if (!ctx) return;
+  if (mrrChartInstance) mrrChartInstance.destroy();
+
+  // Mock data: 12 months of MRR growth
+  const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const data = [12000,18000,24000,28000,31000,35000,38000,40000,43000,46000,49000,52000];
+  const prevData = [8000,12000,18000,22000,26000,29000,32000,35000,38000,40000,43000,46000];
+
+  mrrChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [
+        {
+          label: 'MRR 2025',
+          data: data,
+          borderColor: '#00d4aa',
+          backgroundColor: (ctx) => {
+            const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 200);
+            g.addColorStop(0, 'rgba(0,212,170,0.25)');
+            g.addColorStop(1, 'rgba(0,212,170,0)');
+            return g;
+          },
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2.5,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: '#00d4aa'
+        },
+        {
+          label: 'MRR 2024',
+          data: prevData,
+          borderColor: 'rgba(255,255,255,0.15)',
+          borderDash: [4, 4],
+          fill: false,
+          tension: 0.4,
+          borderWidth: 1.5,
+          pointRadius: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#161b22',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          titleColor: '#94a3b8',
+          bodyColor: '#e2e8f0',
+          padding: 12,
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0}).format(ctx.raw)}`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 11 } } },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#64748b', font: { size: 11 },
+            callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v)
+          }
+        }
+      }
+    }
+  });
+}
+
+// ── Waterfall ─────────────────────────────────────
+function renderWaterfall() {
+  const items = [
+    { label: 'MRR anterior', val: 46200, color: 'var(--muted)', pct: 92 },
+    { label: '+ Nuevo', val: 8400, color: 'var(--ok)', pct: 17 },
+    { label: '+ Expansión', val: 1200, color: 'var(--p)', pct: 2 },
+    { label: '- Contracción', val: -800, color: 'var(--warn)', pct: 2 },
+    { label: '- Churn', val: -3200, color: 'var(--danger)', pct: 6 },
+    { label: 'MRR neto', val: 51800, color: 'var(--p)', pct: 100 }
+  ];
+
+  document.getElementById('waterfallItems').innerHTML = items.map(it => `
+    <div class="wf-item">
+      <span class="wf-label">${it.label}</span>
+      <div class="wf-bar-wrap">
+        <div class="wf-bar" style="width:${Math.abs(it.pct)}%;background:${it.color};opacity:.8"></div>
+      </div>
+      <span class="wf-val" style="color:${it.val >= 0 ? 'var(--text)' : 'var(--danger)'}">
+        ${it.val >= 0 ? '' : '−'}${fmt(Math.abs(it.val))}
+      </span>
+    </div>`).join('');
+}
+
+// ── Customers Table ───────────────────────────────
+async function loadCustomers() {
+  const { data } = await db.from('profiles').select('*').order('created_at', { ascending: false });
+  allCustomers = data || [];
+  filteredCustomers = [...allCustomers];
+  renderTable();
+  renderPlanBreakdown();
+}
+
+function renderTable() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page = filteredCustomers.slice(start, start + PAGE_SIZE);
+
+  document.getElementById('tableBody').innerHTML = page.length ? page.map(u => `
+    <tr>
+      <td>
+        <div class="td-company">${u.company_name || '—'}</div>
+        <div class="td-email">${u.id?.slice(0,8)}... · ${u.rfc || 'Sin RFC'}</div>
+      </td>
+      <td>${planBadge(u.plan || 'free')}</td>
+      <td>${statusBadge(u.subscription_status || 'trial')}</td>
+      <td style="font-weight:700">${fmt(PLANS[u.plan]?.price || 0)}</td>
+      <td style="color:var(--muted)">${fmtDate(u.created_at)}</td>
+      <td>
+        <div class="row-actions">
+          <button class="row-btn" onclick="viewCustomer('${u.id}')">Ver</button>
+          <button class="row-btn" onclick="editPlan('${u.id}')">Plan</button>
+          <button class="row-btn" style="color:#f87171" onclick="cancelSub('${u.id}')">✕</button>
+        </div>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">Sin resultados</td></tr>`;
+
+  const total = filteredCustomers.length;
+  document.getElementById('tableCount').textContent = `${start+1}–${Math.min(start+PAGE_SIZE, total)} de ${total} clientes`;
+  renderPagination(total);
+}
+
+function renderPagination(total) {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const pag = document.getElementById('pagination');
+  let html = '';
+  for (let i = 1; i <= Math.min(pages, 5); i++) {
+    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="gotoPage(${i})">${i}</button>`;
+  }
+  if (pages > 5) html += `<button class="page-btn" style="pointer-events:none">...</button>`;
+  pag.innerHTML = html;
+}
+
+function gotoPage(p) { currentPage = p; renderTable(); }
+
+function filterTable() {
+  const plan = document.getElementById('planFilter').value;
+  const status = document.getElementById('statusFilter').value;
+  filteredCustomers = allCustomers.filter(u =>
+    (!plan   || u.plan === plan) &&
+    (!status || u.subscription_status === status)
+  );
+  currentPage = 1;
+  renderTable();
+}
+
+function sortTable(key) {
+  if (sortKey === key) sortAsc = !sortAsc;
+  else { sortKey = key; sortAsc = true; }
+  filteredCustomers.sort((a, b) => {
+    const va = a[key] || '', vb = b[key] || '';
+    return sortAsc ? (va < vb ? -1 : 1) : (va > vb ? -1 : 1);
+  });
+  renderTable();
+}
+
+function exportCSV() {
+  const rows = [['Empresa','RFC','Plan','Estado','MRR','Desde']];
+  filteredCustomers.forEach(u => rows.push([
+    u.company_name || '', u.rfc || '', u.plan || '', u.subscription_status || '',
+    PLANS[u.plan]?.price || 0, fmtDate(u.created_at)
+  ]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `clientes-financialos-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('CSV exportado correctamente', 'ok');
+}
+
+// ── Plan Breakdown ────────────────────────────────
+function renderPlanBreakdown() {
+  const plans = ['basico','pro','empresa'];
+  const breakdown = document.getElementById('planBreakdown');
+  breakdown.innerHTML = plans.map(plan => {
+    const users = allCustomers.filter(u => u.plan === plan && u.subscription_status === 'active');
+    const mrr = users.length * (PLANS[plan]?.price || 0);
+    const p = PLANS[plan];
+    return `
+      <div class="kpi-card" style="border-color:${p.color}33">
+        <div class="kpi-label" style="color:${p.color}">${p.name}</div>
+        <div style="display:flex;align-items:baseline;gap:.5rem;margin-bottom:.3rem">
+          <span class="kpi-value" style="font-size:1.4rem">${users.length}</span>
+          <span style="color:var(--muted);font-size:.78rem">clientes</span>
+        </div>
+        <div style="font-size:.82rem;font-weight:700;color:${p.color}">${fmt(mrr)}<span style="color:var(--muted);font-weight:400;font-size:.72rem"> MRR</span></div>
+        <div style="margin-top:.75rem;height:4px;background:rgba(255,255,255,.06);border-radius:2px">
+          <div style="height:100%;border-radius:2px;background:${p.color};width:${Math.min(100, users.length * 15)}%;transition:width 1s ease"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Activity Feed ─────────────────────────────────
+async function renderActivity() {
+  const { data } = await db.from('payments')
+    .select('*, profiles(company_name, plan)')
+    .order('created_at', { ascending: false })
+    .limit(15);
+
+  const events = data?.map(p => ({
+    icon: '💳', type: 'fi-green',
+    title: `${p.profiles?.company_name || 'Cliente'} suscribió plan ${PLANS[p.plan]?.name || p.plan}`,
+    sub: `${fmt(p.amount)} MXN · ${p.plan}`,
+    time: p.created_at
+  })) || [];
+
+  // Mock recent events if no real data
+  const mockEvents = [
+    { icon:'🆕', type:'fi-blue', title:'Nuevo registro: empresa@ejemplo.com', sub:'Plan Pro — Trial iniciado', time: new Date(Date.now()-5*60000).toISOString() },
+    { icon:'💳', type:'fi-green', title:'Pago recibido: Distribuidora MX', sub:'$1,990 MXN · Plan Pro', time: new Date(Date.now()-32*60000).toISOString() },
+    { icon:'⚠', type:'fi-amber', title:'Pago fallido: Constructora Durán', sub:'Tarjeta rechazada — 2do intento', time: new Date(Date.now()-2*3600000).toISOString() },
+    { icon:'💳', type:'fi-green', title:'Pago recibido: Grupo Mendoza', sub:'$990 MXN · Plan Básico', time: new Date(Date.now()-3*3600000).toISOString() },
+    { icon:'📈', type:'fi-blue', title:'Upgrade: Taller Rodríguez → Pro', sub:'$990 → $1,990 MXN', time: new Date(Date.now()-5*3600000).toISOString() },
+    { icon:'❌', type:'fi-red', title:'Cancelación: Inversiones Garza', sub:'Plan Pro · Motivo: precio', time: new Date(Date.now()-8*3600000).toISOString() },
+    { icon:'💳', type:'fi-green', title:'Pago recibido: Farmacia Central', sub:'$3,990 MXN · Plan Empresa', time: new Date(Date.now()-10*3600000).toISOString() },
+    { icon:'🆕', type:'fi-blue', title:'Nuevo registro: pymes@nextsol.mx', sub:'Plan Básico — Trial iniciado', time: new Date(Date.now()-12*3600000).toISOString() }
+  ];
+
+  const feed = [...events, ...mockEvents].slice(0, 12);
+  document.getElementById('activityFeed').innerHTML = feed.map(e => `
+    <div class="feed-item">
+      <div class="feed-icon ${e.type}">${e.icon}</div>
+      <div class="feed-body">
+        <div class="feed-title">${e.title}</div>
+        <div class="feed-sub">${e.sub}</div>
+      </div>
+      <div class="feed-time">${fmtRelative(e.time)}</div>
+    </div>`).join('');
+}
+
+// ── Realtime ──────────────────────────────────────
+function setupRealtimeUpdates() {
+  subscribeToTable('profiles', () => { loadKPIs(); loadCustomers(); });
+  subscribeToTable('payments', () => { loadKPIs(); renderActivity(); });
+}
+
+// ── UI helpers ────────────────────────────────────
+function setPeriod(days, btn) {
+  currentPeriod = days;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMRRChart();
+}
+
+function setPage(page) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('pageTitle').textContent = {
+    overview:'Overview', revenue:'Revenue', customers:'Clientes',
+    payments:'Pagos', churn:'Churn & Retención', cohorts:'Cohorts',
+    plans:'Planes', settings:'Configuración'
+  }[page] || page;
+}
+
+function showToast(msg, type = 'ok') {
+  const colors = { ok: 'var(--ok)', err: 'var(--danger)', info: 'var(--info)' };
+  const el = document.createElement('div');
+  el.style.cssText = `background:var(--bg2);border:1px solid ${colors[type]}33;color:var(--text);
+    padding:.75rem 1.1rem;border-radius:10px;font-size:.82rem;font-weight:500;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);display:flex;align-items:center;gap:.6rem;
+    border-left:3px solid ${colors[type]};animation:slideIn .3s ease`;
+  el.innerHTML = `<span>${type==='ok'?'✓':type==='err'?'✕':'ℹ'}</span><span>${msg}</span>`;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function viewCustomer(id) { showToast('Abriendo perfil del cliente...', 'info'); }
+function editPlan(id) { showToast('Función disponible próximamente', 'info'); }
+async function cancelSub(id) {
+  if (!confirm('¿Cancelar la suscripción de este cliente?')) return;
+  await db.from('profiles').update({ subscription_status: 'cancelled' }).eq('id', id);
+  await loadCustomers();
+  showToast('Suscripción cancelada', 'err');
+}
+
+function confirmLogout() {
+  if (confirm('¿Cerrar sesión de administrador?')) signOut();
+}
+</script>
+</body>
+</html>
