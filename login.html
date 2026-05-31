@@ -156,8 +156,17 @@ blockquote::before{content:'"';font-size:3rem;color:var(--p);line-height:0;verti
 <script src="/assets/app.js"></script>
 <script>
 // Redirigir si ya está logueado
-getSession().then(session => {
-  if (session) window.location.href = '/dashboard.html';
+getSession().then(async session => {
+  if (session) {
+    const profile = await getProfile(session.user.id);
+    if (profile?.is_admin) {
+      window.location.href = '/admin/dashboard.html';
+    } else if (profile?.plan === 'free' || !profile?.plan) {
+      window.location.href = '/pricing.html';
+    } else {
+      window.location.href = '/dashboard.html';
+    }
+  }
 });
 
 async function handleLogin(e) {
