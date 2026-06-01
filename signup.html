@@ -143,14 +143,14 @@ select option{background:var(--bg2)}
       </button>
     </form>
 
-    <div class="footer-link">¿Ya tienes cuenta? <a href="/login.html">Iniciar sesión</a></div>
+    <div class="footer-link">¿Ya tienes cuenta? <a href="/login">Iniciar sesión</a></div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-getSession().then(s => { if (s) window.location.href = '/dashboard.html'; });
+getSession().then(s => { if (s) window.location.href = '/dashboard'; });
 
 function checkStrength(val) {
   const fill = document.getElementById('strengthFill');
@@ -240,7 +240,7 @@ async function handleSignup(e) {
 
   // Si no requiere confirmación de email, redirigir a pricing
   if (data.session) {
-    setTimeout(() => window.location.href = '/pricing.html', 1500);
+    setTimeout(() => window.location.href = '/pricing', 1500);
   }
 }
 
@@ -248,7 +248,7 @@ async function signupWithGoogle() {
   const { error } = await db.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: window.location.origin + '/pricing.html',
+      redirectTo: window.location.origin + '/pricing',
       queryParams: { access_type: 'offline', prompt: 'consent' }
     }
   });

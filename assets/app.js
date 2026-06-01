@@ -34,7 +34,7 @@ async function getProfile(userId) {
   return data;
 }
 
-async function requireAuth(redirectTo = '/login.html') {
+async function requireAuth(redirectTo = '/login') {
   const session = await getSession();
   if (!session) { window.location.href = redirectTo; return null; }
   return session;
@@ -44,13 +44,13 @@ async function requireAdmin() {
   const session = await requireAuth();
   if (!session) return null;
   const profile = await getProfile(session.user.id);
-  if (!profile?.is_admin) { window.location.href = '/dashboard.html'; return null; }
+  if (!profile?.is_admin) { window.location.href = '/dashboard'; return null; }
   return { session, profile };
 }
 
 async function signOut() {
   await db.auth.signOut();
-  window.location.href = '/login.html';
+  window.location.href = '/login';
 }
 
 // ── Format helpers ────────────────────────────────────────

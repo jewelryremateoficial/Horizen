@@ -316,7 +316,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
     </div>
     <div id="userMenu" style="display:none;padding:.5rem .35rem 0">
-      <a class="nav-item" style="margin:0" href="/pricing.html">
+      <a class="nav-item" style="margin:0" href="/pricing">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         Mejorar plan
       </a>
@@ -346,7 +346,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     </div>
 
     <!-- Trial banner -->
-    <a href="/pricing.html" class="trial-banner" id="trialBanner" style="display:none">
+    <a href="/pricing" class="trial-banner" id="trialBanner" style="display:none">
       <div class="dot"></div>
       <span id="trialDays">14 días restantes</span>
     </a>
@@ -372,7 +372,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div class="title">Tu prueba gratuita vence pronto</div>
           <div class="desc">Activa tu plan para mantener acceso completo a tu inteligencia financiera.</div>
         </div>
-        <button class="btn-upgrade" onclick="window.location.href='/pricing.html'">Activar plan →</button>
+        <button class="btn-upgrade" onclick="window.location.href='/pricing'">Activar plan →</button>
       </div>
 
       <!-- Period bar -->
@@ -989,7 +989,7 @@ let currentUser = null;
 let currentProfile = null;
 
 (async () => {
-  const session = await requireAuth('/login.html');
+  const session = await requireAuth('/login');
   if (!session) return;
   currentUser = session.user;
   currentProfile = await getProfile(currentUser.id);
