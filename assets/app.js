@@ -5,13 +5,13 @@
 
 const SUPABASE_URL = 'https://upcbznfkpswtxiffgsgj.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_2rL4lnWnN_6c3h2KMRt8TA_yz2Bb8yZ';
-const PAYPAL_CLIENT_ID = 'YOUR_PAYPAL_CLIENT_ID';
+const PAYPAL_CLIENT_ID = 'Ab9gde9vp6tmdo_5bc2w-jWtvA4xd_dwWuRoTBxSTJeyd77Gu2EQeOEsFhdd4RmanITAXlDDJKpv8wNI';
 
 // PayPal Plan IDs (crear en PayPal Dashboard → Subscriptions → Plans)
 const PAYPAL_PLANS = {
-  basico:  'YOUR_PAYPAL_PLAN_ID_BASICO',   // $990 MXN/mes
-  pro:     'YOUR_PAYPAL_PLAN_ID_PRO',      // $1,990 MXN/mes
-  empresa: 'YOUR_PAYPAL_PLAN_ID_EMPRESA'   // $3,990 MXN/mes
+  basico:  'P-79321420JS938303KNIOSOJA',   // $990 MXN/mes
+  pro:     'P-30241692SC5349045NIOSOJI',   // $1,990 MXN/mes
+  empresa: 'P-2KG00541GJ147021VNIOSOJI'   // $3,990 MXN/mes
 };
 
 // Init Supabase

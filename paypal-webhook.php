@@ -8,13 +8,13 @@
  *            PAYMENT.SALE.COMPLETED, BILLING.SUBSCRIPTION.PAYMENT.FAILED
  */
 
-// Credenciales — reemplaza con las tuyas
-define('PAYPAL_CLIENT_ID',     'YOUR_PAYPAL_CLIENT_ID');
-define('PAYPAL_CLIENT_SECRET', 'YOUR_PAYPAL_CLIENT_SECRET');
-define('PAYPAL_WEBHOOK_ID',    'YOUR_PAYPAL_WEBHOOK_ID');  // Del panel de PayPal
+// Credenciales
+define('PAYPAL_CLIENT_ID',     'Ab9gde9vp6tmdo_5bc2w-jWtvA4xd_dwWuRoTBxSTJeyd77Gu2EQeOEsFhdd4RmanITAXlDDJKpv8wNI');
+define('PAYPAL_CLIENT_SECRET', 'EL8hc2KDF2vSLTcswfMuO-YWWQOG-hQGVW9dWmx1ifBEuCeoYM1OOYG5SxvzCn8JSmYhfpUpstO-H8GX');
+define('PAYPAL_WEBHOOK_ID',    '4KL64234YG1820715');
 
-define('SUPABASE_URL',         'YOUR_SUPABASE_URL');
-define('SUPABASE_SERVICE_KEY', 'YOUR_SUPABASE_SERVICE_ROLE_KEY');  // NO el anon key
+define('SUPABASE_URL',         'https://upcbznfkpswtxiffgsgj.supabase.co');
+define('SUPABASE_SERVICE_KEY', 'SUPABASE_SERVICE_ROLE_KEY_PENDING');  // TODO: service_role key de Supabase Settings → API
 
 define('PAYPAL_API',           'https://api-m.paypal.com');  // cambiar a sandbox para pruebas
 
