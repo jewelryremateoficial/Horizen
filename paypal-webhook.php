@@ -14,7 +14,7 @@ define('PAYPAL_CLIENT_SECRET', 'EL8hc2KDF2vSLTcswfMuO-YWWQOG-hQGVW9dWmx1ifBEuCeo
 define('PAYPAL_WEBHOOK_ID',    '4KL64234YG1820715');
 
 define('SUPABASE_URL',         'https://upcbznfkpswtxiffgsgj.supabase.co');
-define('SUPABASE_SERVICE_KEY', 'SUPABASE_SERVICE_ROLE_KEY_PENDING');  // TODO: service_role key de Supabase Settings → API
+define('SUPABASE_SERVICE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwY2J6bmZrcHN3dHhpZmZnc2dqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE2NjE1OCwiZXhwIjoyMDk1NzQyMTU4fQ.U3LbBJUeFKBvyar0zJp1Q9cDOjKNTXdt3J5xHB1NZdY');
 
 define('PAYPAL_API',           'https://api-m.paypal.com');  // cambiar a sandbox para pruebas
 
