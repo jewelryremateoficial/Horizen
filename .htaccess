@@ -1,16 +1,40 @@
+# ============================================================
+# FinancialOS — .htaccess
+# Prioridad: index.html > index.php  (WordPress queda atrás)
+# ============================================================
+
+# 1. index.html primero, WordPress de respaldo
+DirectoryIndex index.html index.php
+
 Options -MultiViews
 RewriteEngine On
 RewriteBase /
 
-# Redirigir .html → URL limpia (301 permanente)
+# ── A: Redirigir .html → URL limpia (301) ───────────────────
 RewriteCond %{THE_REQUEST} \s/+(.+?)\.html[\s?] [NC]
 RewriteRule ^ /%1 [R=301,L,NE]
 
-# Servir archivos .html cuando se pide sin extensión
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
+# ── B: Nuestras páginas sin extensión (ANTES que WordPress) ─
+RewriteRule ^login/?$              login.html              [L]
+RewriteRule ^signup/?$             signup.html             [L]
+RewriteRule ^pricing/?$            pricing.html            [L]
+RewriteRule ^dashboard/?$          dashboard.html          [L]
+RewriteRule ^reset-password/?$     reset-password.html     [L]
+RewriteRule ^admin/dashboard/?$    admin/dashboard.html    [L]
+
+# ── C: Archivos y carpetas reales pasan directo ─────────────
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# ── D: Genérico — cualquier otro .html sin extensión ────────
 RewriteCond %{REQUEST_FILENAME}.html -f
 RewriteRule ^(.+?)/?$ $1.html [L]
 
-# Seguridad básica
+# ── E: Todo lo demás → WordPress (wp-admin, API REST, etc.) ─
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+
+# Seguridad
 Options -Indexes
