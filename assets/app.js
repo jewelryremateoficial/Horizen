@@ -43,8 +43,14 @@ async function requireAuth(redirectTo = '/login') {
 async function requireAdmin() {
   const session = await requireAuth();
   if (!session) return null;
-  const profile = await getProfile(session.user.id);
-  if (!profile?.is_admin) { window.location.href = '/dashboard'; return null; }
+  const user = session.user;
+  // Check Auth metadata first (bypasses RLS, always reliable)
+  const isAdmin = user?.app_metadata?.is_admin === true ||
+                  user?.user_metadata?.is_admin === true;
+  if (!isAdmin) { window.location.href = '/dashboard'; return null; }
+  // Load profile for display (non-blocking if RLS has issues)
+  let profile = {};
+  try { profile = (await getProfile(user.id)) || {}; } catch(e) {}
   return { session, profile };
 }
 
