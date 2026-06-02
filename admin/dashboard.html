@@ -20,8 +20,9 @@
 html,body{min-height:100vh;font-size:14px}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;font-variant-numeric:tabular-nums}
 a{text-decoration:none;color:inherit}
+button{font-family:'Inter',sans-serif}
 
-/* ── SIDEBAR ─────────────────────────────────────── */
+/* ── SIDEBAR ───────────────────────────────────── */
 .sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;overflow-y:auto}
 .sidebar-logo{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.6rem}
 .sidebar-logo .name{font-size:1rem;font-weight:900;letter-spacing:-.4px}
@@ -37,14 +38,12 @@ a{text-decoration:none;color:inherit}
 .sidebar-footer{margin-top:auto;padding:1rem .75rem;border-top:1px solid var(--border)}
 .user-row{display:flex;align-items:center;gap:.65rem;padding:.6rem .5rem;border-radius:8px;cursor:pointer;transition:background .2s}
 .user-row:hover{background:rgba(255,255,255,.05)}
-.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--sec));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.7rem;color:#060b18;flex-shrink:0}
+.avatar-sm{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--sec));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.7rem;color:#060b18;flex-shrink:0}
 .user-info .user-name{font-size:.8rem;font-weight:600;line-height:1.2}
 .user-info .user-role{font-size:.68rem;color:var(--muted);line-height:1}
 
-/* ── MAIN ────────────────────────────────────────── */
+/* ── MAIN ─────────────────────────────────────── */
 .main{flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden}
-
-/* TOPBAR */
 .topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1.75rem;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;gap:1rem}
 .topbar-left{display:flex;align-items:center;gap:.5rem}
 .breadcrumb{display:flex;align-items:center;gap:.4rem;font-size:.82rem;color:var(--muted)}
@@ -56,20 +55,22 @@ a{text-decoration:none;color:inherit}
 .search-box input::placeholder{color:var(--muted2)}
 .icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;position:relative}
 .icon-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15)}
-.notif-dot{position:absolute;top:6px;right:6px;width:6px;height:6px;background:var(--danger);border-radius:50%;border:1.5px solid var(--bg2)}
 .live-dot{display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:var(--ok)}
 .live-dot::before{content:'';width:6px;height:6px;background:var(--ok);border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.5)}}
-
-/* PAGE CONTENT */
 .page{flex:1;padding:1.75rem;overflow-y:auto}
+
+/* ── SHARED COMPONENTS ─────────────────────────── */
 .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem}
 .page-title{font-size:1.3rem;font-weight:800;letter-spacing:-.5px}
 .page-subtitle{font-size:.8rem;color:var(--muted);margin-top:.15rem}
-.period-selector{display:flex;gap:.35rem;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.25rem}
-.period-btn{padding:.3rem .75rem;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;border:none;background:none;color:var(--muted);font-family:'Inter',sans-serif;transition:all .2s}
-.period-btn.active{background:rgba(0,212,170,.1);color:var(--p);border:1px solid rgba(0,212,170,.2)}
-.period-btn:not(.active):hover{color:var(--text)}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--p);color:#060b18}
+.btn-primary:hover{background:var(--p2)}
+.btn-secondary{background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text)}
+.btn-secondary:hover{background:rgba(255,255,255,.1)}
+.btn-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171}
+.btn-danger:hover{background:rgba(239,68,68,.2)}
 
 /* KPI CARDS */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:1rem;margin-bottom:1.5rem}
@@ -83,72 +84,65 @@ a{text-decoration:none;color:inherit}
 .kpi-card.danger::before{background:var(--danger)}
 .kpi-card.info::before{background:var(--info)}
 .kpi-label{display:flex;align-items:center;gap:.4rem;font-size:.67rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:.65rem}
-.kpi-help{width:13px;height:13px;border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--muted2);cursor:help}
 .kpi-value{font-size:1.75rem;font-weight:800;letter-spacing:-1px;line-height:1;margin-bottom:.4rem}
 .kpi-delta{display:flex;align-items:center;gap:.3rem;font-size:.75rem;font-weight:600}
 .kpi-delta.up{color:var(--ok)}
 .kpi-delta.down{color:var(--danger)}
 .kpi-delta.neutral{color:var(--muted)}
-.kpi-sparkline{margin-top:.75rem;height:36px}
 
-/* CHART ROW */
-.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1.5rem}
-.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.25rem}
-.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
-.chart-title{font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
-.chart-badge{font-size:.7rem;font-weight:700;padding:.2rem .55rem;border-radius:50px}
-.chart-canvas-wrap{position:relative;height:200px}
-
-/* METRICS WATERFALL */
-.waterfall-items{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem}
-.wf-item{display:flex;align-items:center;gap:.75rem}
-.wf-bar-wrap{flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden}
-.wf-bar{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1)}
-.wf-label{font-size:.75rem;color:var(--muted);width:90px;flex-shrink:0}
-.wf-val{font-size:.78rem;font-weight:700;width:75px;text-align:right;flex-shrink:0}
-.wf-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-
-/* BOTTOM ROW */
-.bottom-row{display:grid;grid-template-columns:1.4fr 1fr;gap:1rem;margin-bottom:1.5rem}
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border)}
+.card-title{font-size:.82rem;font-weight:700}
+.card-body{padding:1.25rem}
 
 /* TABLE */
-.table-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
 .table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);gap:.75rem;flex-wrap:wrap}
-.table-title{font-size:.82rem;font-weight:700}
-.table-actions{display:flex;gap:.5rem;align-items:center}
-.filter-btn{display:flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:.35rem .7rem;font-size:.75rem;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
-.filter-btn:hover{border-color:rgba(255,255,255,.15);color:var(--text)}
-.export-btn{background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);border-radius:7px;padding:.35rem .7rem;font-size:.75rem;color:var(--p);cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;transition:all .2s}
-.export-btn:hover{background:rgba(0,212,170,.15)}
+.table-actions{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.filter-select{display:flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:.35rem .7rem;font-size:.75rem;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;outline:none;transition:all .2s}
+.filter-select:focus{border-color:var(--p);color:var(--text)}
+.search-input{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;padding:.35rem .75rem;font-size:.78rem;color:var(--text);font-family:'Inter',sans-serif;outline:none;width:200px;transition:all .2s}
+.search-input:focus{border-color:var(--p)}
+.search-input::placeholder{color:var(--muted2)}
 table{width:100%;border-collapse:collapse}
 th{font-size:.67rem;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;padding:.7rem 1.25rem;text-align:left;border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none}
 th:hover{color:var(--muted)}
-th .sort{opacity:.4;font-size:.7rem;margin-left:.2rem}
 td{padding:.75rem 1.25rem;font-size:.82rem;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(255,255,255,.02)}
-.td-email{color:var(--muted);font-size:.78rem}
-.td-company{font-weight:600}
 .pill{display:inline-flex;align-items:center;padding:.2rem .6rem;border-radius:50px;font-size:.68rem;font-weight:700;letter-spacing:.3px}
 .pill-green{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
 .pill-blue{background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.2)}
 .pill-amber{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.2)}
 .pill-red{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.2)}
 .pill-gray{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border)}
-.row-actions{display:flex;gap:.35rem;opacity:0;transition:opacity .2s}
-tr:hover .row-actions{opacity:1}
-.row-btn{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:5px;padding:.2rem .5rem;font-size:.68rem;cursor:pointer;color:var(--muted);font-family:'Inter',sans-serif;transition:all .2s}
+.row-actions{display:flex;gap:.35rem}
+.row-btn{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:5px;padding:.25rem .6rem;font-size:.72rem;cursor:pointer;color:var(--muted);font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap}
 .row-btn:hover{background:rgba(255,255,255,.1);color:var(--text)}
+.row-btn.danger{color:#f87171;border-color:rgba(239,68,68,.2)}
+.row-btn.danger:hover{background:rgba(239,68,68,.1)}
 .table-footer{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;border-top:1px solid var(--border);font-size:.75rem;color:var(--muted)}
 .pagination{display:flex;gap:.3rem}
 .page-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--muted);font-size:.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-family:'Inter',sans-serif}
 .page-btn.active{background:rgba(0,212,170,.1);border-color:rgba(0,212,170,.2);color:var(--p)}
 .page-btn:hover:not(.active){background:rgba(255,255,255,.05);color:var(--text)}
 
+/* CHART */
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1.5rem}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.25rem}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.chart-title{font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.chart-canvas-wrap{position:relative;height:200px}
+
+/* WATERFALL */
+.waterfall-items{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem}
+.wf-item{display:flex;align-items:center;gap:.75rem}
+.wf-bar-wrap{flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden}
+.wf-bar{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.wf-label{font-size:.75rem;color:var(--muted);width:100px;flex-shrink:0}
+.wf-val{font-size:.78rem;font-weight:700;width:80px;text-align:right;flex-shrink:0}
+
 /* ACTIVITY FEED */
-.activity-feed{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-.feed-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);font-size:.82rem;font-weight:700}
-.feed-list{overflow-y:auto;max-height:340px}
 .feed-item{display:flex;align-items:flex-start;gap:.75rem;padding:.75rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.03);transition:background .2s}
 .feed-item:last-child{border-bottom:none}
 .feed-item:hover{background:rgba(255,255,255,.02)}
@@ -158,34 +152,92 @@ tr:hover .row-actions{opacity:1}
 .fi-amber{background:rgba(245,158,11,.1);color:#fbbf24}
 .fi-red{background:rgba(239,68,68,.1);color:#f87171}
 .feed-body{flex:1;min-width:0}
-.feed-title{font-size:.8rem;font-weight:600;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feed-title{font-size:.8rem;font-weight:600;line-height:1.3}
 .feed-sub{font-size:.72rem;color:var(--muted);margin-top:.1rem}
 .feed-time{font-size:.68rem;color:var(--muted2);white-space:nowrap}
 
-/* ALERT BANNER */
-.alert-banner{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:.85rem 1.25rem;display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;font-size:.82rem}
-.alert-banner .alert-icon{font-size:1rem}
-.alert-banner .alert-text{flex:1}
-.alert-banner .alert-text strong{color:var(--warn)}
-.dismiss-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;font-family:'Inter',sans-serif;padding:.2rem .5rem;border-radius:4px}
-.dismiss-btn:hover{color:var(--text);background:rgba(255,255,255,.06)}
+/* BOTTOM ROW */
+.bottom-row{display:grid;grid-template-columns:1.4fr 1fr;gap:1rem;margin-bottom:1.5rem}
 
-/* SKELETON */
-.skeleton{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);background-size:400% 100%;animation:shimmer 1.5s infinite;border-radius:6px}
-@keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9000;padding:1rem;backdrop-filter:blur(4px)}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px;width:100%;max-width:540px;overflow:hidden;animation:modalIn .25s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border)}
+.modal-title{font-size:1rem;font-weight:700}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;padding:.25rem;border-radius:4px;transition:color .2s;line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:1.5rem}
+.modal-footer{display:flex;gap:.75rem;justify-content:flex-end;padding:1rem 1.5rem;border-top:1px solid var(--border)}
+.form-group{margin-bottom:1.1rem}
+.form-label{display:block;font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.3px}
+.form-input,.form-select{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.6rem .85rem;color:var(--text);font-size:.88rem;font-family:'Inter',sans-serif;outline:none;transition:all .2s}
+.form-input:focus,.form-select:focus{border-color:var(--p);background:rgba(0,212,170,.04)}
+.form-select option{background:var(--bg2)}
+.info-row{display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.82rem}
+.info-row:last-child{border-bottom:none}
+.info-row .label{color:var(--muted)}
+.info-row .value{font-weight:600;max-width:250px;text-align:right;word-break:break-all}
+.section-divider{font-size:.72rem;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px;margin:1.25rem 0 .75rem}
+
+/* PLAN BREAKDOWN */
+.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
+
+/* SETTINGS */
+.settings-section{background:var(--bg2);border:1px solid var(--border);border-radius:14px;margin-bottom:1.25rem;overflow:hidden}
+.settings-section-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border)}
+.settings-section-title{font-size:.88rem;font-weight:700}
+.settings-section-sub{font-size:.75rem;color:var(--muted);margin-top:.2rem}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.04);gap:1rem}
+.settings-row:last-child{border-bottom:none}
+.settings-row-info .label{font-size:.85rem;font-weight:600}
+.settings-row-info .sub{font-size:.75rem;color:var(--muted);margin-top:.15rem}
+.settings-val{font-size:.82rem;color:var(--muted);font-family:monospace;background:rgba(255,255,255,.04);padding:.3rem .65rem;border-radius:6px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toggle{position:relative;width:38px;height:21px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;background:rgba(255,255,255,.1);border-radius:21px;cursor:pointer;transition:background .2s}
+.toggle input:checked + .toggle-track{background:var(--p)}
+.toggle-track::after{content:'';position:absolute;width:15px;height:15px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .2s}
+.toggle input:checked + .toggle-track::after{transform:translateX(17px)}
+.danger-zone{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.15)}
+.danger-zone .settings-section-header{border-color:rgba(239,68,68,.15)}
+.danger-zone .settings-section-title{color:#f87171}
 
 /* TOAST */
 .toast-wrap{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:.5rem;z-index:9999}
 
-@media(max-width:1100px){.charts-row{grid-template-columns:1fr}.bottom-row{grid-template-columns:1fr}}
-@media(max-width:768px){.sidebar{display:none}.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+/* SKELETON */
+.skeleton{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 75%);background-size:400% 100%;animation:shimmer 1.5s infinite;border-radius:6px;height:16px}
+@keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:3rem 1.5rem;color:var(--muted)}
+.empty-state .icon{font-size:2.5rem;margin-bottom:.75rem}
+.empty-state .title{font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:.3rem}
+.empty-state .sub{font-size:.8rem}
+
+/* PERIOD SELECTOR */
+.period-selector{display:flex;gap:.35rem;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.25rem}
+.period-btn{padding:.3rem .75rem;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;border:none;background:none;color:var(--muted);font-family:'Inter',sans-serif;transition:all .2s}
+.period-btn.active{background:rgba(0,212,170,.1);color:var(--p);border:1px solid rgba(0,212,170,.2)}
+
+/* ALERT BANNER */
+.alert-banner{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:.85rem 1.25rem;display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;font-size:.82rem}
+
+/* COPY BTN */
+.copy-btn{background:none;border:1px solid var(--border);border-radius:5px;padding:.2rem .5rem;font-size:.68rem;cursor:pointer;color:var(--muted);font-family:'Inter',sans-serif;transition:all .2s;margin-left:.4rem}
+.copy-btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn .35s ease}
+@media(max-width:1100px){.charts-row,.bottom-row{grid-template-columns:1fr}.plan-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.sidebar{display:none}.kpi-grid{grid-template-columns:repeat(2,1fr)}.plan-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<!-- ══ SIDEBAR ══════════════════════════════════════ -->
+<!-- ══ SIDEBAR ═══════════════════════════════════ -->
 <aside class="sidebar">
   <div class="sidebar-logo">
     <div>
@@ -196,44 +248,32 @@ tr:hover .row-actions{opacity:1}
 
   <div class="sidebar-section">
     <div class="sidebar-label">Principal</div>
-    <div class="nav-item active" onclick="setPage('overview')">
+    <div class="nav-item active" data-page="overview" onclick="setPage('overview',this)">
       <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
       Overview
     </div>
-    <div class="nav-item" onclick="setPage('revenue')">
-      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-      Revenue
-    </div>
-    <div class="nav-item" onclick="setPage('customers')">
+    <div class="nav-item" data-page="customers" onclick="setPage('customers',this)">
       <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
       Clientes
       <span class="badge-count" id="trialCount">–</span>
     </div>
-    <div class="nav-item" onclick="setPage('payments')">
+    <div class="nav-item" data-page="payments" onclick="setPage('payments',this)">
       <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
       Pagos
     </div>
-  </div>
-
-  <div class="sidebar-section">
-    <div class="sidebar-label">Análisis</div>
-    <div class="nav-item" onclick="setPage('churn')">
-      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-      Churn & Retención
-    </div>
-    <div class="nav-item" onclick="setPage('cohorts')">
-      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-      Cohorts
+    <div class="nav-item" data-page="revenue" onclick="setPage('revenue',this)">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      Revenue
     </div>
   </div>
 
   <div class="sidebar-section">
     <div class="sidebar-label">Sistema</div>
-    <div class="nav-item" onclick="setPage('plans')">
+    <div class="nav-item" data-page="plans" onclick="setPage('plans',this)">
       <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-      Planes
+      Planes & Precios
     </div>
-    <div class="nav-item" onclick="setPage('settings')">
+    <div class="nav-item" data-page="settings" onclick="setPage('settings',this)">
       <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
       Configuración
     </div>
@@ -241,19 +281,17 @@ tr:hover .row-actions{opacity:1}
 
   <div class="sidebar-footer">
     <div class="user-row" onclick="confirmLogout()">
-      <div class="avatar" id="adminAvatar">E</div>
+      <div class="avatar-sm" id="adminAvatar">A</div>
       <div class="user-info">
         <div class="user-name" id="adminName">Admin</div>
-        <div class="user-role">Super Admin</div>
+        <div class="user-role">Super Admin ·  Dueño</div>
       </div>
     </div>
   </div>
 </aside>
 
-<!-- ══ MAIN ══════════════════════════════════════════ -->
+<!-- ══ MAIN ═══════════════════════════════════════ -->
 <div class="main">
-
-  <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-left">
       <div class="breadcrumb">
@@ -266,53 +304,152 @@ tr:hover .row-actions{opacity:1}
       <div class="live-dot">En vivo</div>
       <div class="search-box">
         <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke-width="2.5"/><path d="m21 21-4.35-4.35" stroke-width="2.5"/></svg>
-        <input type="text" placeholder="Buscar cliente, plan... (⌘K)">
+        <input type="text" id="globalSearch" placeholder="Buscar cliente... (⌘K)" oninput="handleGlobalSearch(this.value)">
       </div>
-      <div class="icon-btn" title="Notificaciones">
-        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-        <div class="notif-dot"></div>
-      </div>
-      <div class="icon-btn" onclick="exportCSV()" title="Exportar datos">
+      <div class="icon-btn" onclick="exportCurrentCSV()" title="Exportar CSV">
         <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
       </div>
     </div>
   </div>
 
-  <!-- PAGE CONTENT -->
-  <div class="page fade-in" id="pageContent">
+  <div class="page fade-in" id="pageContent"></div>
+</div>
 
-    <!-- ALERT BANNER -->
-    <div class="alert-banner" id="alertBanner">
-      <span class="alert-icon">⚠</span>
-      <span class="alert-text"><strong>Acción requerida:</strong> 3 suscripciones con pago fallido en los últimos 7 días. <a href="#" style="color:var(--warn);font-weight:700">Ver pagos pendientes →</a></span>
-      <button class="dismiss-btn" onclick="document.getElementById('alertBanner').style.display='none'">Descartar</button>
+<!-- ══ CUSTOMER MODAL ═══════════════════════════ -->
+<div class="modal-overlay hidden" id="customerModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Detalle del cliente</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
 
-    <!-- PERIOD + HEADER -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+// ══ STATE ════════════════════════════════════════
+let allCustomers = [], allPayments = [];
+let filteredCustomers = [], filteredPayments = [];
+let custPage = 1, payPage = 1;
+const PAGE_SIZE = 10;
+let sortKey = 'created_at', sortAsc = false;
+let mrrChart = null;
+let currentPageName = 'overview';
+let adminProfile = null, adminSession = null;
+
+// ══ INIT ═════════════════════════════════════════
+(async () => {
+  const auth = await requireAdmin();
+  if (!auth) return;
+  adminSession = auth.session;
+  adminProfile = auth.profile;
+
+  const email = adminSession.user.email || '';
+  const initials = (adminProfile?.full_name || email).charAt(0).toUpperCase();
+  document.getElementById('adminName').textContent = adminProfile?.full_name || email;
+  document.getElementById('adminAvatar').textContent = initials;
+
+  await loadAllData();
+  setupRealtime();
+  setPage('overview', document.querySelector('.nav-item[data-page="overview"]'));
+})();
+
+async function loadAllData() {
+  const [cRes, pRes] = await Promise.all([
+    db.from('profiles').select('*').order('created_at', { ascending: false }),
+    db.from('payments').select('*').order('created_at', { ascending: false })
+  ]);
+  allCustomers = cRes.data || [];
+  allPayments   = pRes.data || [];
+  filteredCustomers = [...allCustomers];
+  filteredPayments  = [...allPayments];
+  const trials = allCustomers.filter(u => !u.subscription_status || u.subscription_status === 'trial');
+  document.getElementById('trialCount').textContent = trials.length || '0';
+}
+
+function setupRealtime() {
+  subscribeToTable('profiles', async () => { await loadAllData(); if (currentPageName === 'overview') renderOverview(); if (currentPageName === 'customers') renderCustomers(); });
+  subscribeToTable('payments', async () => { await loadAllData(); if (currentPageName === 'overview') renderOverview(); if (currentPageName === 'payments') renderPayments(); });
+}
+
+// ══ ROUTING ══════════════════════════════════════
+function setPage(name, el) {
+  currentPageName = name;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const titles = { overview:'Overview', customers:'Clientes', payments:'Pagos', revenue:'Revenue', plans:'Planes & Precios', settings:'Configuración' };
+  document.getElementById('pageTitle').textContent = titles[name] || name;
+  const content = document.getElementById('pageContent');
+  content.style.animation = 'none';
+  content.offsetHeight;
+  content.style.animation = 'fadeIn .3s ease';
+  switch(name) {
+    case 'overview':  renderOverview(); break;
+    case 'customers': filteredCustomers = [...allCustomers]; custPage = 1; renderCustomers(); break;
+    case 'payments':  filteredPayments = [...allPayments];   payPage = 1;  renderPayments(); break;
+    case 'revenue':   renderRevenue(); break;
+    case 'plans':     renderPlans(); break;
+    case 'settings':  renderSettings(); break;
+  }
+}
+
+// ══ PAGE: OVERVIEW ═══════════════════════════════
+function renderOverview() {
+  const active    = allCustomers.filter(u => u.subscription_status === 'active');
+  const trial     = allCustomers.filter(u => !u.subscription_status || u.subscription_status === 'trial');
+  const cancelled = allCustomers.filter(u => u.subscription_status === 'cancelled');
+  const mrr  = active.reduce((s, u) => s + (PLANS[u.plan]?.price || 0), 0);
+  const arr  = mrr * 12;
+  const arpu = active.length > 0 ? mrr / active.length : 0;
+  const churn = allCustomers.length > 1 ? ((cancelled.length / allCustomers.length)*100).toFixed(1) : '0.0';
+
+  const kpis = [
+    { label:'MRR', val:fmt(mrr), delta:'+8.3%', dir:'up', color:'teal', note:'vs. mes anterior' },
+    { label:'ARR', val:fmt(arr), delta:'+8.3%', dir:'up', color:'purple', note:'proyección anual' },
+    { label:'Activos', val:active.length, delta:'+'+active.length, dir:'up', color:'green', note:'suscripciones pagadas' },
+    { label:'Trials', val:trial.length, delta:trial.length, dir:'neutral', color:'info', note:'en período de prueba' },
+    { label:'Churn Rate', val:churn+'%', delta:churn < 2 ? '▼ Saludable':'▲ Atención', dir:churn < 2 ? 'up':'down', color:churn < 5 ? 'warn':'danger', note:'cancelaciones/total' },
+    { label:'ARPU', val:fmt(arpu), delta:'Promedio', dir:'up', color:'teal', note:'ingreso por usuario' }
+  ];
+
+  const recentCusts = allCustomers.slice(0,6);
+
+  document.getElementById('pageContent').innerHTML = `
     <div class="page-header">
       <div>
         <div class="page-title">Dashboard Administrativo</div>
-        <div class="page-subtitle" id="lastUpdated">Actualizando...</div>
+        <div class="page-subtitle">Última actualización: ${fmtRelative(new Date())}</div>
       </div>
       <div class="period-selector">
-        <button class="period-btn" onclick="setPeriod(7, this)">7D</button>
-        <button class="period-btn active" onclick="setPeriod(30, this)">30D</button>
-        <button class="period-btn" onclick="setPeriod(90, this)">90D</button>
-        <button class="period-btn" onclick="setPeriod(365, this)">12M</button>
+        <button class="period-btn" onclick="setPeriod(7,this)">7D</button>
+        <button class="period-btn active" onclick="setPeriod(30,this)">30D</button>
+        <button class="period-btn" onclick="setPeriod(90,this)">90D</button>
+        <button class="period-btn" onclick="setPeriod(365,this)">12M</button>
       </div>
     </div>
 
-    <!-- KPI GRID -->
-    <div class="kpi-grid" id="kpiGrid">
-      <!-- KPI cards rendered via JS -->
+    <div class="kpi-grid">
+      ${kpis.map(k => `
+        <div class="kpi-card ${k.color}">
+          <div class="kpi-label">${k.label}</div>
+          <div class="kpi-value">${k.val}</div>
+          <div class="kpi-delta ${k.dir}">
+            ${k.dir==='up'?'↑':k.dir==='down'?'↓':''}
+            ${k.delta} &nbsp;<span style="color:var(--muted2);font-weight:400">${k.note}</span>
+          </div>
+        </div>`).join('')}
     </div>
 
-    <!-- CHARTS ROW -->
     <div class="charts-row">
       <div class="chart-card">
         <div class="chart-header">
-          <span class="chart-title">MRR — Ingresos Recurrentes Mensuales</span>
-          <span class="chart-badge pill-green">↑ 8.3%</span>
+          <span class="chart-title">MRR — Ingresos Recurrentes</span>
+          <span class="pill pill-green">↑ 8.3%</span>
         </div>
         <div class="chart-canvas-wrap"><canvas id="mrrChart"></canvas></div>
       </div>
@@ -321,389 +458,65 @@ tr:hover .row-actions{opacity:1}
           <span class="chart-title">MRR Waterfall</span>
           <span style="font-size:.72rem;color:var(--muted)">Este mes</span>
         </div>
-        <div class="waterfall-items" id="waterfallItems">
-          <!-- rendered via JS -->
-        </div>
+        <div class="waterfall-items" id="waterfallItems"></div>
       </div>
     </div>
 
-    <!-- BOTTOM ROW: TABLE + ACTIVITY -->
     <div class="bottom-row">
-      <!-- CUSTOMERS TABLE -->
-      <div class="table-card">
-        <div class="table-toolbar">
-          <span class="table-title">Clientes activos</span>
-          <div class="table-actions">
-            <select class="filter-btn" id="planFilter" onchange="filterTable()">
-              <option value="">Todos los planes</option>
-              <option value="basico">Básico</option>
-              <option value="pro">Pro</option>
-              <option value="empresa">Empresa</option>
-            </select>
-            <select class="filter-btn" id="statusFilter" onchange="filterTable()">
-              <option value="">Todos los estados</option>
-              <option value="active">Activos</option>
-              <option value="trial">Trial</option>
-              <option value="cancelled">Cancelados</option>
-            </select>
-            <button class="export-btn" onclick="exportCSV()">↓ Exportar</button>
-          </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Últimos clientes</span>
+          <button class="btn btn-secondary" onclick="setPage('customers',document.querySelector('[data-page=customers]'))" style="font-size:.75rem;padding:.3rem .7rem">Ver todos →</button>
         </div>
-        <div style="overflow-x:auto">
-          <table id="customersTable">
-            <thead>
+        <table>
+          <thead><tr>
+            <th>Cliente</th><th>Plan</th><th>Estado</th><th>MRR</th><th>Acciones</th>
+          </tr></thead>
+          <tbody>
+            ${recentCusts.map(u => `
               <tr>
-                <th onclick="sortTable('company')">Empresa <span class="sort">↕</span></th>
-                <th onclick="sortTable('plan')">Plan <span class="sort">↕</span></th>
-                <th onclick="sortTable('status')">Estado <span class="sort">↕</span></th>
-                <th onclick="sortTable('mrr')">MRR <span class="sort">↕</span></th>
-                <th onclick="sortTable('created_at')">Desde <span class="sort">↕</span></th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="tableBody">
-              <!-- Rendered via JS -->
-            </tbody>
-          </table>
-        </div>
-        <div class="table-footer">
-          <span id="tableCount">Cargando...</span>
-          <div class="pagination" id="pagination"></div>
-        </div>
+                <td>
+                  <div style="font-weight:600">${u.company_name || u.full_name || '—'}</div>
+                  <div style="color:var(--muted);font-size:.75rem">${u.id?.slice(0,12)}…</div>
+                </td>
+                <td>${planBadge(u.plan || 'free')}</td>
+                <td>${statusBadge(u.subscription_status || 'trial')}</td>
+                <td style="font-weight:700">${fmt(PLANS[u.plan]?.price || 0)}</td>
+                <td><div class="row-actions">
+                  <button class="row-btn" onclick="openCustomer('${u.id}')">Ver</button>
+                  <button class="row-btn" onclick="openEditPlan('${u.id}')">Plan</button>
+                </div></td>
+              </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem">Sin clientes aún</td></tr>'}
+          </tbody>
+        </table>
       </div>
 
-      <!-- ACTIVITY FEED -->
-      <div class="activity-feed">
-        <div class="feed-header">Actividad reciente</div>
-        <div class="feed-list" id="activityFeed">
-          <!-- Rendered via JS -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Actividad reciente</span></div>
+        <div style="max-height:320px;overflow-y:auto">
+          ${renderActivityHTML()}
         </div>
       </div>
     </div>
 
-    <!-- PLAN BREAKDOWN -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem" id="planBreakdown">
-      <!-- Rendered via JS -->
+    <div class="plan-grid" id="planBreakdown">
+      ${renderPlanBreakdownHTML()}
     </div>
+  `;
 
-  </div><!-- /page -->
-</div><!-- /main -->
-
-<div class="toast-wrap" id="toastWrap"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/assets/app.js"></script>
-<script>
-// ── State ─────────────────────────────────────────
-let allCustomers = [], filteredCustomers = [], sortKey = 'created_at', sortAsc = false;
-let currentPage = 1; const PAGE_SIZE = 8;
-let mrrChartInstance = null;
-let currentPeriod = 30;
-
-// ── Init ──────────────────────────────────────────
-(async () => {
-  const auth = await requireAdmin();
-  if (!auth) return;
-
-  const profile = auth.profile;
-  document.getElementById('adminName').textContent = profile.full_name || auth.session.user.email;
-  document.getElementById('adminAvatar').textContent = (profile.full_name || 'A').charAt(0).toUpperCase();
-  document.getElementById('lastUpdated').textContent = `Última actualización: ${fmtRelative(new Date())}`;
-
-  await loadAllData();
-  setupRealtimeUpdates();
-})();
-
-async function loadAllData() {
-  await Promise.all([loadKPIs(), loadCustomers(), renderActivity()]);
   renderMRRChart();
   renderWaterfall();
 }
 
-// ── KPIs ──────────────────────────────────────────
-async function loadKPIs() {
-  // Fetch profiles
-  const { data: profiles } = await db.from('profiles').select('*');
-  const { data: payments } = await db.from('payments').select('*').eq('status','active');
-
-  const active = profiles?.filter(p => p.subscription_status === 'active') || [];
-  const trial  = profiles?.filter(p => p.subscription_status === 'trial') || [];
-  const cancelled = profiles?.filter(p => p.subscription_status === 'cancelled') || [];
-
-  const mrr = active.reduce((sum, p) => sum + (PLANS[p.plan]?.price || 0), 0);
-  const arr = mrr * 12;
-  const totalUsers = profiles?.length || 0;
-  const churnRate = totalUsers > 0 ? ((cancelled.length / totalUsers) * 100).toFixed(1) : '0.0';
-  const arpu = active.length > 0 ? mrr / active.length : 0;
-
-  document.getElementById('trialCount').textContent = trial.length;
-
-  const kpis = [
-    { label:'MRR', val: fmt(mrr), delta:'+8.3%', dir:'up', color:'teal', note:'vs. mes anterior',
-      help:'Ingresos Recurrentes Mensales = suma de suscripciones activas' },
-    { label:'ARR', val: fmt(arr), delta:'+8.3%', dir:'up', color:'purple', note:'proyección anual',
-      help:'ARR = MRR × 12' },
-    { label:'Clientes Activos', val: active.length, delta:'+12', dir:'up', color:'green', note:'suscripciones pagadas',
-      help:'Usuarios con suscripción activa' },
-    { label:'Trials', val: trial.length, delta:trial.length, dir:'neutral', color:'info', note:'pruebas en curso',
-      help:'Usuarios en período de prueba de 14 días' },
-    { label:'Churn Rate', val: churnRate+'%', delta: churnRate < 2 ? '▼ Saludable' : '▲ Atención', dir: churnRate < 2 ? 'up' : 'down', color: churnRate < 5 ? 'warn' : 'danger', note:'cancelaciones/total',
-      help:'Porcentaje de clientes que cancelaron. Objetivo: <2% mensual' },
-    { label:'ARPU', val: fmt(arpu), delta:'+$120', dir:'up', color:'teal', note:'ingreso por usuario',
-      help:'Average Revenue Per User = MRR / Clientes Activos' }
-  ];
-
-  const grid = document.getElementById('kpiGrid');
-  grid.innerHTML = kpis.map(k => `
-    <div class="kpi-card ${k.color} fade-in">
-      <div class="kpi-label">
-        ${k.label}
-        <div class="kpi-help" title="${k.help}">?</div>
-      </div>
-      <div class="kpi-value">${k.val}</div>
-      <div class="kpi-delta ${k.dir}">
-        ${k.dir === 'up' ? '↑' : k.dir === 'down' ? '↓' : ''}
-        ${k.delta} &nbsp;<span style="color:var(--muted2);font-weight:400">${k.note}</span>
-      </div>
-    </div>`).join('');
-}
-
-// ── MRR Chart ─────────────────────────────────────
-function renderMRRChart() {
-  const ctx = document.getElementById('mrrChart');
-  if (!ctx) return;
-  if (mrrChartInstance) mrrChartInstance.destroy();
-
-  // Mock data: 12 months of MRR growth
-  const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const data = [12000,18000,24000,28000,31000,35000,38000,40000,43000,46000,49000,52000];
-  const prevData = [8000,12000,18000,22000,26000,29000,32000,35000,38000,40000,43000,46000];
-
-  mrrChartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: months,
-      datasets: [
-        {
-          label: 'MRR 2025',
-          data: data,
-          borderColor: '#00d4aa',
-          backgroundColor: (ctx) => {
-            const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 200);
-            g.addColorStop(0, 'rgba(0,212,170,0.25)');
-            g.addColorStop(1, 'rgba(0,212,170,0)');
-            return g;
-          },
-          fill: true,
-          tension: 0.4,
-          borderWidth: 2.5,
-          pointRadius: 0,
-          pointHoverRadius: 5,
-          pointHoverBackgroundColor: '#00d4aa'
-        },
-        {
-          label: 'MRR 2024',
-          data: prevData,
-          borderColor: 'rgba(255,255,255,0.15)',
-          borderDash: [4, 4],
-          fill: false,
-          tension: 0.4,
-          borderWidth: 1.5,
-          pointRadius: 0
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#161b22',
-          borderColor: 'rgba(255,255,255,0.1)',
-          borderWidth: 1,
-          titleColor: '#94a3b8',
-          bodyColor: '#e2e8f0',
-          padding: 12,
-          callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: ${new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0}).format(ctx.raw)}`
-          }
-        }
-      },
-      scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#64748b', font: { size: 11 } } },
-        y: {
-          grid: { color: 'rgba(255,255,255,0.04)' },
-          ticks: {
-            color: '#64748b', font: { size: 11 },
-            callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v)
-          }
-        }
-      }
-    }
-  });
-}
-
-// ── Waterfall ─────────────────────────────────────
-function renderWaterfall() {
-  const items = [
-    { label: 'MRR anterior', val: 46200, color: 'var(--muted)', pct: 92 },
-    { label: '+ Nuevo', val: 8400, color: 'var(--ok)', pct: 17 },
-    { label: '+ Expansión', val: 1200, color: 'var(--p)', pct: 2 },
-    { label: '- Contracción', val: -800, color: 'var(--warn)', pct: 2 },
-    { label: '- Churn', val: -3200, color: 'var(--danger)', pct: 6 },
-    { label: 'MRR neto', val: 51800, color: 'var(--p)', pct: 100 }
-  ];
-
-  document.getElementById('waterfallItems').innerHTML = items.map(it => `
-    <div class="wf-item">
-      <span class="wf-label">${it.label}</span>
-      <div class="wf-bar-wrap">
-        <div class="wf-bar" style="width:${Math.abs(it.pct)}%;background:${it.color};opacity:.8"></div>
-      </div>
-      <span class="wf-val" style="color:${it.val >= 0 ? 'var(--text)' : 'var(--danger)'}">
-        ${it.val >= 0 ? '' : '−'}${fmt(Math.abs(it.val))}
-      </span>
-    </div>`).join('');
-}
-
-// ── Customers Table ───────────────────────────────
-async function loadCustomers() {
-  const { data } = await db.from('profiles').select('*').order('created_at', { ascending: false });
-  allCustomers = data || [];
-  filteredCustomers = [...allCustomers];
-  renderTable();
-  renderPlanBreakdown();
-}
-
-function renderTable() {
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const page = filteredCustomers.slice(start, start + PAGE_SIZE);
-
-  document.getElementById('tableBody').innerHTML = page.length ? page.map(u => `
-    <tr>
-      <td>
-        <div class="td-company">${u.company_name || '—'}</div>
-        <div class="td-email">${u.id?.slice(0,8)}... · ${u.rfc || 'Sin RFC'}</div>
-      </td>
-      <td>${planBadge(u.plan || 'free')}</td>
-      <td>${statusBadge(u.subscription_status || 'trial')}</td>
-      <td style="font-weight:700">${fmt(PLANS[u.plan]?.price || 0)}</td>
-      <td style="color:var(--muted)">${fmtDate(u.created_at)}</td>
-      <td>
-        <div class="row-actions">
-          <button class="row-btn" onclick="viewCustomer('${u.id}')">Ver</button>
-          <button class="row-btn" onclick="editPlan('${u.id}')">Plan</button>
-          <button class="row-btn" style="color:#f87171" onclick="cancelSub('${u.id}')">✕</button>
-        </div>
-      </td>
-    </tr>`).join('') : `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">Sin resultados</td></tr>`;
-
-  const total = filteredCustomers.length;
-  document.getElementById('tableCount').textContent = `${start+1}–${Math.min(start+PAGE_SIZE, total)} de ${total} clientes`;
-  renderPagination(total);
-}
-
-function renderPagination(total) {
-  const pages = Math.ceil(total / PAGE_SIZE);
-  const pag = document.getElementById('pagination');
-  let html = '';
-  for (let i = 1; i <= Math.min(pages, 5); i++) {
-    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="gotoPage(${i})">${i}</button>`;
-  }
-  if (pages > 5) html += `<button class="page-btn" style="pointer-events:none">...</button>`;
-  pag.innerHTML = html;
-}
-
-function gotoPage(p) { currentPage = p; renderTable(); }
-
-function filterTable() {
-  const plan = document.getElementById('planFilter').value;
-  const status = document.getElementById('statusFilter').value;
-  filteredCustomers = allCustomers.filter(u =>
-    (!plan   || u.plan === plan) &&
-    (!status || u.subscription_status === status)
-  );
-  currentPage = 1;
-  renderTable();
-}
-
-function sortTable(key) {
-  if (sortKey === key) sortAsc = !sortAsc;
-  else { sortKey = key; sortAsc = true; }
-  filteredCustomers.sort((a, b) => {
-    const va = a[key] || '', vb = b[key] || '';
-    return sortAsc ? (va < vb ? -1 : 1) : (va > vb ? -1 : 1);
-  });
-  renderTable();
-}
-
-function exportCSV() {
-  const rows = [['Empresa','RFC','Plan','Estado','MRR','Desde']];
-  filteredCustomers.forEach(u => rows.push([
-    u.company_name || '', u.rfc || '', u.plan || '', u.subscription_status || '',
-    PLANS[u.plan]?.price || 0, fmtDate(u.created_at)
-  ]));
-  const csv = rows.map(r => r.join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = `clientes-financialos-${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  showToast('CSV exportado correctamente', 'ok');
-}
-
-// ── Plan Breakdown ────────────────────────────────
-function renderPlanBreakdown() {
-  const plans = ['basico','pro','empresa'];
-  const breakdown = document.getElementById('planBreakdown');
-  breakdown.innerHTML = plans.map(plan => {
-    const users = allCustomers.filter(u => u.plan === plan && u.subscription_status === 'active');
-    const mrr = users.length * (PLANS[plan]?.price || 0);
-    const p = PLANS[plan];
-    return `
-      <div class="kpi-card" style="border-color:${p.color}33">
-        <div class="kpi-label" style="color:${p.color}">${p.name}</div>
-        <div style="display:flex;align-items:baseline;gap:.5rem;margin-bottom:.3rem">
-          <span class="kpi-value" style="font-size:1.4rem">${users.length}</span>
-          <span style="color:var(--muted);font-size:.78rem">clientes</span>
-        </div>
-        <div style="font-size:.82rem;font-weight:700;color:${p.color}">${fmt(mrr)}<span style="color:var(--muted);font-weight:400;font-size:.72rem"> MRR</span></div>
-        <div style="margin-top:.75rem;height:4px;background:rgba(255,255,255,.06);border-radius:2px">
-          <div style="height:100%;border-radius:2px;background:${p.color};width:${Math.min(100, users.length * 15)}%;transition:width 1s ease"></div>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-// ── Activity Feed ─────────────────────────────────
-async function renderActivity() {
-  const { data } = await db.from('payments')
-    .select('*, profiles(company_name, plan)')
-    .order('created_at', { ascending: false })
-    .limit(15);
-
-  const events = data?.map(p => ({
-    icon: '💳', type: 'fi-green',
-    title: `${p.profiles?.company_name || 'Cliente'} suscribió plan ${PLANS[p.plan]?.name || p.plan}`,
-    sub: `${fmt(p.amount)} MXN · ${p.plan}`,
-    time: p.created_at
-  })) || [];
-
-  // Mock recent events if no real data
-  const mockEvents = [
-    { icon:'🆕', type:'fi-blue', title:'Nuevo registro: empresa@ejemplo.com', sub:'Plan Pro — Trial iniciado', time: new Date(Date.now()-5*60000).toISOString() },
-    { icon:'💳', type:'fi-green', title:'Pago recibido: Distribuidora MX', sub:'$1,990 MXN · Plan Pro', time: new Date(Date.now()-32*60000).toISOString() },
-    { icon:'⚠', type:'fi-amber', title:'Pago fallido: Constructora Durán', sub:'Tarjeta rechazada — 2do intento', time: new Date(Date.now()-2*3600000).toISOString() },
-    { icon:'💳', type:'fi-green', title:'Pago recibido: Grupo Mendoza', sub:'$990 MXN · Plan Básico', time: new Date(Date.now()-3*3600000).toISOString() },
-    { icon:'📈', type:'fi-blue', title:'Upgrade: Taller Rodríguez → Pro', sub:'$990 → $1,990 MXN', time: new Date(Date.now()-5*3600000).toISOString() },
-    { icon:'❌', type:'fi-red', title:'Cancelación: Inversiones Garza', sub:'Plan Pro · Motivo: precio', time: new Date(Date.now()-8*3600000).toISOString() },
-    { icon:'💳', type:'fi-green', title:'Pago recibido: Farmacia Central', sub:'$3,990 MXN · Plan Empresa', time: new Date(Date.now()-10*3600000).toISOString() },
-    { icon:'🆕', type:'fi-blue', title:'Nuevo registro: pymes@nextsol.mx', sub:'Plan Básico — Trial iniciado', time: new Date(Date.now()-12*3600000).toISOString() }
-  ];
-
-  const feed = [...events, ...mockEvents].slice(0, 12);
-  document.getElementById('activityFeed').innerHTML = feed.map(e => `
+function renderActivityHTML() {
+  const items = allPayments.slice(0,10).map(p => ({
+    icon:'💳', type:'fi-green',
+    title:`Pago — ${p.plan || ''}`,
+    sub:`${fmt(p.amount || 0)} · ${p.paypal_subscription_id?.slice(0,14)||''}…`,
+    time:p.created_at
+  }));
+  if (!items.length) return '<div class="empty-state"><div class="icon">💤</div><div class="title">Sin actividad</div><div class="sub">Los pagos aparecerán aquí</div></div>';
+  return items.map(e => `
     <div class="feed-item">
       <div class="feed-icon ${e.type}">${e.icon}</div>
       <div class="feed-body">
@@ -714,54 +527,794 @@ async function renderActivity() {
     </div>`).join('');
 }
 
-// ── Realtime ──────────────────────────────────────
-function setupRealtimeUpdates() {
-  subscribeToTable('profiles', () => { loadKPIs(); loadCustomers(); });
-  subscribeToTable('payments', () => { loadKPIs(); renderActivity(); });
+function renderPlanBreakdownHTML() {
+  return ['basico','pro','empresa'].map(plan => {
+    const users = allCustomers.filter(u => u.plan === plan && u.subscription_status === 'active');
+    const mrr = users.length * (PLANS[plan]?.price || 0);
+    const p = PLANS[plan];
+    return `
+      <div class="kpi-card" style="border-color:${p.color}33;cursor:pointer" onclick="setPage('customers',document.querySelector('[data-page=customers]'))">
+        <div class="kpi-label" style="color:${p.color}">${p.name}</div>
+        <div style="display:flex;align-items:baseline;gap:.5rem;margin-bottom:.3rem">
+          <span class="kpi-value" style="font-size:1.4rem">${users.length}</span>
+          <span style="color:var(--muted);font-size:.78rem">clientes activos</span>
+        </div>
+        <div style="font-size:.85rem;font-weight:700;color:${p.color}">${fmt(mrr)}<span style="color:var(--muted);font-weight:400;font-size:.72rem"> /mes</span></div>
+        <div style="margin-top:.75rem;height:4px;background:rgba(255,255,255,.06);border-radius:2px">
+          <div style="height:100%;border-radius:2px;background:${p.color};width:${Math.min(100,users.length*20)}%;transition:width 1s ease"></div>
+        </div>
+      </div>`;
+  }).join('');
 }
 
-// ── UI helpers ────────────────────────────────────
-function setPeriod(days, btn) {
-  currentPeriod = days;
+function renderMRRChart() {
+  const ctx = document.getElementById('mrrChart');
+  if (!ctx) return;
+  if (mrrChart) mrrChart.destroy();
+  const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const active = allCustomers.filter(u => u.subscription_status === 'active');
+  const baseMRR = active.reduce((s,u) => s + (PLANS[u.plan]?.price||0), 0) || 0;
+  const data = months.map((_,i) => Math.max(0, baseMRR - (11-i) * Math.floor(baseMRR * 0.07)));
+  mrrChart = new Chart(ctx, {
+    type:'line',
+    data:{ labels:months, datasets:[{ label:'MRR', data, borderColor:'#00d4aa',
+      backgroundColor:(c) => { const g = c.chart.ctx.createLinearGradient(0,0,0,200); g.addColorStop(0,'rgba(0,212,170,0.25)'); g.addColorStop(1,'rgba(0,212,170,0)'); return g; },
+      fill:true, tension:0.4, borderWidth:2.5, pointRadius:0, pointHoverRadius:5, pointHoverBackgroundColor:'#00d4aa' }]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#161b22', borderColor:'rgba(255,255,255,0.1)', borderWidth:1, titleColor:'#94a3b8', bodyColor:'#e2e8f0', padding:12,
+        callbacks:{ label: c => ` MRR: ${new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:0}).format(c.raw)}` }}},
+      scales:{ x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#64748b',font:{size:11}} },
+               y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#64748b',font:{size:11}, callback: v => '$'+(v>=1000?(v/1000).toFixed(0)+'K':v)} }}}
+  });
+}
+
+function renderWaterfall() {
+  const el = document.getElementById('waterfallItems');
+  if (!el) return;
+  const active = allCustomers.filter(u => u.subscription_status === 'active');
+  const mrr = active.reduce((s,u) => s + (PLANS[u.plan]?.price||0), 0);
+  const prev = Math.floor(mrr * 0.88);
+  const nuevo = Math.floor(mrr * 0.15);
+  const exp   = Math.floor(mrr * 0.02);
+  const contr = -Math.floor(mrr * 0.015);
+  const churn = -Math.floor(mrr * 0.055);
+  const items = [
+    { label:'MRR anterior', val:prev, color:'var(--muted)', pct:88 },
+    { label:'+ Nuevo', val:nuevo, color:'var(--ok)', pct:15 },
+    { label:'+ Expansión', val:exp, color:'var(--p)', pct:3 },
+    { label:'- Contracción', val:contr, color:'var(--warn)', pct:2 },
+    { label:'- Churn', val:churn, color:'var(--danger)', pct:6 },
+    { label:'MRR Neto', val:mrr, color:'var(--p)', pct:100 }
+  ];
+  el.innerHTML = items.map(it => `
+    <div class="wf-item">
+      <span class="wf-label">${it.label}</span>
+      <div class="wf-bar-wrap"><div class="wf-bar" style="width:${Math.abs(it.pct)}%;background:${it.color};opacity:.8"></div></div>
+      <span class="wf-val" style="color:${it.val>=0?'var(--text)':'var(--danger)'}">
+        ${it.val>=0?'':'-'}${fmt(Math.abs(it.val))}
+      </span>
+    </div>`).join('');
+}
+
+function setPeriod(d, btn) {
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderMRRChart();
 }
 
-function setPage(page) {
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  event.currentTarget.classList.add('active');
-  document.getElementById('pageTitle').textContent = {
-    overview:'Overview', revenue:'Revenue', customers:'Clientes',
-    payments:'Pagos', churn:'Churn & Retención', cohorts:'Cohorts',
-    plans:'Planes', settings:'Configuración'
-  }[page] || page;
+// ══ PAGE: CUSTOMERS ═══════════════════════════════
+function renderCustomers() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Clientes</div>
+        <div class="page-subtitle">${allCustomers.length} usuarios registrados en total</div>
+      </div>
+      <button class="btn btn-primary" onclick="openAddCustomer()">+ Agregar cliente</button>
+    </div>
+
+    <div class="card">
+      <div class="table-toolbar">
+        <span class="card-title" id="custCount">Cargando...</span>
+        <div class="table-actions">
+          <input type="text" class="search-input" placeholder="Buscar empresa, email..." oninput="searchCustomers(this.value)" id="custSearch">
+          <select class="filter-select" onchange="filterCustomers()" id="custPlanFilter">
+            <option value="">Todos los planes</option>
+            <option value="basico">Básico</option>
+            <option value="pro">Pro</option>
+            <option value="empresa">Empresa</option>
+            <option value="free">Free/Trial</option>
+          </select>
+          <select class="filter-select" onchange="filterCustomers()" id="custStatusFilter">
+            <option value="">Todos los estados</option>
+            <option value="active">Activos</option>
+            <option value="trial">Trial</option>
+            <option value="cancelled">Cancelados</option>
+            <option value="past_due">Vencidos</option>
+          </select>
+          <button class="btn btn-secondary" onclick="exportCustomersCSV()" style="font-size:.75rem;padding:.35rem .75rem">↓ CSV</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th onclick="sortCust('company_name')">Empresa / Usuario ↕</th>
+            <th onclick="sortCust('plan')">Plan ↕</th>
+            <th onclick="sortCust('subscription_status')">Estado ↕</th>
+            <th onclick="sortCust('plan')">MRR ↕</th>
+            <th onclick="sortCust('created_at')">Registro ↕</th>
+            <th>Acciones</th>
+          </tr></thead>
+          <tbody id="custTableBody"></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="custFooter"></span>
+        <div class="pagination" id="custPagination"></div>
+      </div>
+    </div>
+  `;
+  renderCustTable();
 }
 
-function showToast(msg, type = 'ok') {
-  const colors = { ok: 'var(--ok)', err: 'var(--danger)', info: 'var(--info)' };
-  const el = document.createElement('div');
-  el.style.cssText = `background:var(--bg2);border:1px solid ${colors[type]}33;color:var(--text);
-    padding:.75rem 1.1rem;border-radius:10px;font-size:.82rem;font-weight:500;
-    box-shadow:0 8px 24px rgba(0,0,0,.4);display:flex;align-items:center;gap:.6rem;
-    border-left:3px solid ${colors[type]};animation:slideIn .3s ease`;
-  el.innerHTML = `<span>${type==='ok'?'✓':type==='err'?'✕':'ℹ'}</span><span>${msg}</span>`;
-  document.getElementById('toastWrap').appendChild(el);
-  setTimeout(() => el.remove(), 3500);
+function renderCustTable() {
+  const start = (custPage - 1) * PAGE_SIZE;
+  const slice = filteredCustomers.slice(start, start + PAGE_SIZE);
+  const total = filteredCustomers.length;
+  document.getElementById('custCount').textContent = `${total} clientes`;
+  document.getElementById('custFooter').textContent = `${start+1}–${Math.min(start+PAGE_SIZE,total)} de ${total}`;
+
+  document.getElementById('custTableBody').innerHTML = slice.length ? slice.map(u => `
+    <tr>
+      <td>
+        <div style="font-weight:600">${u.company_name || u.full_name || '—'}</div>
+        <div style="color:var(--muted);font-size:.75rem">${u.rfc || u.id?.slice(0,16)+'…'}</div>
+      </td>
+      <td>${planBadge(u.plan || 'free')}</td>
+      <td>${statusBadge(u.subscription_status || 'trial')}</td>
+      <td style="font-weight:700">${fmt(PLANS[u.plan]?.price || 0)}</td>
+      <td style="color:var(--muted)">${fmtDate(u.created_at)}</td>
+      <td>
+        <div class="row-actions">
+          <button class="row-btn" onclick="openCustomer('${u.id}')">Ver</button>
+          <button class="row-btn" onclick="openEditPlan('${u.id}')">Plan</button>
+          <button class="row-btn" onclick="sendPasswordReset('${u.id}')">🔑</button>
+          <button class="row-btn danger" onclick="deleteCust('${u.id}')">✕</button>
+        </div>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:3rem">Sin resultados</td></tr>`;
+
+  renderCustPagination(total);
 }
 
-function viewCustomer(id) { showToast('Abriendo perfil del cliente...', 'info'); }
-function editPlan(id) { showToast('Función disponible próximamente', 'info'); }
-async function cancelSub(id) {
-  if (!confirm('¿Cancelar la suscripción de este cliente?')) return;
-  await db.from('profiles').update({ subscription_status: 'cancelled' }).eq('id', id);
-  await loadCustomers();
-  showToast('Suscripción cancelada', 'err');
+function renderCustPagination(total) {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  let html = '';
+  for (let i = 1; i <= Math.min(pages, 7); i++)
+    html += `<button class="page-btn ${i===custPage?'active':''}" onclick="goCustPage(${i})">${i}</button>`;
+  if (pages > 7) html += `<button class="page-btn" disabled>…</button>`;
+  document.getElementById('custPagination').innerHTML = html;
+}
+
+function goCustPage(p) { custPage = p; renderCustTable(); }
+
+function searchCustomers(q) {
+  const plan   = document.getElementById('custPlanFilter')?.value || '';
+  const status = document.getElementById('custStatusFilter')?.value || '';
+  filteredCustomers = allCustomers.filter(u =>
+    (!plan   || u.plan === plan) &&
+    (!status || u.subscription_status === status) &&
+    (!q || (u.company_name||'').toLowerCase().includes(q.toLowerCase()) ||
+           (u.full_name||'').toLowerCase().includes(q.toLowerCase()) ||
+           (u.rfc||'').toLowerCase().includes(q.toLowerCase()) ||
+           (u.id||'').toLowerCase().includes(q.toLowerCase()))
+  );
+  custPage = 1;
+  document.getElementById('custCount').textContent = `${filteredCustomers.length} clientes`;
+  renderCustTable();
+}
+
+function filterCustomers() {
+  const q      = document.getElementById('custSearch')?.value || '';
+  searchCustomers(q);
+}
+
+function sortCust(key) {
+  if (sortKey === key) sortAsc = !sortAsc; else { sortKey = key; sortAsc = true; }
+  filteredCustomers.sort((a,b) => {
+    const va = a[key]||'', vb = b[key]||'';
+    return sortAsc ? (va<vb?-1:1) : (va>vb?-1:1);
+  });
+  renderCustTable();
+}
+
+function exportCustomersCSV() {
+  const rows = [['Empresa','RFC','Plan','Estado','MRR','Desde']];
+  filteredCustomers.forEach(u => rows.push([
+    u.company_name||'', u.rfc||'', u.plan||'', u.subscription_status||'',
+    PLANS[u.plan]?.price||0, fmtDate(u.created_at)
+  ]));
+  downloadCSV(rows, `clientes-financialos-${new Date().toISOString().slice(0,10)}`);
+  toast('CSV exportado', 'ok');
+}
+
+// ══ PAGE: PAYMENTS ════════════════════════════════
+function renderPayments() {
+  const totalRev = allPayments.filter(p => p.status === 'completed').reduce((s,p) => s + (p.amount||0), 0);
+  document.getElementById('pageContent').innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Pagos</div>
+        <div class="page-subtitle">Revenue total: <strong style="color:var(--p)">${fmt(totalRev)}</strong> · ${allPayments.length} transacciones</div>
+      </div>
+      <button class="btn btn-secondary" onclick="exportPaymentsCSV()">↓ Exportar CSV</button>
+    </div>
+
+    <div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">
+      ${['completed','pending','failed'].map(s => {
+        const items = allPayments.filter(p => p.status === s);
+        const sum = items.reduce((a,p) => a+(p.amount||0),0);
+        const colors = {completed:'green',pending:'warn',failed:'danger'};
+        const labels = {completed:'Completados',pending:'Pendientes',failed:'Fallidos'};
+        return `<div class="kpi-card ${colors[s]}">
+          <div class="kpi-label">${labels[s]}</div>
+          <div class="kpi-value">${items.length}</div>
+          <div class="kpi-delta neutral">${fmt(sum)}</div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="card">
+      <div class="table-toolbar">
+        <span class="card-title" id="payCount">${allPayments.length} pagos</span>
+        <div class="table-actions">
+          <select class="filter-select" onchange="filterPayments()" id="payStatusFilter">
+            <option value="">Todos</option>
+            <option value="completed">Completados</option>
+            <option value="pending">Pendientes</option>
+            <option value="failed">Fallidos</option>
+          </select>
+          <select class="filter-select" onchange="filterPayments()" id="payPlanFilter">
+            <option value="">Todos los planes</option>
+            <option value="basico">Básico</option>
+            <option value="pro">Pro</option>
+            <option value="empresa">Empresa</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>ID Pago PayPal</th>
+            <th>Suscripción</th>
+            <th>Plan</th>
+            <th>Monto</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+          </tr></thead>
+          <tbody id="payTableBody"></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="payFooter"></span>
+        <div class="pagination" id="payPagination"></div>
+      </div>
+    </div>
+  `;
+  renderPayTable();
+}
+
+function renderPayTable() {
+  const start = (payPage - 1) * PAGE_SIZE;
+  const slice = filteredPayments.slice(start, start + PAGE_SIZE);
+  const total = filteredPayments.length;
+  document.getElementById('payFooter').textContent = `${start+1}–${Math.min(start+PAGE_SIZE,total)} de ${total}`;
+
+  const statusColors = { completed:'pill-green', pending:'pill-amber', failed:'pill-red' };
+  const statusLabels = { completed:'Completado', pending:'Pendiente', failed:'Fallido' };
+
+  document.getElementById('payTableBody').innerHTML = slice.length ? slice.map(p => `
+    <tr>
+      <td style="font-family:monospace;font-size:.75rem;color:var(--muted)">${p.paypal_payment_id?.slice(0,16)||'—'}…</td>
+      <td style="font-family:monospace;font-size:.75rem;color:var(--muted)">${p.paypal_subscription_id?.slice(0,14)||'—'}…</td>
+      <td>${planBadge(p.plan||'free')}</td>
+      <td style="font-weight:700;color:var(--p)">${fmt(p.amount||0)}</td>
+      <td><span class="pill ${statusColors[p.status]||'pill-gray'}">${statusLabels[p.status]||p.status}</span></td>
+      <td style="color:var(--muted)">${fmtDate(p.created_at)}</td>
+    </tr>`).join('') : `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:3rem">Sin pagos registrados aún. Los pagos de PayPal aparecerán aquí automáticamente.</td></tr>`;
+
+  const pages = Math.ceil(total / PAGE_SIZE);
+  let html = '';
+  for (let i = 1; i <= Math.min(pages, 7); i++)
+    html += `<button class="page-btn ${i===payPage?'active':''}" onclick="goPayPage(${i})">${i}</button>`;
+  document.getElementById('payPagination').innerHTML = html;
+}
+
+function goPayPage(p) { payPage = p; renderPayTable(); }
+
+function filterPayments() {
+  const s = document.getElementById('payStatusFilter').value;
+  const p = document.getElementById('payPlanFilter').value;
+  filteredPayments = allPayments.filter(pay => (!s || pay.status===s) && (!p || pay.plan===p));
+  payPage = 1;
+  document.getElementById('payCount').textContent = `${filteredPayments.length} pagos`;
+  renderPayTable();
+}
+
+function exportPaymentsCSV() {
+  const rows = [['ID Pago','Suscripción','Plan','Monto','Estado','Fecha']];
+  filteredPayments.forEach(p => rows.push([p.paypal_payment_id||'', p.paypal_subscription_id||'', p.plan||'', p.amount||0, p.status||'', fmtDate(p.created_at)]));
+  downloadCSV(rows, `pagos-financialos-${new Date().toISOString().slice(0,10)}`);
+  toast('CSV exportado', 'ok');
+}
+
+// ══ PAGE: REVENUE ════════════════════════════════
+function renderRevenue() {
+  const active = allCustomers.filter(u => u.subscription_status === 'active');
+  const mrr  = active.reduce((s,u) => s + (PLANS[u.plan]?.price||0), 0);
+  const arr  = mrr * 12;
+  const completedPay = allPayments.filter(p => p.status === 'completed');
+  const totalCollected = completedPay.reduce((s,p) => s + (p.amount||0), 0);
+  const avgTx = completedPay.length > 0 ? totalCollected / completedPay.length : 0;
+
+  document.getElementById('pageContent').innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">Revenue</div>
+      <div class="page-subtitle">Análisis financiero de tu SaaS</div></div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card teal"><div class="kpi-label">MRR Actual</div><div class="kpi-value">${fmt(mrr)}</div><div class="kpi-delta up">↑ Suscripciones activas</div></div>
+      <div class="kpi-card purple"><div class="kpi-label">ARR Proyectado</div><div class="kpi-value">${fmt(arr)}</div><div class="kpi-delta neutral">MRR × 12</div></div>
+      <div class="kpi-card green"><div class="kpi-label">Total Cobrado</div><div class="kpi-value">${fmt(totalCollected)}</div><div class="kpi-delta neutral">${completedPay.length} pagos</div></div>
+      <div class="kpi-card info"><div class="kpi-label">Ticket Promedio</div><div class="kpi-value">${fmt(avgTx)}</div><div class="kpi-delta neutral">Por transacción</div></div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">MRR Proyectado — 12 meses</span>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="revChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><span class="chart-title">Ingresos por Plan</span></div>
+        <div class="chart-canvas-wrap"><canvas id="planChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="plan-grid">
+      ${['basico','pro','empresa'].map(plan => {
+        const users = allCustomers.filter(u => u.plan===plan && u.subscription_status==='active');
+        const revenue = users.length * (PLANS[plan]?.price||0);
+        const total = allCustomers.filter(u => u.subscription_status==='active').length || 1;
+        const pct = Math.round((users.length / total) * 100);
+        const p = PLANS[plan];
+        return `
+          <div class="kpi-card" style="border-color:${p.color}33">
+            <div class="kpi-label" style="color:${p.color}">${p.name} — $${(p.price).toLocaleString()} MXN/mes</div>
+            <div style="display:flex;align-items:baseline;gap:.6rem;margin-bottom:.5rem">
+              <span class="kpi-value" style="font-size:1.5rem">${users.length}</span>
+              <span style="color:var(--muted);font-size:.8rem">clientes (${pct}%)</span>
+            </div>
+            <div style="font-size:.88rem;font-weight:700;color:${p.color}">${fmt(revenue)}<span style="color:var(--muted);font-weight:400;font-size:.75rem"> /mes</span></div>
+            <div style="margin-top:.75rem;height:5px;background:rgba(255,255,255,.06);border-radius:3px">
+              <div style="height:100%;border-radius:3px;background:${p.color};width:${Math.min(100,pct)}%;transition:width 1s ease"></div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>
+  `;
+
+  // Revenue chart
+  const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mrrData = months.map((_,i) => Math.max(0, mrr - (11-i) * Math.floor(mrr*0.07)));
+  new Chart(document.getElementById('revChart'), {
+    type:'line',
+    data:{ labels:months, datasets:[{ label:'MRR', data:mrrData, borderColor:'#00d4aa',
+      backgroundColor:(c) => { const g=c.chart.ctx.createLinearGradient(0,0,0,200); g.addColorStop(0,'rgba(0,212,170,0.2)'); g.addColorStop(1,'rgba(0,212,170,0)'); return g; },
+      fill:true, tension:0.4, borderWidth:2.5, pointRadius:0 }]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#161b22', borderColor:'rgba(255,255,255,0.1)', borderWidth:1, titleColor:'#94a3b8', bodyColor:'#e2e8f0', padding:10 }},
+      scales:{ x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#64748b',font:{size:11}} },
+               y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#64748b',font:{size:11},callback:v=>'$'+(v>=1000?(v/1000).toFixed(0)+'K':v)} }}}
+  });
+
+  // Plan donut
+  const planData = ['basico','pro','empresa'].map(plan =>
+    allCustomers.filter(u => u.plan===plan && u.subscription_status==='active').length * (PLANS[plan]?.price||0)
+  );
+  new Chart(document.getElementById('planChart'), {
+    type:'doughnut',
+    data:{ labels:['Básico','Pro','Empresa'],
+      datasets:[{ data:planData, backgroundColor:['rgba(99,102,241,0.8)','rgba(0,212,170,0.8)','rgba(245,158,11,0.8)'], borderColor:'#161b22', borderWidth:3, hoverOffset:4 }]},
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'65%',
+      plugins:{ legend:{ position:'bottom', labels:{ color:'#94a3b8', font:{size:11}, padding:12 }},
+        tooltip:{ backgroundColor:'#161b22', borderColor:'rgba(255,255,255,0.1)', borderWidth:1, titleColor:'#94a3b8', bodyColor:'#e2e8f0', padding:10,
+          callbacks:{ label:c => ` ${c.label}: ${fmt(c.raw)}` }}}}
+  });
+}
+
+// ══ PAGE: PLANS ══════════════════════════════════
+function renderPlans() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">Planes & Precios</div>
+      <div class="page-subtitle">Configuración de tus suscripciones en PayPal</div></div>
+    </div>
+
+    <div class="plan-grid">
+      ${[
+        { key:'basico',  name:'Básico',  price:990,  paypalId:'P-79321420JS938303KNIOSOJA', color:'#6366f1', features:['Dashboard financiero','Hasta 5 usuarios','Soporte por email'] },
+        { key:'pro',     name:'Pro',     price:1990, paypalId:'P-30241692SC5349045NIOSOJI', color:'#00d4aa', features:['Todo lo de Básico','Usuarios ilimitados','Reportes avanzados','ISR en tiempo real','Soporte prioritario'] },
+        { key:'empresa', name:'Empresa', price:3990, paypalId:'P-2KG00541GJ147021VNIOSOJI', color:'#f59e0b', features:['Todo lo de Pro','Módulo nómina','Múltiples empresas','Integración contable','Gestor de cuenta dedicado'] }
+      ].map(plan => `
+        <div class="card" style="border-color:${plan.color}33">
+          <div class="card-body">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+              <div>
+                <div style="font-size:1rem;font-weight:800;color:${plan.color}">${plan.name}</div>
+                <div style="font-size:1.75rem;font-weight:900;letter-spacing:-1px;margin-top:.25rem">
+                  $${plan.price.toLocaleString()}<span style="font-size:.8rem;font-weight:500;color:var(--muted)">/mes</span>
+                </div>
+              </div>
+              <div style="font-size:2rem">${plan.key==='basico'?'🥈':plan.key==='pro'?'⭐':'🏆'}</div>
+            </div>
+            <div style="margin-bottom:1.25rem">
+              ${plan.features.map(f => `<div style="display:flex;align-items:center;gap:.5rem;padding:.3rem 0;font-size:.82rem;color:var(--muted)"><span style="color:${plan.color}">✓</span>${f}</div>`).join('')}
+            </div>
+            <div class="section-divider">PayPal Plan ID</div>
+            <div style="display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:.6rem .85rem">
+              <span style="font-family:monospace;font-size:.75rem;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${plan.paypalId}</span>
+              <button class="copy-btn" onclick="copyText('${plan.paypalId}')">Copiar</button>
+            </div>
+            <div style="margin-top:.75rem;display:flex;align-items:center;justify-content:space-between;font-size:.78rem">
+              <span style="color:var(--muted)">${allCustomers.filter(u=>u.plan===plan.key&&u.subscription_status==='active').length} clientes activos</span>
+              <span style="color:${plan.color};font-weight:700">${fmt(allCustomers.filter(u=>u.plan===plan.key&&u.subscription_status==='active').length*(plan.price))}/mes</span>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Credenciales PayPal</span>
+        <a href="https://developer.paypal.com/dashboard" target="_blank" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .7rem">Abrir PayPal Dashboard ↗</a>
+      </div>
+      <div class="card-body">
+        <div class="info-row"><span class="label">Client ID</span><span class="value" style="font-family:monospace;font-size:.75rem">Ab9gde9vp6tmdo_5bc2w-jWtvA4xd_dwWuRoTBxSTJeyd77Gu2EQeOEsFhdd4RmanITAXlDDJKpv8wNI</span></div>
+        <div class="info-row"><span class="label">Webhook URL</span><span class="value" style="font-family:monospace;font-size:.75rem">https://horizen.com.mx/paypal-webhook.php</span></div>
+        <div class="info-row"><span class="label">Webhook ID</span><span class="value" style="font-family:monospace;font-size:.75rem">4KL64234YG1820715</span></div>
+        <div class="info-row"><span class="label">Ambiente</span><span class="value"><span class="pill pill-green">Live / Producción</span></span></div>
+      </div>
+    </div>
+  `;
+}
+
+// ══ PAGE: SETTINGS ════════════════════════════════
+function renderSettings() {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="page-header">
+      <div><div class="page-title">Configuración</div>
+      <div class="page-subtitle">Ajustes de la plataforma FinancialOS</div></div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-header">
+        <div class="settings-section-title">Mi cuenta</div>
+        <div class="settings-section-sub">Tu perfil de administrador</div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="label">Email</div>
+          <div class="sub">Correo de acceso a FinancialOS</div>
+        </div>
+        <span class="settings-val">${adminSession?.user?.email || '—'}</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="label">Nombre</div>
+        </div>
+        <input class="form-input" style="max-width:220px" value="${adminProfile?.full_name || ''}" placeholder="Tu nombre" id="settingsName">
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="label">Rol</div>
+        </div>
+        <span class="pill pill-red" style="font-size:.72rem">Super Admin</span>
+      </div>
+      <div class="settings-row" style="justify-content:flex-end">
+        <button class="btn btn-primary" onclick="saveProfile()">Guardar cambios</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-header">
+        <div class="settings-section-title">Supabase</div>
+        <div class="settings-section-sub">Base de datos y autenticación</div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info"><div class="label">Project URL</div></div>
+        <span class="settings-val">upcbznfkpswtxiffgsgj.supabase.co</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info"><div class="label">Usuarios registrados</div></div>
+        <span style="font-size:.88rem;font-weight:700;color:var(--p)">${allCustomers.length}</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info"><div class="label">Suscripciones activas</div></div>
+        <span style="font-size:.88rem;font-weight:700;color:var(--ok)">${allCustomers.filter(u=>u.subscription_status==='active').length}</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info"><div class="label">Estado</div></div>
+        <span class="pill pill-green">Conectado</span>
+      </div>
+      <div class="settings-row" style="justify-content:flex-end;gap:.5rem">
+        <a href="https://supabase.com/dashboard/project/upcbznfkpswtxiffgsgj" target="_blank" class="btn btn-secondary" style="font-size:.75rem;padding:.35rem .75rem">Abrir Supabase ↗</a>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-header">
+        <div class="settings-section-title">Sitio web</div>
+        <div class="settings-section-sub">URLs y configuración del dominio</div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info"><div class="label">Dominio</div></div>
+        <span class="settings-val">horizen.com.mx</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info"><div class="label">Hosting</div></div>
+        <span class="settings-val">Hostinger · srv747</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="label">URLs limpias</div>
+          <div class="sub">/login en lugar de /login.html</div>
+        </div>
+        <label class="toggle"><input type="checkbox" checked disabled><div class="toggle-track"></div></label>
+      </div>
+      <div class="settings-row" style="justify-content:flex-end">
+        <a href="https://hpanel.hostinger.com" target="_blank" class="btn btn-secondary" style="font-size:.75rem;padding:.35rem .75rem">Abrir Hostinger ↗</a>
+      </div>
+    </div>
+
+    <div class="settings-section danger-zone">
+      <div class="settings-section-header">
+        <div class="settings-section-title">Zona de peligro</div>
+        <div class="settings-section-sub">Acciones irreversibles — úsalas con cuidado</div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="label">Cerrar sesión</div>
+          <div class="sub">Salir de la cuenta de administrador</div>
+        </div>
+        <button class="btn btn-danger" onclick="confirmLogout()">Cerrar sesión</button>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="label">Cambiar contraseña</div>
+          <div class="sub">Enviar enlace de recuperación a tu correo</div>
+        </div>
+        <button class="btn btn-secondary" onclick="sendSelfReset()">Enviar reset</button>
+      </div>
+    </div>
+  `;
+}
+
+// ══ MODALS ════════════════════════════════════════
+function openCustomer(id) {
+  const u = allCustomers.find(c => c.id === id);
+  if (!u) return;
+  document.getElementById('modalTitle').textContent = u.company_name || u.full_name || 'Cliente';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="info-row"><span class="label">ID</span><span class="value" style="font-family:monospace;font-size:.75rem">${u.id}</span></div>
+    <div class="info-row"><span class="label">Empresa</span><span class="value">${u.company_name || '—'}</span></div>
+    <div class="info-row"><span class="label">RFC</span><span class="value">${u.rfc || '—'}</span></div>
+    <div class="info-row"><span class="label">Plan</span><span class="value">${planBadge(u.plan || 'free')}</span></div>
+    <div class="info-row"><span class="label">Estado</span><span class="value">${statusBadge(u.subscription_status || 'trial')}</span></div>
+    <div class="info-row"><span class="label">MRR</span><span class="value" style="color:var(--p);font-weight:800">${fmt(PLANS[u.plan]?.price || 0)}</span></div>
+    <div class="info-row"><span class="label">Suscripción PayPal</span><span class="value" style="font-family:monospace;font-size:.75rem">${u.paypal_subscription_id || '—'}</span></div>
+    <div class="info-row"><span class="label">Registrado</span><span class="value">${fmtDate(u.created_at)}</span></div>
+  `;
+  document.getElementById('modalFooter').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
+    <button class="btn btn-secondary" onclick="sendPasswordReset('${u.id}')">🔑 Reset password</button>
+    <button class="btn btn-primary" onclick="openEditPlan('${u.id}')">Cambiar plan</button>
+  `;
+  document.getElementById('customerModal').classList.remove('hidden');
+}
+
+function openEditPlan(id) {
+  const u = allCustomers.find(c => c.id === id);
+  if (!u) return;
+  document.getElementById('modalTitle').textContent = 'Cambiar plan — ' + (u.company_name || u.full_name || 'Cliente');
+  document.getElementById('modalBody').innerHTML = `
+    <div style="margin-bottom:1.25rem">
+      <div style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem">Plan actual: ${planBadge(u.plan||'free')} · Estado: ${statusBadge(u.subscription_status||'trial')}</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nuevo plan</label>
+      <select class="form-select" id="newPlan">
+        <option value="free" ${u.plan==='free'?'selected':''}>Free / Trial</option>
+        <option value="basico" ${u.plan==='basico'?'selected':''}>Básico — $990/mes</option>
+        <option value="pro" ${u.plan==='pro'?'selected':''}>Pro — $1,990/mes</option>
+        <option value="empresa" ${u.plan==='empresa'?'selected':''}>Empresa — $3,990/mes</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Estado de suscripción</label>
+      <select class="form-select" id="newStatus">
+        <option value="trial" ${u.subscription_status==='trial'?'selected':''}>Trial</option>
+        <option value="active" ${u.subscription_status==='active'?'selected':''}>Activo</option>
+        <option value="cancelled" ${u.subscription_status==='cancelled'?'selected':''}>Cancelado</option>
+        <option value="past_due" ${u.subscription_status==='past_due'?'selected':''}>Vencido</option>
+      </select>
+    </div>
+    <div style="font-size:.78rem;color:var(--muted);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:.75rem">
+      ⚠️ Esto actualiza la base de datos directamente. Para cambios de facturación reales, hazlo también en el panel de PayPal.
+    </div>
+  `;
+  document.getElementById('modalFooter').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-primary" onclick="savePlan('${u.id}')">Guardar cambios</button>
+  `;
+  document.getElementById('customerModal').classList.remove('hidden');
+}
+
+async function savePlan(id) {
+  const plan   = document.getElementById('newPlan').value;
+  const status = document.getElementById('newStatus').value;
+  const { error } = await db.from('profiles').update({ plan, subscription_status: status }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'err'); return; }
+  closeModal();
+  await loadAllData();
+  if (currentPageName === 'customers') renderCustomers();
+  if (currentPageName === 'overview') renderOverview();
+  toast('Plan actualizado correctamente', 'ok');
+}
+
+function openAddCustomer() {
+  document.getElementById('modalTitle').textContent = 'Agregar cliente manualmente';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="form-group">
+      <label class="form-label">Email *</label>
+      <input type="email" class="form-input" id="newEmail" placeholder="cliente@empresa.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contraseña temporal *</label>
+      <input type="text" class="form-input" id="newPass" placeholder="Min. 8 caracteres" value="FinOS${Math.floor(Math.random()*9000)+1000}!">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Plan inicial</label>
+      <select class="form-select" id="newClientPlan">
+        <option value="free">Free / Trial</option>
+        <option value="basico">Básico — $990/mes</option>
+        <option value="pro" selected>Pro — $1,990/mes</option>
+        <option value="empresa">Empresa — $3,990/mes</option>
+      </select>
+    </div>
+    <div style="font-size:.78rem;color:var(--muted)">El cliente recibirá un email de bienvenida con sus credenciales de acceso.</div>
+  `;
+  document.getElementById('modalFooter').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-primary" onclick="createCustomer()">Crear cliente</button>
+  `;
+  document.getElementById('customerModal').classList.remove('hidden');
+}
+
+async function createCustomer() {
+  const email = document.getElementById('newEmail').value.trim();
+  const pass  = document.getElementById('newPass').value;
+  const plan  = document.getElementById('newClientPlan').value;
+  if (!email || !pass) { toast('Email y contraseña son requeridos', 'err'); return; }
+  toast('Creando cuenta…', 'info');
+  const { data, error } = await db.auth.admin ?
+    db.auth.admin.createUser({ email, password: pass, email_confirm: true }) :
+    db.auth.signUp({ email, password: pass });
+  if (error) { toast('Error: ' + error.message, 'err'); return; }
+  const uid = data?.user?.id;
+  if (uid) await db.from('profiles').upsert({ id: uid, plan, subscription_status: plan === 'free' ? 'trial' : 'active' });
+  closeModal();
+  await loadAllData();
+  renderCustomers();
+  toast('Cliente creado: ' + email, 'ok');
+}
+
+async function sendPasswordReset(id) {
+  const u = allCustomers.find(c => c.id === id);
+  if (!u) return;
+  // Can't get email from profile directly, show toast
+  toast('Usa Supabase Dashboard → Authentication para enviar el reset por email', 'info');
+}
+
+async function deleteCust(id) {
+  const u = allCustomers.find(c => c.id === id);
+  if (!confirm(`¿Cancelar suscripción de "${u?.company_name || u?.id}"?\n\nEsto no elimina la cuenta, solo cambia el estado a "Cancelado".`)) return;
+  await db.from('profiles').update({ subscription_status: 'cancelled', plan: 'free' }).eq('id', id);
+  await loadAllData();
+  if (currentPageName === 'customers') renderCustomers();
+  toast('Suscripción cancelada', 'err');
+}
+
+function closeModal() {
+  document.getElementById('customerModal').classList.add('hidden');
+}
+
+document.getElementById('customerModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ══ SETTINGS ACTIONS ═════════════════════════════
+async function saveProfile() {
+  const name = document.getElementById('settingsName')?.value || '';
+  const { error } = await db.from('profiles').update({ full_name: name }).eq('id', adminSession.user.id);
+  if (error) { toast('Error: ' + error.message, 'err'); return; }
+  adminProfile.full_name = name;
+  document.getElementById('adminName').textContent = name || adminSession.user.email;
+  document.getElementById('adminAvatar').textContent = (name || 'A').charAt(0).toUpperCase();
+  toast('Perfil actualizado', 'ok');
+}
+
+async function sendSelfReset() {
+  const email = adminSession?.user?.email;
+  if (!email) return;
+  await db.auth.resetPasswordForEmail(email, { redirectTo: 'https://horizen.com.mx/reset-password' });
+  toast('Enlace enviado a ' + email, 'ok');
 }
 
 function confirmLogout() {
   if (confirm('¿Cerrar sesión de administrador?')) signOut();
 }
+
+// ══ GLOBAL SEARCH ════════════════════════════════
+function handleGlobalSearch(q) {
+  if (!q) return;
+  setPage('customers', document.querySelector('[data-page="customers"]'));
+  setTimeout(() => {
+    const input = document.getElementById('custSearch');
+    if (input) { input.value = q; searchCustomers(q); }
+  }, 100);
+}
+
+// ══ EXPORT ═══════════════════════════════════════
+function exportCurrentCSV() {
+  if (currentPageName === 'customers') exportCustomersCSV();
+  else if (currentPageName === 'payments') exportPaymentsCSV();
+  else toast('Navega a Clientes o Pagos para exportar', 'info');
+}
+
+function downloadCSV(rows, filename) {
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,﻿' + encodeURIComponent(csv);
+  a.download = filename + '.csv';
+  a.click();
+}
+
+// ══ HELPERS ══════════════════════════════════════
+function copyText(txt) {
+  navigator.clipboard.writeText(txt).then(() => toast('Copiado al portapapeles', 'ok'));
+}
+
+function toast(msg, type = 'ok') {
+  const colors = { ok:'var(--ok)', err:'var(--danger)', info:'var(--info)' };
+  const icons  = { ok:'✓', err:'✕', info:'ℹ' };
+  const el = document.createElement('div');
+  el.style.cssText = `background:var(--bg2);border:1px solid ${colors[type]}33;color:var(--text);
+    padding:.75rem 1.1rem;border-radius:10px;font-size:.82rem;font-weight:500;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);display:flex;align-items:center;gap:.6rem;
+    border-left:3px solid ${colors[type]};animation:slideIn .3s ease;max-width:360px`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+const styleTag = document.createElement('style');
+styleTag.textContent = `
+  @keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+`;
+document.head.appendChild(styleTag);
 </script>
 </body>
 </html>
