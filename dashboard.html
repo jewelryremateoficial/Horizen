@@ -5,1275 +5,1471 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — FinancialOS</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+/* ── Design Tokens ────────────────────────────────────────── */
 :root{
-  --p:#00d4aa;--p2:#00a884;--sec:#6366f1;--warn:#f59e0b;--danger:#f43f5e;
+  --p:#00d4aa;--p2:#00a884;--sec:#6366f1;
+  --ok:#10b981;--warn:#f59e0b;--err:#f43f5e;
   --bg:#060b18;--bg2:#0d1526;--bg3:#111827;--bg4:#1a2235;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
-  --text:#f0f4f8;--muted:rgba(240,244,248,0.5);--muted2:rgba(240,244,248,0.35);
-  --sidebar:240px;--topbar:56px;
+  --border:rgba(255,255,255,.08);--text:#f0f4f8;--muted:rgba(240,244,248,.5);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
 
-/* ── SIDEBAR ─────────────────────────────────────────── */
-.sidebar{
-  width:var(--sidebar);min-width:var(--sidebar);height:100vh;
-  background:var(--bg2);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;position:fixed;left:0;top:0;z-index:100;
-  transition:transform .3s;
-}
-.sidebar-logo{
-  height:var(--topbar);display:flex;align-items:center;padding:0 1.25rem;
-  border-bottom:1px solid var(--border);gap:.5rem;flex-shrink:0;
-}
-.sidebar-logo .wordmark{font-size:1.15rem;font-weight:900;letter-spacing:-.5px}
-.sidebar-logo .wordmark span{color:var(--p)}
-.sidebar-logo .logo-dot{width:6px;height:6px;background:var(--p);border-radius:50%;animation:pulse 2s infinite;flex-shrink:0}
+/* ── SIDEBAR ──────────────────────────────────────────────── */
+.sidebar{width:236px;background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:fixed;height:100vh;z-index:100;overflow-y:auto}
+.logo-wrap{padding:1.25rem 1.25rem .9rem;border-bottom:1px solid var(--border)}
+.logo-mark{font-size:1.1rem;font-weight:900;letter-spacing:-.4px;display:flex;align-items:center;gap:.4rem}
+.logo-mark span{color:var(--p)}
+.logo-dot{width:6px;height:6px;background:var(--p);border-radius:50%;animation:pulse 2s infinite}
+.logo-sub{font-size:.65rem;color:var(--muted);margin-top:.15rem}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.5)}}
 
-.nav-section{padding:.75rem .75rem .35rem;font-size:.62rem;font-weight:700;color:var(--muted2);letter-spacing:.8px;text-transform:uppercase;margin-top:.25rem}
-.nav-item{
-  display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;
-  border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:500;color:var(--muted);
-  transition:all .15s;margin:0 .35rem 1px;text-decoration:none;
-}
-.nav-item:hover{background:rgba(255,255,255,.05);color:var(--text)}
-.nav-item.active{background:rgba(0,212,170,.1);color:var(--p);font-weight:600}
-.nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.7}
-.nav-item.active svg{opacity:1}
-.nav-badge{margin-left:auto;background:var(--p);color:#060b18;font-size:.6rem;font-weight:800;padding:.1rem .4rem;border-radius:50px;min-width:18px;text-align:center}
-.nav-badge.warn{background:var(--warn);color:#000}
+.nav{flex:1;padding:.75rem .5rem}
+.nav-lbl{font-size:.6rem;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;padding:.5rem .65rem;margin-top:.35rem}
+.ni{display:flex;align-items:center;gap:.55rem;padding:.58rem .75rem;border-radius:8px;
+  cursor:pointer;font-size:.84rem;font-weight:500;color:var(--muted);border:none;background:none;
+  width:100%;text-align:left;transition:all .15s}
+.ni:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.ni.active{background:rgba(0,212,170,.1);color:var(--p);font-weight:600}
+.ni .ico{width:16px;text-align:center;font-size:.9rem;flex-shrink:0}
+.ni .badge{margin-left:auto;background:var(--err);color:#fff;font-size:.6rem;font-weight:800;
+  padding:.1rem .4rem;border-radius:50px;min-width:18px;text-align:center}
 
-.sidebar-bottom{margin-top:auto;padding:.75rem;border-top:1px solid var(--border)}
-.user-card{display:flex;align-items:center;gap:.65rem;padding:.6rem .75rem;border-radius:8px;cursor:pointer;transition:background .15s}
-.user-card:hover{background:rgba(255,255,255,.05)}
-.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--sec));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.75rem;color:#060b18;flex-shrink:0}
-.user-info .name{font-size:.8rem;font-weight:600;line-height:1.2}
-.user-info .plan{font-size:.68rem;color:var(--muted)}
-.user-card .arrow{margin-left:auto;color:var(--muted2)}
+.sidebar-footer{padding:.75rem .5rem;border-top:1px solid var(--border)}
+.user-row{display:flex;align-items:center;gap:.65rem;padding:.55rem .75rem;border-radius:8px;cursor:pointer;transition:background .15s}
+.user-row:hover{background:rgba(255,255,255,.05)}
+.av{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--p),var(--sec));
+  display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;color:#060b18;flex-shrink:0}
+.user-info .uname{font-size:.82rem;font-weight:600}
+.user-info .uplan{font-size:.68rem;color:var(--p);font-weight:700}
 
-/* ── MAIN ─────────────────────────────────────────────── */
-.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden}
-
-/* ── TOPBAR ─────────────────────────────────────────── */
-.topbar{
-  height:var(--topbar);background:var(--bg2);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 1.5rem;gap:1rem;flex-shrink:0;
-  position:sticky;top:0;z-index:50;
-}
+/* ── MAIN ──────────────────────────────────────────────────── */
+.main{margin-left:236px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:54px;background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:0 1.75rem;display:flex;align-items:center;gap:.85rem;position:sticky;top:0;z-index:50;flex-shrink:0}
 .topbar-title{font-size:.95rem;font-weight:700;flex:1}
-.topbar-title .breadcrumb{font-size:.75rem;color:var(--muted);font-weight:400;margin-left:.5rem}
+.topbar-sub{font-size:.78rem;color:var(--muted);font-weight:400}
+.tb-btn{padding:.38rem .8rem;border-radius:8px;font-size:.75rem;font-weight:600;border:none;cursor:pointer;transition:all .15s}
+.tb-primary{background:var(--p);color:#060b18}
+.tb-primary:hover{background:var(--p2);transform:translateY(-1px)}
+.tb-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.tb-ghost:hover{border-color:var(--p);color:var(--p)}
+.notif{position:relative;background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.05rem;padding:.3rem;transition:color .15s}
+.notif:hover{color:var(--text)}
+.notif-dot{position:absolute;top:2px;right:2px;width:7px;height:7px;background:var(--err);border-radius:50%;border:2px solid var(--bg2)}
 
-.trial-banner{
-  display:flex;align-items:center;gap:.6rem;background:rgba(245,158,11,.08);
-  border:1px solid rgba(245,158,11,.2);color:#fbbf24;padding:.35rem .85rem;
-  border-radius:50px;font-size:.75rem;font-weight:600;cursor:pointer;
-  transition:all .2s;text-decoration:none;
-}
-.trial-banner:hover{background:rgba(245,158,11,.12)}
-.trial-banner .dot{width:6px;height:6px;background:#f59e0b;border-radius:50%;animation:pulse 2s infinite}
+/* ── PAGES ──────────────────────────────────────────────────── */
+.page{display:none;padding:1.75rem;flex-direction:column;gap:1.5rem;animation:fadeIn .25s ease}
+.page.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
-.tb-icon-btn{
-  width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.04);
-  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:all .15s;color:var(--muted);flex-shrink:0;
-}
-.tb-icon-btn:hover{background:rgba(255,255,255,.08);color:var(--text)}
-.notif-btn{position:relative}
-.notif-dot{position:absolute;top:6px;right:6px;width:6px;height:6px;background:var(--danger);border-radius:50%;border:1.5px solid var(--bg2)}
+/* ── ONE-MINUTE CHECK ───────────────────────────────────────── */
+.omc{background:linear-gradient(135deg,rgba(0,212,170,.07),rgba(99,102,241,.04));
+  border:1px solid rgba(0,212,170,.18);border-radius:16px;padding:1.75rem;position:relative;overflow:hidden}
+.omc::before{content:'';position:absolute;width:360px;height:360px;
+  background:radial-gradient(circle,rgba(0,212,170,.08) 0%,transparent 70%);
+  top:-80px;right:-80px;pointer-events:none}
+.omc-hdr{display:flex;align-items:center;gap:.65rem;margin-bottom:1.5rem}
+.omc-tag{background:rgba(0,212,170,.15);border:1px solid rgba(0,212,170,.3);color:var(--p);
+  font-size:.68rem;font-weight:800;padding:.25rem .7rem;border-radius:50px;letter-spacing:.5px;text-transform:uppercase}
+.omc-ttl{font-size:.92rem;font-weight:700;color:var(--muted)}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
+.kpi{background:rgba(13,21,38,.85);border:1px solid var(--border);border-radius:13px;padding:1.35rem;transition:border-color .3s}
+.kpi.red{border-color:rgba(244,63,94,.4)}
+.kpi.yellow{border-color:rgba(245,158,11,.35)}
+.kpi.green{border-color:rgba(0,212,170,.3)}
+.kpi-lbl{font-size:.69rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.6rem}
+.kpi-val{font-size:2.4rem;font-weight:900;letter-spacing:-1.5px;line-height:1;margin-bottom:.4rem}
+.kpi-val.c-green{color:var(--p)}
+.kpi-val.c-yellow{color:var(--warn)}
+.kpi-val.c-red{color:var(--err)}
+.kpi-sub{font-size:.75rem;color:var(--muted);line-height:1.5}
+.runway-bar{margin-top:.85rem;height:5px;background:rgba(255,255,255,.06);border-radius:50px;overflow:hidden}
+.runway-fill{height:100%;border-radius:50px;transition:width .9s ease}
+.runway-txt{font-size:.68rem;color:var(--muted);margin-top:.3rem}
 
-/* ── CONTENT ─────────────────────────────────────────── */
-.content{flex:1;overflow-y:auto;padding:1.5rem}
+/* Semáforo */
+.sem-row{display:flex;align-items:center;gap:.65rem;margin-top:.3rem}
+.sem-light{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.sem-light.green{background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.sem-light.yellow{background:var(--warn);box-shadow:0 0 10px var(--warn)}
+.sem-light.red{background:var(--err);box-shadow:0 0 10px var(--err);animation:blink 1.1s infinite}
+@keyframes blink{0%,100%{box-shadow:0 0 10px var(--err)}50%{box-shadow:0 0 22px rgba(244,63,94,.6)}}
+.sem-txt{font-size:.95rem;font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:.25rem;font-size:.68rem;font-weight:700;
+  padding:.18rem .55rem;border-radius:50px;border:1px solid}
 
-/* ── PERIOD BAR ─────────────────────────────────────── */
-.period-bar{display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap}
-.period-bar h2{font-size:1.25rem;font-weight:800;letter-spacing:-.5px;flex:1}
-.period-tabs{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:3px}
-.period-tab{padding:.35rem .85rem;border-radius:6px;font-size:.78rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s}
-.period-tab.active{background:var(--bg4);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.btn-sm{padding:.45rem 1rem;border-radius:8px;font-size:.78rem;font-weight:600;border:none;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
-.btn-outline{background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--border)}
-.btn-outline:hover{background:rgba(255,255,255,.08)}
-.btn-primary-sm{background:var(--p);color:#060b18}
-.btn-primary-sm:hover{background:var(--p2)}
+/* ── CARDS ──────────────────────────────────────────────────── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.35rem}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem}
+.card-ttl{font-size:.88rem;font-weight:700}
+.card-act{font-size:.76rem;color:var(--p);cursor:pointer;font-weight:600;background:none;border:none;transition:opacity .2s}
+.card-act:hover{opacity:.7}
 
-/* ── KPI CARDS ─────────────────────────────────────── */
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
-.kpi-card{
-  background:var(--bg2);border:1px solid var(--border);border-radius:14px;
-  padding:1.25rem;position:relative;overflow:hidden;transition:border-color .2s;
-}
-.kpi-card:hover{border-color:var(--border2)}
-.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:14px 14px 0 0}
-.kpi-card.green::before{background:var(--p)}
-.kpi-card.purple::before{background:var(--sec)}
-.kpi-card.amber::before{background:var(--warn)}
-.kpi-card.red::before{background:var(--danger)}
-.kpi-label{font-size:.72rem;font-weight:600;color:var(--muted);letter-spacing:.3px;text-transform:uppercase;margin-bottom:.5rem}
-.kpi-value{font-size:1.5rem;font-weight:900;letter-spacing:-1px;margin-bottom:.35rem;line-height:1}
-.kpi-sub{font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:.3rem}
-.kpi-change{font-size:.72rem;font-weight:700;padding:.15rem .45rem;border-radius:4px}
-.kpi-change.up{background:rgba(0,212,170,.1);color:var(--p)}
-.kpi-change.down{background:rgba(244,63,94,.1);color:var(--danger)}
-.kpi-icon{position:absolute;top:1.25rem;right:1.25rem;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;opacity:.6}
-.kpi-icon.green{background:rgba(0,212,170,.1);color:var(--p)}
-.kpi-icon.purple{background:rgba(99,102,241,.1);color:var(--sec)}
-.kpi-icon.amber{background:rgba(245,158,11,.1);color:var(--warn)}
-.kpi-icon.red{background:rgba(244,63,94,.1);color:var(--danger)}
+/* ── ACCOUNTS GRID ──────────────────────────────────────────── */
+.acc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.9rem}
+.acc-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.15rem;
+  cursor:pointer;transition:all .18s;position:relative;overflow:hidden}
+.acc-card:hover{transform:translateY(-2px);border-color:rgba(0,212,170,.3)}
+.acc-top-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
+.acc-ico{font-size:1.25rem;margin-bottom:.6rem}
+.acc-name{font-size:.82rem;font-weight:600;margin-bottom:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc-inst{font-size:.7rem;color:var(--muted);margin-bottom:.6rem}
+.acc-avail{font-size:1.35rem;font-weight:900;letter-spacing:-.5px}
+.acc-current{font-size:.72rem;color:var(--muted);margin-top:.15rem}
+.acc-type-pill{font-size:.63rem;font-weight:700;padding:.13rem .45rem;border-radius:50px;margin-top:.4rem;display:inline-block}
+.acc-add{display:flex;align-items:center;justify-content:center;border-style:dashed;min-height:130px;cursor:pointer}
 
-/* ── CHARTS ROW ─────────────────────────────────────── */
-.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1.5rem}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.25rem}
-.card-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem}
-.card-title{font-size:.9rem;font-weight:700;flex:1}
-.card-sub{font-size:.75rem;color:var(--muted)}
-.chart-container{position:relative;height:200px}
+/* ── TRANSACTIONS TABLE ─────────────────────────────────────── */
+.tx-tbl{width:100%;border-collapse:collapse}
+.tx-tbl th{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.4px;padding:.55rem .9rem;text-align:left;border-bottom:1px solid var(--border)}
+.tx-tbl td{padding:.7rem .9rem;border-bottom:1px solid rgba(255,255,255,.04);font-size:.83rem;vertical-align:middle}
+.tx-tbl tr:hover td{background:rgba(255,255,255,.02)}
+.tx-tbl tr:last-child td{border-bottom:none}
+.amt-in{color:var(--ok);font-weight:700}
+.amt-out{color:var(--err);font-weight:700}
+.fiscal-tag{font-size:.6rem;font-weight:700;padding:.08rem .38rem;border-radius:4px;
+  background:rgba(0,212,170,.1);color:var(--p);border:1px solid rgba(0,212,170,.25)}
+.src-tag{font-size:.6rem;font-weight:700;padding:.08rem .38rem;border-radius:4px}
+.src-manual{background:rgba(99,102,241,.1);color:#818cf8}
+.src-belvo{background:rgba(0,212,170,.1);color:var(--p)}
+.src-sat_cfdi{background:rgba(16,185,129,.1);color:#10b981}
+.src-pdf_ocr{background:rgba(245,158,11,.1);color:var(--warn)}
+.src-whatsapp{background:rgba(37,211,102,.1);color:#25d366}
+.cat-pill{font-size:.7rem;color:var(--muted);background:rgba(255,255,255,.05);
+  padding:.13rem .42rem;border-radius:4px;white-space:nowrap}
 
-/* ── P&L TABLE ─────────────────────────────────────── */
-.pl-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
-.pl-section{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.25rem}
-.pl-row{display:flex;align-items:center;padding:.55rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.85rem}
-.pl-row:last-child{border-bottom:none}
-.pl-row .label{flex:1;color:var(--muted)}
-.pl-row.total{font-weight:700;color:var(--text);border-top:1px solid var(--border2);margin-top:.25rem;padding-top:.65rem}
-.pl-row.total .label{color:var(--text)}
-.pl-val{font-weight:600;font-variant-numeric:tabular-nums;font-size:.88rem}
-.pl-val.pos{color:var(--p)}
-.pl-val.neg{color:var(--danger)}
-.pl-val.neutral{color:var(--text)}
+/* ── DEBTS ─────────────────────────────────────────────────── */
+.debt-list{display:flex;flex-direction:column;gap:.75rem}
+.debt-item{background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  padding:1rem 1.15rem;display:flex;align-items:center;gap:.85rem}
+.debt-ico{font-size:1.15rem;width:34px;height:34px;background:rgba(244,63,94,.08);
+  border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.debt-info{flex:1;min-width:0}
+.debt-name{font-size:.85rem;font-weight:600;margin-bottom:.18rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.debt-meta{font-size:.72rem;color:var(--muted)}
+.debt-cut{font-size:.7rem;font-weight:700;padding:.18rem .48rem;border-radius:50px;flex-shrink:0}
+.debt-cut.urgent{background:rgba(244,63,94,.15);color:var(--err)}
+.debt-cut.soon{background:rgba(245,158,11,.12);color:var(--warn)}
+.debt-cut.ok{background:rgba(16,185,129,.08);color:var(--ok)}
+.debt-amt{text-align:right;flex-shrink:0}
+.debt-bal{font-size:.97rem;font-weight:800;color:var(--err)}
+.debt-min{font-size:.7rem;color:var(--muted);margin-top:.1rem}
+.debt-prog{width:70px;margin:0 .65rem}
+.debt-prog-bar{height:4px;background:rgba(255,255,255,.07);border-radius:50px}
+.debt-prog-fill{height:100%;border-radius:50px;background:var(--err)}
 
-/* ── CASHFLOW ─────────────────────────────────────── */
-.cashflow-bar{height:8px;border-radius:4px;background:var(--bg3);overflow:hidden;margin-top:.4rem}
-.cashflow-fill{height:100%;border-radius:4px;transition:width .6s ease}
-.cashflow-item{margin-bottom:1rem}
-.cashflow-item:last-child{margin-bottom:0}
-.cf-header{display:flex;justify-content:space-between;margin-bottom:.3rem}
-.cf-label{font-size:.82rem;color:var(--muted);font-weight:500}
-.cf-value{font-size:.82rem;font-weight:700}
+/* ── TAX RESERVES ───────────────────────────────────────────── */
+.tax-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.9rem}
+.tax-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.15rem}
+.tax-period-lbl{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:.85rem}
+.tax-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem}
+.tax-lbl{font-size:.78rem;color:var(--muted)}
+.tax-val{font-size:.85rem;font-weight:700}
+.tax-total{display:flex;justify-content:space-between;padding-top:.65rem;margin-top:.2rem;border-top:1px solid var(--border)}
+.tax-total-lbl{font-size:.8rem;font-weight:700}
+.tax-total-val{font-size:.97rem;font-weight:900;color:var(--warn)}
+.tax-pills{display:flex;gap:.4rem;margin-top:.75rem}
+.tax-pill{font-size:.63rem;font-weight:700;padding:.18rem .55rem;border-radius:50px;flex:1;text-align:center}
+.tax-pill.paid{background:rgba(16,185,129,.12);color:var(--ok)}
+.tax-pill.due{background:rgba(244,63,94,.1);color:var(--err)}
 
-/* ── TRANSACTIONS ─────────────────────────────────── */
-.tx-table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse}
-th{font-size:.7rem;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.4px;padding:.6rem .75rem;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
-td{font-size:.84rem;padding:.7rem .75rem;border-bottom:1px solid rgba(255,255,255,.04);white-space:nowrap}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(255,255,255,.02)}
-.tx-badge{padding:.2rem .65rem;border-radius:50px;font-size:.68rem;font-weight:700;letter-spacing:.3px}
-.tx-ingreso{background:rgba(0,212,170,.1);color:var(--p)}
-.tx-egreso{background:rgba(244,63,94,.1);color:var(--danger)}
-.tx-transferencia{background:rgba(99,102,241,.1);color:var(--sec)}
-.tx-amount.pos{color:var(--p)}
-.tx-amount.neg{color:var(--danger)}
+/* ── NOVA ───────────────────────────────────────────────────── */
+.nova-card{background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(0,212,170,.05));
+  border:1px solid rgba(99,102,241,.2);border-radius:16px;padding:2rem;text-align:center;position:relative;overflow:hidden}
+.nova-glow{position:absolute;width:280px;height:280px;
+  background:radial-gradient(circle,rgba(99,102,241,.14) 0%,transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.nova-feats{display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center;margin:1.25rem 0}
+.nova-feat{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;
+  padding:.55rem .9rem;font-size:.76rem;color:var(--muted);display:flex;align-items:center;gap:.35rem}
+.nova-feat strong{color:var(--text)}
+.nova-input{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;
+  padding:.58rem .9rem;color:var(--text);font-size:.85rem;font-family:'Inter',sans-serif;outline:none}
+.nova-input:focus{border-color:var(--p)}
+.nova-input::placeholder{color:var(--muted)}
+.btn-nova{background:linear-gradient(135deg,var(--sec),var(--p));color:#fff;border:none;
+  border-radius:9px;padding:.58rem 1.15rem;font-size:.82rem;font-weight:700;cursor:pointer;transition:opacity .2s;white-space:nowrap}
+.btn-nova:hover{opacity:.85}
 
-/* ── SAT MODULE ─────────────────────────────────── */
-.sat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
-.sat-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.25rem}
-.sat-header{display:flex;align-items:center;gap:.6rem;margin-bottom:.85rem}
-.sat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
-.sat-title{font-size:.82rem;font-weight:700}
-.sat-period{font-size:.7rem;color:var(--muted)}
-.sat-amount{font-size:1.35rem;font-weight:900;letter-spacing:-.5px;margin-bottom:.3rem}
-.sat-status{display:inline-flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:600;padding:.2rem .65rem;border-radius:50px}
-.sat-ok{background:rgba(0,212,170,.1);color:var(--p)}
-.sat-warn{background:rgba(245,158,11,.1);color:var(--warn)}
-.sat-due{background:rgba(244,63,94,.1);color:var(--danger)}
-.sat-progress{margin-top:.75rem}
-.sat-pb{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
-.sat-pf{height:100%;border-radius:2px;transition:width .6s ease}
+/* ── INTEGRATIONS ───────────────────────────────────────────── */
+.sync-list{display:flex;flex-direction:column;gap:.65rem}
+.sync-item{display:flex;align-items:center;gap:.85rem;padding:.9rem 1.1rem;
+  background:var(--bg3);border:1px solid var(--border);border-radius:11px}
+.sync-ico{font-size:1.2rem;width:38px;height:38px;background:var(--bg4);border-radius:9px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sync-info{flex:1}
+.sync-name{font-size:.85rem;font-weight:600;margin-bottom:.18rem}
+.sync-sub{font-size:.72rem;color:var(--muted)}
+.sync-status{font-size:.67rem;font-weight:700;padding:.13rem .48rem;border-radius:50px;flex-shrink:0}
+.sync-status.live{background:rgba(16,185,129,.12);color:var(--ok)}
+.sync-status.avail{background:rgba(99,102,241,.1);color:#818cf8}
+.sync-status.soon{background:rgba(255,255,255,.05);color:var(--muted)}
+.sync-btn{padding:.38rem .8rem;border-radius:8px;font-size:.73rem;font-weight:700;
+  border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s}
+.sync-btn:hover:not(:disabled){border-color:var(--p);color:var(--p)}
+.sync-btn:disabled{opacity:.35;cursor:not-allowed}
 
-/* ── ALERTS ─────────────────────────────────────── */
-.alert-card{
-  display:flex;align-items:flex-start;gap:.75rem;background:rgba(245,158,11,.06);
-  border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:.85rem 1rem;
-  margin-bottom:1rem;font-size:.82rem;
-}
-.alert-card.info{background:rgba(99,102,241,.06);border-color:rgba(99,102,241,.2)}
-.alert-card.success{background:rgba(0,212,170,.06);border-color:rgba(0,212,170,.2)}
-.alert-icon{font-size:1rem;flex-shrink:0;margin-top:1px}
-.alert-text .title{font-weight:700;margin-bottom:.2rem}
-.alert-text .desc{color:var(--muted);line-height:1.45}
+/* ── MODAL ──────────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1000;
+  display:none;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.75rem;
+  width:100%;max-width:510px;animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
+.modal-ttl{font-size:1.05rem;font-weight:800;margin-bottom:1.35rem}
+.fg{margin-bottom:1rem}
+.flbl{font-size:.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.3px;margin-bottom:.38rem;display:block}
+.finp,.fsel{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);
+  color:var(--text);padding:.7rem .9rem;border-radius:9px;font-size:.88rem;
+  font-family:'Inter',sans-serif;outline:none;transition:border-color .18s}
+.finp:focus,.fsel:focus{border-color:var(--p)}
+.finp::placeholder{color:var(--muted)}
+.fsel{appearance:none;cursor:pointer}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+.fcheck{display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.85rem;margin-top:.15rem}
+.fcheck input[type=checkbox]{width:15px;height:15px;accent-color:var(--p);cursor:pointer}
+.mod-footer{display:flex;gap:.65rem;justify-content:flex-end;margin-top:1.35rem;
+  padding-top:1.15rem;border-top:1px solid var(--border)}
+.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);
+  padding:.58rem 1.15rem;border-radius:9px;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .18s}
+.btn-cancel:hover{border-color:var(--text);color:var(--text)}
+.btn-save{background:var(--p);color:#060b18;border:none;padding:.58rem 1.35rem;
+  border-radius:9px;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .18s}
+.btn-save:hover{background:var(--p2);transform:translateY(-1px)}
+.btn-save:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
-/* ── EMPTY STATE ─────────────────────────────────── */
-.empty-state{text-align:center;padding:3rem 1rem;color:var(--muted)}
-.empty-state .icon{font-size:2.5rem;margin-bottom:.75rem;opacity:.5}
-.empty-state .title{font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:.35rem}
-.empty-state .desc{font-size:.82rem;line-height:1.5;max-width:320px;margin:0 auto 1rem}
+/* ── HELPERS ────────────────────────────────────────────────── */
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--muted)}
+.empty .eico{font-size:2.2rem;margin-bottom:.75rem}
+.empty .etxt{font-size:.88rem;margin-bottom:.85rem}
+.ecta{display:inline-flex;align-items:center;gap:.45rem;background:var(--p);color:#060b18;
+  border:none;padding:.58rem 1.1rem;border-radius:9px;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .18s}
+.ecta:hover{background:var(--p2);transform:translateY(-1px)}
+.sk{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.04) 75%);
+  background-size:400% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+@keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.tabs{display:flex;gap:.2rem;background:rgba(255,255,255,.04);border-radius:9px;padding:.2rem}
+.tab{padding:.4rem .78rem;border-radius:7px;font-size:.78rem;font-weight:600;color:var(--muted);
+  cursor:pointer;border:none;background:none;transition:all .15s}
+.tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,.3)}
+.section-ttl{font-size:1.2rem;font-weight:800;letter-spacing:-.3px}
+.section-sub{font-size:.82rem;color:var(--muted);margin-top:.2rem}
 
-/* ── TABS ─────────────────────────────────────── */
-.module-tabs{display:flex;gap:.25rem;background:var(--bg3);border-radius:10px;padding:4px;margin-bottom:1.25rem}
-.module-tab{flex:1;text-align:center;padding:.5rem .75rem;border-radius:8px;font-size:.8rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s}
-.module-tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+/* ── ALERT BANNERS ──────────────────────────────────────────── */
+.alert-list{display:flex;flex-direction:column;gap:.5rem}
+.alert-item{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;
+  border-radius:9px;border-left:3px solid}
+.alert-item.critical{background:rgba(244,63,94,.07);border-color:var(--err)}
+.alert-item.warning{background:rgba(245,158,11,.07);border-color:var(--warn)}
+.alert-item.info{background:rgba(99,102,241,.07);border-color:var(--sec)}
+.alert-ttl{font-size:.83rem;font-weight:600}
+.alert-msg{font-size:.76rem;color:var(--muted)}
+.alert-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.82rem;
+  padding:.2rem;transition:color .15s;margin-left:auto;flex-shrink:0}
+.alert-close:hover{color:var(--text)}
 
-/* ── SECTION VIEWS ─────────────────────────────── */
-.section-view{display:none}
-.section-view.active{display:block}
-
-/* ── MOBILE ─────────────────────────────────────── */
-.hamburger{display:none;width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--muted)}
-.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99}
-
-@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.sat-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:900px){.charts-row{grid-template-columns:1fr}.pl-grid{grid-template-columns:1fr}}
-@media(max-width:768px){
-  .sidebar{transform:translateX(-100%)}
-  .sidebar.open{transform:translateX(0)}
-  .sidebar-overlay.open{display:block}
-  .main{margin-left:0}
-  .hamburger{display:flex}
-  .kpi-grid{grid-template-columns:1fr 1fr}
-  .sat-grid{grid-template-columns:1fr}
-  .content{padding:1rem}
-  .topbar{padding:0 1rem}
-}
-@media(max-width:480px){.kpi-grid{grid-template-columns:1fr}}
-
-/* ── SPINNER ─────────────────────────────────────── */
-.spin{animation:spinA .7s linear infinite}
-@keyframes spinA{to{transform:rotate(360deg)}}
-
-/* UPGRADE BANNER */
-.upgrade-bar{
-  background:linear-gradient(90deg,rgba(0,212,170,.08),rgba(99,102,241,.08));
-  border:1px solid rgba(0,212,170,.15);border-radius:14px;
-  padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;
-  margin-bottom:1.5rem;
-}
-.upgrade-bar .text{flex:1;font-size:.85rem}
-.upgrade-bar .title{font-weight:700;margin-bottom:.15rem}
-.upgrade-bar .desc{color:var(--muted);font-size:.78rem}
-.btn-upgrade{background:var(--p);color:#060b18;font-weight:700;font-size:.8rem;padding:.5rem 1.25rem;border-radius:8px;border:none;cursor:pointer;white-space:nowrap;transition:background .2s;font-family:'Inter',sans-serif}
-.btn-upgrade:hover{background:var(--p2)}
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media(max-width:900px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.kpi-grid{grid-template-columns:1fr}}
+@media(max-width:640px){.page{padding:1rem}.topbar{padding:0 1rem}.frow{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<!-- Sidebar overlay mobile -->
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-<!-- ── SIDEBAR ── -->
-<nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
-    <div class="wordmark">Financial<span>OS</span></div>
-    <div class="logo-dot"></div>
+<!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
+<nav class="sidebar">
+  <div class="logo-wrap">
+    <div class="logo-mark">Financial<span>OS</span><div class="logo-dot"></div></div>
+    <div class="logo-sub">Control Financiero Total</div>
   </div>
+  <div class="nav">
+    <div class="nav-lbl">Principal</div>
+    <button class="ni active" onclick="showPage('overview')"><span class="ico">⚡</span>One-Minute Check</button>
+    <button class="ni" onclick="showPage('transactions')"><span class="ico">📊</span>Transacciones</button>
+    <button class="ni" onclick="showPage('accounts')"><span class="ico">🏦</span>Cuentas</button>
 
-  <div style="flex:1;overflow-y:auto;padding-bottom:.5rem">
-    <div class="nav-section">Principal</div>
-    <a class="nav-item active" data-view="resumen" onclick="showView('resumen',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      Resumen
-    </a>
-    <a class="nav-item" data-view="pyg" onclick="showView('pyg',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      P&amp;G / Resultados
-    </a>
-    <a class="nav-item" data-view="cashflow" onclick="showView('cashflow',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V8m0 0l-4 4m4-4l4 4"/><path d="M20 4H4"/></svg>
-      Flujo de Caja
-    </a>
-    <a class="nav-item" data-view="balance" onclick="showView('balance',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
-      Balance General
-    </a>
+    <div class="nav-lbl">Finanzas</div>
+    <button class="ni" onclick="showPage('debts')">
+      <span class="ico">💳</span>Deudas
+      <span class="badge" id="debtBadge" style="display:none"></span>
+    </button>
+    <button class="ni" onclick="showPage('taxes')"><span class="ico">🧾</span>SAT / Fiscal</button>
 
-    <div class="nav-section">Fiscal</div>
-    <a class="nav-item" data-view="isr" onclick="showView('isr',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14l2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-      ISR / SAT
-      <span class="nav-badge warn">!</span>
-    </a>
-    <a class="nav-item" data-view="iva" onclick="showView('iva',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-      IVA
-    </a>
+    <div class="nav-lbl">Inteligencia</div>
+    <button class="ni" onclick="showPage('nova')"><span class="ico">🤖</span>NOVA IA — CFO</button>
+    <button class="ni" onclick="showPage('integrations')"><span class="ico">🔗</span>Integraciones</button>
 
-    <div class="nav-section">Operaciones</div>
-    <a class="nav-item" data-view="transacciones" onclick="showView('transacciones',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6l4-4 4 4M16 18l-4 4-4-4M3 12h18"/></svg>
-      Transacciones
-    </a>
-    <a class="nav-item" data-view="cuentas" onclick="showView('cuentas',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-      Cuentas Bancarias
-    </a>
-    <a class="nav-item" data-view="proveedores" onclick="showView('proveedores',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      Proveedores
-    </a>
+    <div class="nav-lbl">Cuenta</div>
+    <button class="ni" onclick="showPage('settings')"><span class="ico">⚙️</span>Configuración</button>
   </div>
-
-  <div class="sidebar-bottom">
-    <div class="user-card" onclick="toggleUserMenu()">
-      <div class="user-avatar" id="userAvatarSidebar">?</div>
+  <div class="sidebar-footer">
+    <div class="user-row" onclick="showPage('settings')">
+      <div class="av" id="userAv">?</div>
       <div class="user-info">
-        <div class="name" id="userNameSidebar">Cargando...</div>
-        <div class="plan" id="userPlanSidebar">—</div>
+        <div class="uname" id="userName">Cargando...</div>
+        <div class="uplan" id="userPlan">Trial</div>
       </div>
-      <div class="arrow">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-      </div>
-    </div>
-    <div id="userMenu" style="display:none;padding:.5rem .35rem 0">
-      <a class="nav-item" style="margin:0" href="/pricing">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        Mejorar plan
-      </a>
-      <a class="nav-item" style="margin:0" href="/configuracion.html">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        Configuración
-      </a>
-      <a class="nav-item" style="margin:0;color:var(--danger)" onclick="signOut()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        Cerrar sesión
-      </a>
     </div>
   </div>
 </nav>
 
-<!-- ── MAIN ── -->
+<!-- ══ MAIN ════════════════════════════════════════════════ -->
 <div class="main">
 
-  <!-- TOPBAR -->
-  <header class="topbar">
-    <div class="hamburger" id="hamburgerBtn" onclick="openSidebar()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">
+      ⚡ One-Minute Check <span class="topbar-sub">— Tu salud financiera al instante</span>
     </div>
-    <div class="topbar-title">
-      <span id="pageTitle">Resumen</span>
-      <span class="breadcrumb" id="pagePeriod">Mayo 2026</span>
+    <div style="display:flex;align-items:center;gap:.6rem">
+      <button class="tb-btn tb-ghost" onclick="openModal('txModal')">+ Transacción</button>
+      <button class="tb-btn tb-primary" onclick="syncNow()">↺ Sync</button>
+      <button class="notif" onclick="showPage('alerts')">
+        🔔<div class="notif-dot" id="notifDot" style="display:none"></div>
+      </button>
+      <button onclick="confirmSignOut()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.82rem;font-weight:600">Salir</button>
     </div>
+  </div>
 
-    <!-- Trial banner -->
-    <a href="/pricing" class="trial-banner" id="trialBanner" style="display:none">
-      <div class="dot"></div>
-      <span id="trialDays">14 días restantes</span>
-    </a>
+  <!-- ══ PAGE: One-Minute Check ══════════════════════════════ -->
+  <div class="page active" id="page-overview">
 
-    <div class="tb-icon-btn" title="Actualizar" onclick="loadDashboard()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.18-5"/></svg>
-    </div>
-    <div class="tb-icon-btn notif-btn" title="Notificaciones">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      <div class="notif-dot"></div>
-    </div>
-  </header>
+    <!-- Alert banners críticos -->
+    <div id="alertBanners"></div>
 
-  <!-- CONTENT -->
-  <div class="content">
-
-    <!-- ══ VIEW: RESUMEN ══════════════════════════════════ -->
-    <div class="section-view active" id="view-resumen">
-      <!-- Upgrade bar (shown for trial) -->
-      <div class="upgrade-bar" id="upgradeBanner" style="display:none">
-        <div style="font-size:1.5rem">🚀</div>
-        <div class="text">
-          <div class="title">Tu prueba gratuita vence pronto</div>
-          <div class="desc">Activa tu plan para mantener acceso completo a tu inteligencia financiera.</div>
-        </div>
-        <button class="btn-upgrade" onclick="window.location.href='/pricing'">Activar plan →</button>
+    <!-- 3 KPIs -->
+    <div class="omc">
+      <div class="omc-hdr">
+        <div class="omc-tag">One-Minute Check™</div>
+        <div class="omc-ttl">Tu salud financiera en 3 números</div>
       </div>
-
-      <!-- Period bar -->
-      <div class="period-bar">
-        <h2 id="greetingTitle">Buenos días 👋</h2>
-        <div class="period-tabs">
-          <div class="period-tab active" onclick="setPeriod('mes',this)">Este mes</div>
-          <div class="period-tab" onclick="setPeriod('trimestre',this)">Trimestre</div>
-          <div class="period-tab" onclick="setPeriod('año',this)">Año</div>
-        </div>
-        <button class="btn-sm btn-outline" onclick="window.print()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;margin-right:4px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-          Exportar
-        </button>
-      </div>
-
-      <!-- KPI cards -->
       <div class="kpi-grid">
-        <div class="kpi-card green">
-          <div class="kpi-icon green">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-          <div class="kpi-label">Ingresos del período</div>
-          <div class="kpi-value" id="kpiIngresos">$—</div>
-          <div class="kpi-sub">
-            <span class="kpi-change up" id="kpiIngresosChange">+0%</span>
-            vs período anterior
-          </div>
-        </div>
-        <div class="kpi-card red">
-          <div class="kpi-icon red">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
-          </div>
-          <div class="kpi-label">Gastos del período</div>
-          <div class="kpi-value" id="kpiGastos">$—</div>
-          <div class="kpi-sub">
-            <span class="kpi-change down" id="kpiGastosChange">+0%</span>
-            vs período anterior
-          </div>
-        </div>
-        <div class="kpi-card green">
-          <div class="kpi-icon green">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          </div>
-          <div class="kpi-label">Utilidad neta</div>
-          <div class="kpi-value" id="kpiUtilidad">$—</div>
-          <div class="kpi-sub">
-            <span class="kpi-change up" id="kpiUtilidadChange">+0%</span>
-            margen neto
-          </div>
-        </div>
-        <div class="kpi-card purple">
-          <div class="kpi-icon purple">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-          </div>
-          <div class="kpi-label">Saldo en cuentas</div>
-          <div class="kpi-value" id="kpiSaldo">$—</div>
-          <div class="kpi-sub" id="kpiSaldoSub">Liquidez disponible</div>
-        </div>
-      </div>
 
-      <!-- Charts row -->
-      <div class="charts-row">
-        <!-- Revenue chart -->
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Ingresos vs Gastos</div>
-              <div class="card-sub">Últimos 6 meses</div>
-            </div>
-          </div>
-          <div class="chart-container">
-            <canvas id="revenueChart"></canvas>
-          </div>
+        <!-- KPI 1: Liquidez Real -->
+        <div class="kpi" id="kpiLiqCard">
+          <div class="kpi-lbl">💧 Liquidez Real (Caja Libre)</div>
+          <div class="kpi-val c-green sk" id="kpiLiq" style="min-height:2.4rem">&nbsp;</div>
+          <div class="kpi-sub" id="kpiLiqSub">Calculando...</div>
+          <div class="runway-bar"><div class="runway-fill" id="runwayFill" style="width:0%;background:var(--p)"></div></div>
+          <div class="runway-txt" id="runwayTxt">— días de runway</div>
         </div>
-        <!-- Breakdown donut -->
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <div class="card-title">Gastos por categoría</div>
-              <div class="card-sub">Distribución del período</div>
-            </div>
-          </div>
-          <div class="chart-container" style="height:160px">
-            <canvas id="expenseChart"></canvas>
-          </div>
-          <div id="expenseLegend" style="margin-top:.75rem"></div>
-        </div>
-      </div>
 
-      <!-- Alerts -->
-      <div id="alertsContainer">
-        <div class="alert-card">
-          <div class="alert-icon">⚠️</div>
-          <div class="alert-text">
-            <div class="title">Declaración de IVA próxima</div>
-            <div class="desc">Tu declaración mensual de IVA vence el 17 de junio. IVA a pagar estimado: $18,420 MXN</div>
-          </div>
+        <!-- KPI 2: Margen Neto Real -->
+        <div class="kpi" id="kpiMarCard">
+          <div class="kpi-lbl">📈 Margen Neto Real</div>
+          <div class="kpi-val c-green sk" id="kpiMar" style="min-height:2.4rem">&nbsp;</div>
+          <div class="kpi-sub" id="kpiMarSub">Calculando...</div>
+          <div style="margin-top:.75rem;display:flex;gap:.45rem;flex-wrap:wrap" id="marChips"></div>
         </div>
-        <div class="alert-card info">
-          <div class="alert-icon">ℹ️</div>
-          <div class="alert-text">
-            <div class="title">Conecta tu banco para datos en tiempo real</div>
-            <div class="desc">Vincula tu cuenta bancaria para importar transacciones automáticamente y obtener análisis precisos.</div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Recent transactions preview -->
-      <div class="card" style="margin-bottom:0">
-        <div class="card-header">
-          <div class="card-title">Transacciones recientes</div>
-          <button class="btn-sm btn-outline" onclick="showView('transacciones',null)">Ver todas →</button>
+        <!-- KPI 3: Semáforo -->
+        <div class="kpi" id="kpiSemCard">
+          <div class="kpi-lbl">🚦 Semáforo de Alertas</div>
+          <div class="sem-row sk" id="semRow" style="min-height:1.4rem;border-radius:8px;width:120px">&nbsp;</div>
+          <div class="kpi-sub" id="kpiSemSub" style="margin-top:.75rem">Calculando...</div>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.75rem" id="alertChips"></div>
         </div>
-        <div class="tx-table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Descripción</th>
-                <th>Fecha</th>
-                <th>Tipo</th>
-                <th style="text-align:right">Monto</th>
-              </tr>
-            </thead>
-            <tbody id="recentTxBody">
-              <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:1.5rem">Cargando transacciones...</td></tr>
-            </tbody>
-          </table>
-        </div>
+
       </div>
     </div>
 
-    <!-- ══ VIEW: P&G ═══════════════════════════════════ -->
-    <div class="section-view" id="view-pyg">
-      <div class="period-bar">
-        <h2>Estado de Resultados</h2>
-        <div class="period-tabs">
-          <div class="period-tab active">Este mes</div>
-          <div class="period-tab">Acumulado</div>
-          <div class="period-tab">Año</div>
-        </div>
-        <button class="btn-sm btn-outline">📥 Descargar PDF</button>
-      </div>
-
-      <div class="alert-card success" style="margin-bottom:1.5rem">
-        <div class="alert-icon">✅</div>
-        <div class="alert-text">
-          <div class="title">Margen operativo saludable</div>
-          <div class="desc">Tu margen operativo de 28.4% está por encima del promedio del sector (22%). Buen trabajo controlando costos.</div>
-        </div>
-      </div>
-
-      <div class="pl-grid">
-        <!-- Ingresos -->
-        <div class="pl-section">
-          <div class="card-header" style="margin-bottom:.85rem">
-            <div class="card-title">📈 Ingresos</div>
-            <div class="card-sub">Mayo 2026</div>
-          </div>
-          <div class="pl-row">
-            <span class="label">Ventas de productos</span>
-            <span class="pl-val pos">$284,500</span>
-          </div>
-          <div class="pl-row">
-            <span class="label">Servicios prestados</span>
-            <span class="pl-val pos">$142,000</span>
-          </div>
-          <div class="pl-row">
-            <span class="label">Otros ingresos</span>
-            <span class="pl-val pos">$18,200</span>
-          </div>
-          <div class="pl-row total">
-            <span class="label">Total Ingresos</span>
-            <span class="pl-val pos" style="font-size:1rem">$444,700</span>
-          </div>
-        </div>
-
-        <!-- Costos y Gastos -->
-        <div class="pl-section">
-          <div class="card-header" style="margin-bottom:.85rem">
-            <div class="card-title">📉 Costos y Gastos</div>
-            <div class="card-sub">Mayo 2026</div>
-          </div>
-          <div class="pl-row">
-            <span class="label">Costo de ventas (COGS)</span>
-            <span class="pl-val neg">-$183,400</span>
-          </div>
-          <div class="pl-row">
-            <span class="label">Nómina y RH</span>
-            <span class="pl-val neg">-$98,200</span>
-          </div>
-          <div class="pl-row">
-            <span class="label">Renta y servicios</span>
-            <span class="pl-val neg">-$24,500</span>
-          </div>
-          <div class="pl-row">
-            <span class="label">Marketing y ventas</span>
-            <span class="pl-val neg">-$18,900</span>
-          </div>
-          <div class="pl-row">
-            <span class="label">Otros gastos</span>
-            <span class="pl-val neg">-$8,300</span>
-          </div>
-          <div class="pl-row total">
-            <span class="label">Total Egresos</span>
-            <span class="pl-val neg" style="font-size:1rem">-$333,300</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Resultado final -->
+    <!-- Cuentas + Resumen 30d -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
       <div class="card">
-        <div class="card-header">
-          <div class="card-title">Resultado del período</div>
+        <div class="card-hdr">
+          <div class="card-ttl">🏦 Mis Cuentas</div>
+          <button class="card-act" onclick="showPage('accounts')">Ver todas →</button>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem">
-          <div style="text-align:center">
-            <div style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.5rem">Utilidad Bruta</div>
-            <div style="font-size:1.4rem;font-weight:900;color:var(--p)">$261,300</div>
-            <div style="font-size:.72rem;color:var(--muted)">Margen: 58.8%</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.5rem">EBITDA</div>
-            <div style="font-size:1.4rem;font-weight:900;color:var(--sec)">$156,800</div>
-            <div style="font-size:.72rem;color:var(--muted)">Margen: 35.3%</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.5rem">Utilidad Operativa</div>
-            <div style="font-size:1.4rem;font-weight:900;color:var(--sec)">$126,300</div>
-            <div style="font-size:.72rem;color:var(--muted)">Margen: 28.4%</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.5rem">Utilidad Neta</div>
-            <div style="font-size:1.4rem;font-weight:900;color:var(--p)">$111,400</div>
-            <div style="font-size:.72rem;color:var(--muted)">Margen: 25.1%</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ VIEW: CASHFLOW ═══════════════════════════════ -->
-    <div class="section-view" id="view-cashflow">
-      <div class="period-bar">
-        <h2>Flujo de Caja</h2>
-        <div class="period-tabs">
-          <div class="period-tab active">Este mes</div>
-          <div class="period-tab">Proyección 3m</div>
-          <div class="period-tab">Año</div>
-        </div>
-      </div>
-
-      <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
-        <div class="kpi-card green">
-          <div class="kpi-label">Entradas de efectivo</div>
-          <div class="kpi-value">$444,700</div>
-          <div class="kpi-sub"><span class="kpi-change up">+12.4%</span> vs mes anterior</div>
-        </div>
-        <div class="kpi-card red">
-          <div class="kpi-label">Salidas de efectivo</div>
-          <div class="kpi-value">$333,300</div>
-          <div class="kpi-sub"><span class="kpi-change down">+8.1%</span> vs mes anterior</div>
-        </div>
-        <div class="kpi-card green">
-          <div class="kpi-label">Flujo neto del mes</div>
-          <div class="kpi-value" style="color:var(--p)">+$111,400</div>
-          <div class="kpi-sub"><span class="kpi-change up">+22%</span> vs mes anterior</div>
-        </div>
-      </div>
-
-      <div class="charts-row">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Flujo de caja mensual</div>
-            <div class="card-sub">Últimos 6 meses</div>
-          </div>
-          <div class="chart-container">
-            <canvas id="cashflowChart"></canvas>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">Proyección 30 días</div>
-            <div class="card-sub">Basado en tendencias</div>
-          </div>
-          <div style="margin-top:.5rem">
-            <div class="cashflow-item">
-              <div class="cf-header">
-                <span class="cf-label">Cobros pendientes</span>
-                <span class="cf-value" style="color:var(--p)">+$128,400</span>
-              </div>
-              <div class="cashflow-bar"><div class="cashflow-fill" style="width:82%;background:var(--p)"></div></div>
-            </div>
-            <div class="cashflow-item">
-              <div class="cf-header">
-                <span class="cf-label">Pagos programados</span>
-                <span class="cf-value" style="color:var(--danger)">-$89,200</span>
-              </div>
-              <div class="cashflow-bar"><div class="cashflow-fill" style="width:57%;background:var(--danger)"></div></div>
-            </div>
-            <div class="cashflow-item">
-              <div class="cf-header">
-                <span class="cf-label">Nómina próxima</span>
-                <span class="cf-value" style="color:var(--warn)">-$49,100</span>
-              </div>
-              <div class="cashflow-bar"><div class="cashflow-fill" style="width:31%;background:var(--warn)"></div></div>
-            </div>
-            <div class="cashflow-item">
-              <div class="cf-header">
-                <span class="cf-label">Flujo proyectado</span>
-                <span class="cf-value" style="color:var(--p)">+$39,200</span>
-              </div>
-              <div class="cashflow-bar"><div class="cashflow-fill" style="width:25%;background:var(--sec)"></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Desglose operativo/inversion/financiamiento -->
-      <div class="pl-grid">
-        <div class="pl-section">
-          <div class="card-header" style="margin-bottom:.85rem">
-            <div class="card-title">⚙️ Flujo Operativo</div>
-          </div>
-          <div class="pl-row"><span class="label">Cobros a clientes</span><span class="pl-val pos">$444,700</span></div>
-          <div class="pl-row"><span class="label">Pagos a proveedores</span><span class="pl-val neg">-$183,400</span></div>
-          <div class="pl-row"><span class="label">Pago de nómina</span><span class="pl-val neg">-$98,200</span></div>
-          <div class="pl-row"><span class="label">Impuestos pagados</span><span class="pl-val neg">-$24,300</span></div>
-          <div class="pl-row total"><span class="label">Flujo Operativo</span><span class="pl-val pos">+$138,800</span></div>
-        </div>
-        <div class="pl-section">
-          <div class="card-header" style="margin-bottom:.85rem">
-            <div class="card-title">📦 Inversión y Financiamiento</div>
-          </div>
-          <div class="pl-row"><span class="label">Compra de activos</span><span class="pl-val neg">-$18,200</span></div>
-          <div class="pl-row"><span class="label">Equipos y tecnología</span><span class="pl-val neg">-$9,200</span></div>
-          <div class="pl-row"><span class="label">Pago de créditos</span><span class="pl-val neg">-$24,000</span></div>
-          <div class="pl-row"><span class="label">Intereses bancarios</span><span class="pl-val pos">+$3,200</span></div>
-          <div class="pl-row total"><span class="label">Flujo Neto Total</span><span class="pl-val pos" style="color:var(--p)">+$90,600</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ VIEW: BALANCE ════════════════════════════════ -->
-    <div class="section-view" id="view-balance">
-      <div class="period-bar">
-        <h2>Balance General</h2>
-        <div class="kpi-sub" style="font-size:.85rem;color:var(--muted)">Al 31 de mayo de 2026</div>
-      </div>
-      <div class="pl-grid">
-        <!-- ACTIVOS -->
-        <div class="pl-section">
-          <div class="card-header" style="margin-bottom:.85rem">
-            <div class="card-title">✅ Activos</div>
-          </div>
-          <div class="pl-row" style="font-weight:700;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;padding-bottom:.3rem"><span class="label">Activo Circulante</span></div>
-          <div class="pl-row"><span class="label" style="padding-left:.75rem">Efectivo y bancos</span><span class="pl-val neutral">$384,200</span></div>
-          <div class="pl-row"><span class="label" style="padding-left:.75rem">Cuentas por cobrar</span><span class="pl-val neutral">$128,400</span></div>
-          <div class="pl-row"><span class="label" style="padding-left:.75rem">Inventarios</span><span class="pl-val neutral">$89,600</span></div>
-          <div class="pl-row" style="font-weight:700;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;padding:.75rem 0 .3rem"><span class="label">Activo Fijo</span></div>
-          <div class="pl-row"><span class="label" style="padding-left:.75rem">Maquinaria y equipo</span><span class="pl-val neutral">$248,000</span></div>
-          <div class="pl-row"><span class="label" style="padding-left:.75rem">Inmuebles</span><span class="pl-val neutral">$1,200,000</span></div>
-          <div class="pl-row"><span class="label" style="padding-left:.75rem">Depreciación acum.</span><span class="pl-val neg">-$84,500</span></div>
-          <div class="pl-row total"><span class="label">TOTAL ACTIVOS</span><span class="pl-val pos" style="font-size:1rem">$1,965,700</span></div>
-        </div>
-        <!-- PASIVOS Y CAPITAL -->
-        <div class="pl-section">
-          <div class="card-header" style="margin-bottom:.85rem">
-            <div class="card-title">📋 Pasivos y Capital</div>
-          </div>
-          <div class="pl-row" style="font-weight:700;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;padding-bottom:.3rem"><span class="label">Pasivo Circulante</span></div>
-          <div class="pl-row"><span class="label" style="padding-left:.75rem">Cuentas por pagar</span><span class="pl-val neg">$94,200</span></div>
-          <div class="pl-row"><span class="label" style="padding-left:.75rem">IVA por pagar</span><span class="pl-val neg">$18,420</span></div>
-          <div class="pl-row"><span class="label" style="padding-left:.75rem">ISR por pagar</span><span class="pl-val neg">$14,800</span></div>
-          <div class="pl-row" style="font-weight:700;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;padding:.75rem 0 .3rem"><span class="label">Pasivo L/P y Capital</span></div>
-          <div class="pl-row"><span class="label" style="padding-left:.75rem">Crédito bancario</span><span class="pl-val neg">$480,000</span></div>
-          <div class="pl-row"><span class="label" style="padding-left:.75rem">Capital social</span><span class="pl-val neutral">$800,000</span></div>
-          <div class="pl-row"><span class="label" style="padding-left:.75rem">Utilidades retenidas</span><span class="pl-val pos">$558,280</span></div>
-          <div class="pl-row total"><span class="label">TOTAL PAS. + CAPITAL</span><span class="pl-val pos" style="font-size:1rem">$1,965,700</span></div>
-        </div>
+        <div id="accPreview"><div class="sk" style="height:56px;border-radius:9px;margin-bottom:.5rem"></div><div class="sk" style="height:56px;border-radius:9px"></div></div>
       </div>
       <div class="card">
-        <div class="card-header">
-          <div class="card-title">Indicadores financieros clave</div>
+        <div class="card-hdr">
+          <div class="card-ttl">📊 Últimos 30 días</div>
+          <button class="card-act" onclick="showPage('transactions')">Ver →</button>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem">
-          <div style="text-align:center">
-            <div style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.5rem">Razón Corriente</div>
-            <div style="font-size:1.4rem;font-weight:900;color:var(--p)">2.4x</div>
-            <div style="font-size:.72rem;color:var(--muted)">Ideal &gt; 1.5</div>
+        <div id="summary30d"><div class="sk" style="height:110px;border-radius:9px"></div></div>
+      </div>
+    </div>
+
+    <!-- Últimas transacciones -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-ttl">🕐 Últimas Transacciones</div>
+        <button class="card-act" onclick="openModal('txModal')">+ Nueva</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tx-tbl">
+          <thead><tr><th>Descripción</th><th>Categoría</th><th>Fuente</th><th>Fiscal</th><th>Fecha</th><th style="text-align:right">Monto</th></tr></thead>
+          <tbody id="recentTxBody">
+            <tr><td colspan="6"><div class="sk" style="height:36px;border-radius:7px;margin:.2rem 0"></div></td></tr>
+            <tr><td colspan="6"><div class="sk" style="height:36px;border-radius:7px;margin:.2rem 0"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /overview -->
+
+  <!-- ══ PAGE: Transactions ══════════════════════════════════ -->
+  <div class="page" id="page-transactions">
+    <div><div class="section-ttl">📊 Transacciones</div><div class="section-sub">Movimientos reales (Belvo) + fiscales (SAT)</div></div>
+    <div style="display:flex;gap:.65rem;flex-wrap:wrap;align-items:center">
+      <div class="tabs" id="txFilterTabs">
+        <button class="tab active" onclick="filterTx('all',this)">Todas</button>
+        <button class="tab" onclick="filterTx('ingreso',this)">Ingresos</button>
+        <button class="tab" onclick="filterTx('egreso',this)">Egresos</button>
+        <button class="tab" onclick="filterTx('fiscal',this)">Solo Fiscal</button>
+        <button class="tab" onclick="filterTx('belvo',this)">Solo Belvo</button>
+      </div>
+      <input type="month" id="txMonth" onchange="loadTx()"
+        style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.38rem .7rem;border-radius:8px;font-size:.8rem;font-family:'Inter',sans-serif;outline:none">
+      <div style="flex:1"></div>
+      <button class="tb-btn tb-primary" onclick="openModal('txModal')">+ Nueva</button>
+    </div>
+    <div class="card" style="padding:0;overflow-x:auto">
+      <table class="tx-tbl" id="txTable">
+        <thead><tr>
+          <th>Descripción</th><th>Cuenta</th><th>Categoría</th>
+          <th>Fuente</th><th>Fiscal</th><th>RFC Emisor</th><th>Fecha</th>
+          <th style="text-align:right">Monto</th><th></th>
+        </tr></thead>
+        <tbody id="txBody"><tr><td colspan="9" style="padding:2rem;text-align:center;color:var(--muted)">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: Accounts ══════════════════════════════════════ -->
+  <div class="page" id="page-accounts">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div class="section-ttl">🏦 Cuentas</div><div class="section-sub">Saldos Belvo: balance_available (disponible real)</div></div>
+      <button class="tb-btn tb-primary" onclick="openModal('accModal')">+ Nueva cuenta</button>
+    </div>
+    <div class="acc-grid" id="accGrid">
+      <div class="sk" style="height:130px;border-radius:12px"></div>
+      <div class="sk" style="height:130px;border-radius:12px"></div>
+    </div>
+    <div class="card" style="display:flex;gap:2rem;flex-wrap:wrap">
+      <div><div style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.35rem">Activos Disponibles</div><div style="font-size:1.8rem;font-weight:900;letter-spacing:-1px;color:var(--p)" id="totalAvail">—</div></div>
+      <div><div style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.35rem">Deuda Total (TDC+Loans)</div><div style="font-size:1.8rem;font-weight:900;letter-spacing:-1px;color:var(--err)" id="totalDebt">—</div></div>
+      <div><div style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.35rem">Patrimonio Neto</div><div style="font-size:1.8rem;font-weight:900;letter-spacing:-1px" id="netWorth">—</div></div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: Debts ══════════════════════════════════════════ -->
+  <div class="page" id="page-debts">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div class="section-ttl">💳 Deudas</div><div class="section-sub">TDC con fecha de corte + préstamos — datos de Belvo credit_data</div></div>
+      <button class="tb-btn tb-primary" onclick="openModal('debtModal')">+ Nueva deuda</button>
+    </div>
+    <div class="debt-list" id="debtList">
+      <div class="sk" style="height:76px;border-radius:12px"></div>
+      <div class="sk" style="height:76px;border-radius:12px;margin-top:.5rem"></div>
+    </div>
+    <div class="card">
+      <div class="card-ttl" style="margin-bottom:.9rem">Resumen de deudas</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem">
+        <div><div style="font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.3rem">Deuda Total</div><div style="font-size:1.45rem;font-weight:900;color:var(--err)" id="dTotal">—</div></div>
+        <div><div style="font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.3rem">Pagos este mes</div><div style="font-size:1.45rem;font-weight:900;color:var(--warn)" id="dMonthly">—</div></div>
+        <div><div style="font-size:.68rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.3rem">Tasa promedio</div><div style="font-size:1.45rem;font-weight:900" id="dRate">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: Taxes ══════════════════════════════════════════ -->
+  <div class="page" id="page-taxes">
+    <div><div class="section-ttl">🧾 SAT / Fiscal</div><div class="section-sub">IVA e ISR calculados de transacciones con is_fiscal=true y sat_uuid</div></div>
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-ttl">Reservas fiscales</div>
+        <button class="card-act" onclick="loadTaxes()">↺ Recalcular</button>
+      </div>
+      <div class="tax-grid" id="taxGrid"><div class="sk" style="height:170px;border-radius:12px"></div><div class="sk" style="height:170px;border-radius:12px"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-ttl" style="margin-bottom:.9rem">📄 Cobertura CFDI</div>
+      <div id="cfdiStats"><div class="sk" style="height:52px;border-radius:8px"></div></div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: NOVA IA ════════════════════════════════════════ -->
+  <div class="page" id="page-nova">
+    <div><div class="section-ttl">🤖 NOVA IA</div><div class="section-sub">Tu CFO Virtual con acceso a los datos de Belvo + SAT</div></div>
+    <div class="nova-card">
+      <div class="nova-glow"></div>
+      <div style="font-size:2rem;margin-bottom:.65rem">🤖</div>
+      <div style="font-size:1.15rem;font-weight:900;margin-bottom:.4rem">Conoce a <span style="background:linear-gradient(90deg,var(--p),var(--sec));-webkit-background-clip:text;-webkit-text-fill-color:transparent">NOVA</span></div>
+      <div style="font-size:.86rem;color:var(--muted);max-width:380px;margin:0 auto .1rem">Tu CFO virtual que analiza tus datos reales de Belvo, detecta fugas de dinero y te avisa antes de una fecha de corte o multa del SAT.</div>
+      <div class="nova-feats">
+        <div class="nova-feat">📊 <strong>Consultas naturales</strong> — "¿Cómo van mis ventas?"</div>
+        <div class="nova-feat">📅 <strong>Alerta de corte TDC</strong> — 5 días antes automático</div>
+        <div class="nova-feat">🧾 <strong>Foto ticket → CFDI</strong> — captura fiscal por WhatsApp</div>
+        <div class="nova-feat">🏦 <strong>Sync Belvo diario</strong> — saldos reales siempre frescos</div>
+      </div>
+      <div style="font-size:.77rem;color:var(--warn);font-weight:700;margin-bottom:1rem;padding:.45rem .9rem;background:rgba(245,158,11,.1);border-radius:8px;display:inline-block">🚀 Q3 2025 — Únete a la lista de espera</div>
+      <div style="display:flex;gap:.65rem;max-width:340px;margin:0 auto">
+        <input class="nova-input" type="email" id="novaEmail" placeholder="tu@empresa.com">
+        <button class="btn-nova" onclick="joinNova()">Quiero acceso →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: Integrations ════════════════════════════════════ -->
+  <div class="page" id="page-integrations">
+    <div><div class="section-ttl">🔗 Integraciones</div><div class="section-sub">Open Finance (Belvo) + SAT + importación manual</div></div>
+
+    <div class="card">
+      <div class="card-ttl" style="margin-bottom:.9rem">Open Banking México</div>
+      <div class="sync-list">
+        <div class="sync-item">
+          <div class="sync-ico">🟢</div>
+          <div class="sync-info">
+            <div class="sync-name">Belvo Open Finance</div>
+            <div class="sync-sub">BBVA, Nu, Santander, HSBC, Banamex, Banorte y +12 bancos · Entrega institution_name, balance_available, credit_data</div>
           </div>
-          <div style="text-align:center">
-            <div style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.5rem">Endeudamiento</div>
-            <div style="font-size:1.4rem;font-weight:900;color:var(--sec)">30.9%</div>
-            <div style="font-size:.72rem;color:var(--muted)">Pasivo / Activo</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.5rem">ROE</div>
-            <div style="font-size:1.4rem;font-weight:900;color:var(--p)">8.2%</div>
-            <div style="font-size:.72rem;color:var(--muted)">Retorno s/Capital</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.5rem">Capital de Trabajo</div>
-            <div style="font-size:1.4rem;font-weight:900;color:var(--p)">$474,780</div>
-            <div style="font-size:.72rem;color:var(--muted)">Activo circ - Pasivo circ</div>
-          </div>
+          <span class="sync-status avail">Disponible</span>
+          <button class="sync-btn" onclick="connectBelvo()">Conectar</button>
         </div>
       </div>
     </div>
 
-    <!-- ══ VIEW: ISR ════════════════════════════════════ -->
-    <div class="section-view" id="view-isr">
-      <div class="period-bar">
-        <h2>ISR / SAT — Fiscal 2026</h2>
-        <button class="btn-sm btn-outline">📥 Descargar declaración</button>
-      </div>
-
-      <div class="alert-card" style="margin-bottom:1.5rem">
-        <div class="alert-icon">⚠️</div>
-        <div class="alert-text">
-          <div class="title">Pago provisional ISR — vence 17 junio 2026</div>
-          <div class="desc">ISR estimado a pagar este período: <strong>$14,800 MXN</strong>. Asegúrate de presentar tu declaración a tiempo para evitar recargos.</div>
-        </div>
-      </div>
-
-      <div class="sat-grid">
-        <div class="sat-card">
-          <div class="sat-header">
-            <div class="sat-icon" style="background:rgba(0,212,170,.1)">📊</div>
-            <div>
-              <div class="sat-title">ISR Anual Acumulado</div>
-              <div class="sat-period">Enero–Mayo 2026</div>
-            </div>
+    <div class="card">
+      <div class="card-ttl" style="margin-bottom:.9rem">SAT — Servicio de Administración Tributaria</div>
+      <div class="sync-list">
+        <div class="sync-item">
+          <div class="sync-ico">🧾</div>
+          <div class="sync-info">
+            <div class="sync-name">Descarga masiva CFDI</div>
+            <div class="sync-sub">Importa facturas emitidas y recibidas — llena sat_uuid, rfc_emisor, rfc_receptor automáticamente</div>
           </div>
-          <div class="sat-amount">$68,400</div>
-          <div class="sat-status sat-ok">✓ Al corriente</div>
-          <div class="sat-progress">
-            <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:.35rem">
-              <span>Pagado</span><span>$53,600 / $68,400</span>
-            </div>
-            <div class="sat-pb"><div class="sat-pf" style="width:78%;background:var(--p)"></div></div>
-          </div>
-        </div>
-        <div class="sat-card">
-          <div class="sat-header">
-            <div class="sat-icon" style="background:rgba(245,158,11,.1)">🧾</div>
-            <div>
-              <div class="sat-title">IVA por Declarar</div>
-              <div class="sat-period">Mayo 2026</div>
-            </div>
-          </div>
-          <div class="sat-amount" style="color:var(--warn)">$18,420</div>
-          <div class="sat-status sat-warn">⏰ Vence 17 jun</div>
-          <div class="sat-progress">
-            <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:.35rem">
-              <span>IVA cobrado</span><span>$71,152</span>
-            </div>
-            <div class="sat-pb"><div class="sat-pf" style="width:100%;background:var(--warn)"></div></div>
-          </div>
-        </div>
-        <div class="sat-card">
-          <div class="sat-header">
-            <div class="sat-icon" style="background:rgba(99,102,241,.1)">📁</div>
-            <div>
-              <div class="sat-title">CFDI Emitidos</div>
-              <div class="sat-period">Mayo 2026</div>
-            </div>
-          </div>
-          <div class="sat-amount" style="color:var(--sec)">47</div>
-          <div class="sat-status sat-ok">✓ Timbrados SAT</div>
-          <div class="sat-progress">
-            <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:.35rem">
-              <span>Válidos</span><span>47 / 47</span>
-            </div>
-            <div class="sat-pb"><div class="sat-pf" style="width:100%;background:var(--sec)"></div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ISR table -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Cálculo ISR — Estimado Mayo 2026</div>
-          <div class="card-sub">Régimen: Personas Morales</div>
-        </div>
-        <div style="max-width:560px">
-          <div class="pl-row"><span class="label">Ingresos acumulables</span><span class="pl-val neutral">$444,700.00</span></div>
-          <div class="pl-row"><span class="label">Deducciones autorizadas</span><span class="pl-val neg">-$333,300.00</span></div>
-          <div class="pl-row"><span class="label">Resultado fiscal</span><span class="pl-val neutral">$111,400.00</span></div>
-          <div class="pl-row"><span class="label">Tasa ISR (30%)</span><span class="pl-val neg">$33,420.00</span></div>
-          <div class="pl-row"><span class="label">PTU estimada (10%)</span><span class="pl-val neg">-$11,140.00</span></div>
-          <div class="pl-row"><span class="label">ISR pagos previos</span><span class="pl-val neg">-$7,480.00</span></div>
-          <div class="pl-row total"><span class="label">ISR a pagar este período</span><span class="pl-val" style="color:var(--warn);font-size:1rem">$14,800.00</span></div>
+          <span class="sync-status avail">Disponible</span>
+          <button class="sync-btn" onclick="connectSAT()">Conectar RFC</button>
         </div>
       </div>
     </div>
 
-    <!-- ══ VIEW: IVA ════════════════════════════════════ -->
-    <div class="section-view" id="view-iva">
-      <div class="period-bar">
-        <h2>IVA — Declaración Mensual</h2>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Resumen IVA Mayo 2026</div>
-          <div class="card-sub">Tasa general 16%</div>
-        </div>
-        <div style="max-width:560px">
-          <div class="pl-row"><span class="label">Ingresos gravados (16%)</span><span class="pl-val neutral">$444,700.00</span></div>
-          <div class="pl-row"><span class="label">IVA trasladado (cobrado)</span><span class="pl-val pos">$71,152.00</span></div>
-          <div class="pl-row"><span class="label">IVA acreditable (pagado)</span><span class="pl-val neg">-$52,732.00</span></div>
-          <div class="pl-row total"><span class="label">IVA a pagar (a favor de SHCP)</span><span class="pl-val" style="color:var(--warn);font-size:1rem">$18,420.00</span></div>
-        </div>
-        <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border)">
-          <div class="alert-card" style="margin-bottom:0">
-            <div class="alert-icon">📅</div>
-            <div class="alert-text">
-              <div class="title">Fecha límite de pago: 17 de junio de 2026</div>
-              <div class="desc">Paga antes de esta fecha para evitar actualizaciones y recargos del SAT. Puedes pagar en línea en el portal del SAT con tu e.firma.</div>
-            </div>
+    <div class="card">
+      <div class="card-ttl" style="margin-bottom:.9rem">Importación Manual</div>
+      <div class="sync-list">
+        <div class="sync-item">
+          <div class="sync-ico">📄</div>
+          <div class="sync-info">
+            <div class="sync-name">PDF Estado de Cuenta</div>
+            <div class="sync-sub">OCR extrae transacciones — fuente = pdf_ocr</div>
           </div>
+          <span class="sync-status avail">Disponible</span>
+          <button class="sync-btn" onclick="toast('OCR próximamente','info')">Subir PDF</button>
+        </div>
+        <div class="sync-item">
+          <div class="sync-ico">📊</div>
+          <div class="sync-info"><div class="sync-name">CSV / Excel</div><div class="sync-sub">Exporta de tu banco e importa directo</div></div>
+          <span class="sync-status avail">Disponible</span>
+          <button class="sync-btn" onclick="toast('Importar CSV próximamente','info')">Importar</button>
         </div>
       </div>
     </div>
 
-    <!-- ══ VIEW: TRANSACCIONES ══════════════════════════ -->
-    <div class="section-view" id="view-transacciones">
-      <div class="period-bar">
-        <h2>Transacciones</h2>
-        <button class="btn-sm btn-outline">📥 Exportar CSV</button>
-        <button class="btn-sm btn-primary-sm">+ Nueva</button>
-      </div>
-      <div class="card">
-        <div class="tx-table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Descripción</th>
-                <th>Fecha</th>
-                <th>Categoría</th>
-                <th>Tipo</th>
-                <th style="text-align:right">Monto</th>
-              </tr>
-            </thead>
-            <tbody id="allTxBody">
-              <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem">Cargando...</td></tr>
-            </tbody>
-          </table>
-        </div>
+    <div class="card">
+      <div class="card-ttl" style="margin-bottom:.9rem">📋 Historial de sincronizaciones</div>
+      <div id="syncHist"><div class="empty"><div class="eico">🔄</div><div class="etxt">Sin sincronizaciones aún</div></div></div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: Alerts ═════════════════════════════════════════ -->
+  <div class="page" id="page-alerts">
+    <div><div class="section-ttl">🔔 Alertas</div><div class="section-sub">Fechas de corte, vencimientos SAT, runway crítico</div></div>
+    <div class="card">
+      <div class="alert-list" id="alertsList">
+        <div class="sk" style="height:56px;border-radius:9px"></div>
+        <div class="sk" style="height:56px;border-radius:9px;margin-top:.5rem"></div>
       </div>
     </div>
+  </div>
 
-    <!-- ══ VIEW: CUENTAS ════════════════════════════════ -->
-    <div class="section-view" id="view-cuentas">
-      <div class="period-bar">
-        <h2>Cuentas Bancarias</h2>
-        <button class="btn-sm btn-primary-sm">+ Conectar banco</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem">
-        <div class="card" style="background:linear-gradient(135deg,rgba(0,212,170,.12),rgba(99,102,241,.08));border-color:rgba(0,212,170,.2)">
-          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem">
-            <div style="width:40px;height:40px;background:rgba(0,212,170,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🏦</div>
-            <div>
-              <div style="font-weight:700;font-size:.9rem">BBVA México</div>
-              <div style="font-size:.75rem;color:var(--muted)">••••  ••••  4821</div>
-            </div>
-            <div style="margin-left:auto;background:rgba(0,212,170,.15);color:var(--p);font-size:.68rem;font-weight:700;padding:.2rem .6rem;border-radius:50px">Activa</div>
-          </div>
-          <div style="font-size:1.75rem;font-weight:900;letter-spacing:-1px;color:var(--p);margin-bottom:.25rem">$284,200</div>
-          <div style="font-size:.75rem;color:var(--muted)">Actualizado hace 2h</div>
-        </div>
-        <div class="card" style="background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(0,212,170,.05));border-color:rgba(99,102,241,.2)">
-          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem">
-            <div style="width:40px;height:40px;background:rgba(99,102,241,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🏛️</div>
-            <div>
-              <div style="font-weight:700;font-size:.9rem">Santander</div>
-              <div style="font-size:.75rem;color:var(--muted)">••••  ••••  9302</div>
-            </div>
-            <div style="margin-left:auto;background:rgba(99,102,241,.15);color:var(--sec);font-size:.68rem;font-weight:700;padding:.2rem .6rem;border-radius:50px">Activa</div>
-          </div>
-          <div style="font-size:1.75rem;font-weight:900;letter-spacing:-1px;color:var(--sec);margin-bottom:.25rem">$100,000</div>
-          <div style="font-size:.75rem;color:var(--muted)">Actualizado hace 4h</div>
-        </div>
-        <div class="card" style="border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='var(--p)'" onmouseout="this.style.borderColor=''">
-          <div style="font-size:2rem;margin-bottom:.5rem;opacity:.4">+</div>
-          <div style="font-size:.85rem;font-weight:600;color:var(--muted)">Conectar cuenta</div>
-          <div style="font-size:.75rem;color:var(--muted2);margin-top:.25rem">BBVA, Banamex, HSBC, Banorte...</div>
-        </div>
-      </div>
+  <!-- ══ PAGE: Settings ════════════════════════════════════════ -->
+  <div class="page" id="page-settings">
+    <div><div class="section-ttl">⚙️ Configuración</div><div class="section-sub">Perfil y empresa</div></div>
+    <div class="card" style="max-width:520px">
+      <div class="card-ttl" style="margin-bottom:1.35rem">Perfil</div>
+      <div class="fg"><label class="flbl">Nombre completo</label><input class="finp" id="sName" placeholder="Tu nombre"></div>
+      <div class="fg"><label class="flbl">Empresa</label><input class="finp" id="sCompany" placeholder="Nombre de tu empresa"></div>
+      <div class="fg"><label class="flbl">RFC</label><input class="finp" id="sRFC" placeholder="XAXX010101000" style="text-transform:uppercase"></div>
+      <div class="fg"><label class="flbl">Correo</label><input class="finp" id="sEmail" disabled></div>
+      <button class="btn-save" style="width:100%;margin-top:.25rem" onclick="saveProfile()">Guardar cambios</button>
     </div>
+  </div>
 
-    <!-- ══ VIEW: PROVEEDORES ════════════════════════════ -->
-    <div class="section-view" id="view-proveedores">
-      <div class="period-bar">
-        <h2>Proveedores</h2>
-        <button class="btn-sm btn-primary-sm">+ Nuevo proveedor</button>
-      </div>
-      <div class="card">
-        <div class="empty-state">
-          <div class="icon">📦</div>
-          <div class="title">Añade tus proveedores</div>
-          <div class="desc">Registra tus proveedores para llevar control de cuentas por pagar y automatizar tu contabilidad.</div>
-          <button class="btn-sm btn-primary-sm">+ Agregar primer proveedor</button>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /content -->
 </div><!-- /main -->
+
+
+<!-- ══ MODAL: Nueva Transacción ════════════════════════════ -->
+<div class="overlay" id="txModal">
+  <div class="modal">
+    <div class="modal-ttl">📊 Nueva Transacción</div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Tipo</label>
+        <select class="fsel" id="txType">
+          <option value="ingreso">💰 Ingreso</option>
+          <option value="egreso" selected>💸 Egreso</option>
+          <option value="transferencia">🔄 Transferencia</option>
+        </select>
+      </div>
+      <div class="fg"><label class="flbl">Monto (MXN)</label><input class="finp" type="number" id="txAmt" placeholder="0.00" min="0" step="0.01"></div>
+    </div>
+    <div class="fg"><label class="flbl">Descripción</label><input class="finp" id="txDesc" placeholder="Ej. Pago nómina enero"></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Categoría Belvo</label>
+        <select class="fsel" id="txCat">
+          <option value="">Sin categoría</option>
+          <optgroup label="Belvo (automático)">
+            <option>Income</option><option>Shopping</option><option>Food & Groceries</option>
+            <option>Bills & Utilities</option><option>Transportation</option>
+            <option>Entertainment</option><option>Transfer</option><option>Tax</option>
+            <option>Home & Life</option><option>Personal Care</option>
+            <option>Travel & Vacation</option><option>Uncategorized</option>
+          </optgroup>
+          <optgroup label="Manual">
+            <option>Nómina</option><option>Proveedores</option><option>Renta</option>
+            <option>Publicidad</option><option>Servicios</option><option>Préstamo pago</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="fg"><label class="flbl">Fecha</label><input class="finp" type="date" id="txDate"></div>
+    </div>
+    <div class="fg"><label class="flbl">Cuenta</label>
+      <select class="fsel" id="txAcct"><option value="">Sin cuenta específica</option></select>
+    </div>
+    <div class="fg">
+      <label class="fcheck"><input type="checkbox" id="txFiscal" onchange="toggleFiscal()"> Tiene CFDI / Factura fiscal</label>
+    </div>
+    <div id="fiscalFields" style="display:none">
+      <div class="frow">
+        <div class="fg"><label class="flbl">SAT UUID (folio fiscal)</label><input class="finp" id="txSatUUID" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>
+        <div class="fg"><label class="flbl">IVA incluido (MXN)</label><input class="finp" type="number" id="txIva" placeholder="0.00" step="0.01" min="0"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">RFC Emisor</label><input class="finp" id="txRFCEmisor" placeholder="ABC000101XYZ" style="text-transform:uppercase"></div>
+        <div class="fg"><label class="flbl">RFC Receptor</label><input class="finp" id="txRFCReceptor" placeholder="Tu RFC" style="text-transform:uppercase"></div>
+      </div>
+    </div>
+    <div class="fg"><label class="flbl">Notas</label><input class="finp" id="txNotes" placeholder="Información adicional"></div>
+    <div class="mod-footer">
+      <button class="btn-cancel" onclick="closeModal('txModal')">Cancelar</button>
+      <button class="btn-save" id="txSaveBtn" onclick="saveTx()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Nueva Cuenta ══════════════════════════════════ -->
+<div class="overlay" id="accModal">
+  <div class="modal">
+    <div class="modal-ttl">🏦 Nueva Cuenta</div>
+    <div class="fg"><label class="flbl">Nombre de la cuenta</label><input class="finp" id="accName" placeholder="Ej. BBVA Nómina Principal"></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Tipo (Belvo)</label>
+        <select class="fsel" id="accType">
+          <option value="CHECKING">🏦 CHECKING — Cheques / Débito</option>
+          <option value="SAVINGS">💰 SAVINGS — Ahorro</option>
+          <option value="CREDIT_CARD">💳 CREDIT_CARD — Tarjeta crédito</option>
+          <option value="LOAN">🏛️ LOAN — Préstamo</option>
+          <option value="INVESTMENT">📈 INVESTMENT — CETES / Fondos</option>
+          <option value="CASH">💵 CASH — Efectivo</option>
+        </select>
+      </div>
+      <div class="fg"><label class="flbl">Institución (institution_name)</label><input class="finp" id="accInst" placeholder="BBVA, Nu, Banamex..."></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Saldo disponible (balance_available)</label><input class="finp" type="number" id="accAvail" placeholder="0.00" step="0.01"></div>
+      <div class="fg"><label class="flbl">Saldo actual (balance_current)</label><input class="finp" type="number" id="accCurrent" placeholder="0.00" step="0.01"></div>
+    </div>
+    <div class="fg"><label class="flbl">Últimos 4 dígitos</label><input class="finp" id="accLast4" placeholder="1234" maxlength="4"></div>
+    <div class="mod-footer">
+      <button class="btn-cancel" onclick="closeModal('accModal')">Cancelar</button>
+      <button class="btn-save" id="accSaveBtn" onclick="saveAcc()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Nueva Deuda ═══════════════════════════════════ -->
+<div class="overlay" id="debtModal">
+  <div class="modal">
+    <div class="modal-ttl">💳 Nueva Deuda</div>
+    <div class="fg"><label class="flbl">Nombre</label><input class="finp" id="dName" placeholder="Ej. TDC BBVA Azul"></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Tipo</label>
+        <select class="fsel" id="dType">
+          <option value="credit_card">💳 Tarjeta de crédito</option>
+          <option value="bank_loan">🏦 Préstamo bancario</option>
+          <option value="personal_loan">👤 Préstamo personal</option>
+          <option value="supplier_credit">🤝 Crédito proveedor</option>
+          <option value="tax_debt">🧾 Deuda SAT</option>
+          <option value="other">📋 Otro</option>
+        </select>
+      </div>
+      <div class="fg"><label class="flbl">Institución</label><input class="finp" id="dInst" placeholder="BBVA, Banamex..."></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Saldo actual (outstanding)</label><input class="finp" type="number" id="dBalance" placeholder="0.00" step="0.01" min="0"></div>
+      <div class="fg"><label class="flbl">Pago mínimo (minimum_payment)</label><input class="finp" type="number" id="dMin" placeholder="0.00" step="0.01" min="0"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Tasa anual % (interest_rate)</label><input class="finp" type="number" id="dRate" placeholder="24.0" step="0.1" min="0"></div>
+      <div class="fg">
+        <label class="flbl">Fecha de corte (cutting_date) ⚠️</label>
+        <input class="finp" type="date" id="dCutDate">
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Próxima fecha pago (next_payment_date)</label><input class="finp" type="date" id="dNextPay"></div>
+      <div class="fg"><label class="flbl">Último pago (last_payment_date)</label><input class="finp" type="date" id="dLastPay"></div>
+    </div>
+    <div class="mod-footer">
+      <button class="btn-cancel" onclick="closeModal('debtModal')">Cancelar</button>
+      <button class="btn-save" id="dSaveBtn" onclick="saveDebt()">Guardar</button>
+    </div>
+  </div>
+</div>
 
 <script src="/assets/app.js"></script>
 <script>
-// ── AUTH GUARD ────────────────────────────────────────────
-let currentUser = null;
-let currentProfile = null;
+// ============================================================
+// FinancialOS Dashboard — Belvo Compatible v2.1
+// Columnas: institution_name, balance_available, balance_current
+//           cutting_date, last_payment_date, sat_uuid,
+//           rfc_emisor, rfc_receptor, is_fiscal
+// ============================================================
 
+let _user = null, _profile = null;
+let _accounts = [], _debts = [], _txFilter = 'all';
+
+// ── Init ──────────────────────────────────────────────────────
 (async () => {
   const session = await requireAuth('/login');
   if (!session) return;
-  currentUser = session.user;
-  currentProfile = await getProfile(currentUser.id);
-  initUI();
-  loadDashboard();
+  _user = session.user;
+
+  try { _profile = await getProfile(_user.id); } catch(e) {}
+
+  const name    = _profile?.full_name || _user.email?.split('@')[0] || 'Usuario';
+  const company = _profile?.company_name || '';
+  const plan    = _profile?.plan || 'free';
+
+  document.getElementById('userAv').textContent    = name.slice(0,2).toUpperCase();
+  document.getElementById('userName').textContent  = name;
+  document.getElementById('userPlan').textContent  = PLANS[plan]?.name || 'Trial';
+
+  // Settings prefill
+  document.getElementById('sName').value    = _profile?.full_name    || '';
+  document.getElementById('sCompany').value = _profile?.company_name || '';
+  document.getElementById('sRFC').value     = _profile?.rfc          || '';
+  document.getElementById('sEmail').value   = _user.email            || '';
+
+  // Date defaults
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('txDate').value   = today;
+  document.getElementById('dNextPay').value = today;
+  const m = new Date(); document.getElementById('txMonth').value =
+    `${m.getFullYear()}-${String(m.getMonth()+1).padStart(2,'0')}`;
+
+  // Load data
+  await Promise.all([loadAccounts(), loadDebts()]);
+  await loadMetrics();
+  loadRecentTx();
+
+  // Realtime
+  subscribeToTable('transactions', () => { loadMetrics(); loadRecentTx(); });
+  subscribeToTable('accounts',     () => loadAccounts());
+  subscribeToTable('debts',        () => loadDebts());
+  subscribeToTable('alerts',       () => loadAlerts());
 })();
 
-function initUI() {
-  // Greeting
-  const h = new Date().getHours();
-  const greeting = h < 12 ? 'Buenos días' : h < 18 ? 'Buenas tardes' : 'Buenas noches';
-  const name = currentProfile?.full_name?.split(' ')[0] || '';
-  document.getElementById('greetingTitle').textContent = `${greeting}${name ? ', ' + name : ''} 👋`;
-
-  // Sidebar user info
-  const initials = (currentProfile?.full_name || currentUser.email || '?')
-    .split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('userAvatarSidebar').textContent = initials;
-  document.getElementById('userNameSidebar').textContent = currentProfile?.full_name || currentUser.email;
-  const planLabel = { basico:'Plan Básico', pro:'Plan Pro', empresa:'Plan Empresa', free:'Prueba gratuita' };
-  document.getElementById('userPlanSidebar').textContent = planLabel[currentProfile?.plan] || 'Trial';
-
-  // Trial banner
-  if (currentProfile?.subscription_status === 'trial' && currentProfile?.trial_ends_at) {
-    const days = Math.max(0, Math.ceil((new Date(currentProfile.trial_ends_at) - Date.now()) / 86400000));
-    document.getElementById('trialDays').textContent = `${days} día${days !== 1 ? 's' : ''} restante${days !== 1 ? 's' : ''}`;
-    document.getElementById('trialBanner').style.display = 'flex';
-    document.getElementById('upgradeBanner').style.display = 'flex';
-  }
-
-  // Period label
-  const now = new Date();
-  document.getElementById('pagePeriod').textContent = now.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
-}
-
-// ── DASHBOARD DATA ────────────────────────────────────────
-async function loadDashboard() {
-  // Mock data (replace with real Supabase queries)
-  const data = {
-    ingresos: 444700, ingresosChange: 12.4,
-    gastos: 333300, gastosChange: 8.1,
-    utilidad: 111400, margenNeto: 25.1,
-    saldo: 384200
-  };
-
-  document.getElementById('kpiIngresos').textContent = fmt(data.ingresos);
-  document.getElementById('kpiIngresosChange').textContent = `+${data.ingresosChange}%`;
-  document.getElementById('kpiGastos').textContent = fmt(data.gastos);
-  document.getElementById('kpiGastosChange').textContent = `+${data.gastosChange}%`;
-  document.getElementById('kpiUtilidad').textContent = fmt(data.utilidad);
-  document.getElementById('kpiUtilidadChange').textContent = `${data.margenNeto}%`;
-  document.getElementById('kpiSaldo').textContent = fmt(data.saldo);
-
-  renderCharts();
-  renderTransactions();
-}
-
-// ── CHARTS ────────────────────────────────────────────────
-function renderCharts() {
-  // Revenue vs Expenses chart
-  const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-  if (window._revenueChart) window._revenueChart.destroy();
-
-  const gradient1 = revenueCtx.createLinearGradient(0, 0, 0, 200);
-  gradient1.addColorStop(0, 'rgba(0,212,170,.3)');
-  gradient1.addColorStop(1, 'rgba(0,212,170,0)');
-
-  const gradient2 = revenueCtx.createLinearGradient(0, 0, 0, 200);
-  gradient2.addColorStop(0, 'rgba(244,63,94,.2)');
-  gradient2.addColorStop(1, 'rgba(244,63,94,0)');
-
-  window._revenueChart = new Chart(revenueCtx, {
-    type: 'line',
-    data: {
-      labels: ['Dic', 'Ene', 'Feb', 'Mar', 'Abr', 'May'],
-      datasets: [
-        {
-          label: 'Ingresos',
-          data: [380000, 395000, 412000, 398000, 425000, 444700],
-          borderColor: '#00d4aa',
-          backgroundColor: gradient1,
-          borderWidth: 2,
-          fill: true,
-          tension: .4,
-          pointRadius: 4,
-          pointBackgroundColor: '#00d4aa',
-          pointBorderColor: '#0d1526',
-          pointBorderWidth: 2
-        },
-        {
-          label: 'Gastos',
-          data: [320000, 298000, 315000, 308000, 322000, 333300],
-          borderColor: '#f43f5e',
-          backgroundColor: gradient2,
-          borderWidth: 2,
-          fill: true,
-          tension: .4,
-          pointRadius: 4,
-          pointBackgroundColor: '#f43f5e',
-          pointBorderColor: '#0d1526',
-          pointBorderWidth: 2
-        }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: {
-        backgroundColor: '#0d1526',
-        borderColor: 'rgba(255,255,255,.1)',
-        borderWidth: 1,
-        titleColor: '#f0f4f8',
-        bodyColor: 'rgba(240,244,248,.6)',
-        padding: 10,
-        callbacks: {
-          label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}`
-        }
-      }},
-      scales: {
-        x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: 'rgba(240,244,248,.5)', font: { size: 11 } } },
-        y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: {
-          color: 'rgba(240,244,248,.5)', font: { size: 11 },
-          callback: v => '$' + (v >= 1000000 ? (v/1000000).toFixed(1)+'M' : (v/1000).toFixed(0)+'k')
-        }}
-      }
-    }
+// ── Navigation ────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById(`page-${id}`);
+  if (pg) pg.classList.add('active');
+  document.querySelectorAll('.ni').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(`'${id}'`)) n.classList.add('active');
   });
-
-  // Expense donut chart
-  const expCtx = document.getElementById('expenseChart').getContext('2d');
-  if (window._expChart) window._expChart.destroy();
-
-  const expData = [
-    { label: 'COGS', value: 183400, color: '#f43f5e' },
-    { label: 'Nómina', value: 98200, color: '#6366f1' },
-    { label: 'Renta', value: 24500, color: '#f59e0b' },
-    { label: 'Marketing', value: 18900, color: '#00d4aa' },
-    { label: 'Otros', value: 8300, color: '#94a3b8' }
-  ];
-
-  window._expChart = new Chart(expCtx, {
-    type: 'doughnut',
-    data: {
-      labels: expData.map(d => d.label),
-      datasets: [{ data: expData.map(d => d.value), backgroundColor: expData.map(d => d.color), borderWidth: 0, hoverOffset: 4 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      cutout: '70%',
-      plugins: { legend: { display: false }, tooltip: {
-        backgroundColor: '#0d1526',
-        borderColor: 'rgba(255,255,255,.1)',
-        borderWidth: 1,
-        callbacks: { label: ctx => ` ${ctx.label}: ${fmt(ctx.raw)}` }
-      }}
-    }
-  });
-
-  // Legend
-  const total = expData.reduce((s, d) => s + d.value, 0);
-  document.getElementById('expenseLegend').innerHTML = expData.map(d =>
-    `<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem;font-size:.75rem">
-      <div style="width:8px;height:8px;border-radius:2px;background:${d.color};flex-shrink:0"></div>
-      <span style="flex:1;color:var(--muted)">${d.label}</span>
-      <span style="font-weight:600">${Math.round(d.value/total*100)}%</span>
-    </div>`
-  ).join('');
-
-  // Cashflow chart
-  const cfCtx = document.getElementById('cashflowChart');
-  if (!cfCtx) return;
-  if (window._cfChart) window._cfChart.destroy();
-  window._cfChart = new Chart(cfCtx.getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: ['Dic', 'Ene', 'Feb', 'Mar', 'Abr', 'May'],
-      datasets: [
-        { label: 'Entradas', data: [380000, 395000, 412000, 398000, 425000, 444700], backgroundColor: 'rgba(0,212,170,.6)', borderRadius: 4 },
-        { label: 'Salidas', data: [320000, 298000, 315000, 308000, 322000, 333300], backgroundColor: 'rgba(244,63,94,.5)', borderRadius: 4 }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: {
-        backgroundColor: '#0d1526',
-        borderColor: 'rgba(255,255,255,.1)',
-        borderWidth: 1,
-        callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}` }
-      }},
-      scales: {
-        x: { grid: { display: false }, ticks: { color: 'rgba(240,244,248,.5)', font: { size: 11 } } },
-        y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: {
-          color: 'rgba(240,244,248,.5)', font: { size: 11 },
-          callback: v => '$' + (v/1000).toFixed(0) + 'k'
-        }}
-      }
-    }
-  });
-}
-
-// ── TRANSACTIONS ───────────────────────────────────────────
-const mockTx = [
-  { desc: 'Pago cliente Grupo Alfa', date: '2026-05-28', cat: 'Venta', type: 'ingreso', amount: 84500 },
-  { desc: 'Nómina quincenal', date: '2026-05-25', cat: 'RH', type: 'egreso', amount: -49100 },
-  { desc: 'Factura proveedor Logística MX', date: '2026-05-24', cat: 'Operación', type: 'egreso', amount: -18200 },
-  { desc: 'Depósito Constructora del Norte', date: '2026-05-22', cat: 'Venta', type: 'ingreso', amount: 62000 },
-  { desc: 'Renta oficinas mayo', date: '2026-05-20', cat: 'Renta', type: 'egreso', amount: -24500 },
-  { desc: 'Servicio consultoría estratégica', date: '2026-05-19', cat: 'Servicio', type: 'ingreso', amount: 38000 },
-  { desc: 'Compra insumos producción', date: '2026-05-18', cat: 'Inventario', type: 'egreso', amount: -31400 },
-  { desc: 'Anticipo Proyecto Monterrey', date: '2026-05-15', cat: 'Venta', type: 'ingreso', amount: 95000 },
-  { desc: 'Publicidad Google Ads', date: '2026-05-14', cat: 'Marketing', type: 'egreso', amount: -12800 },
-  { desc: 'Pago ISR abril', date: '2026-05-10', cat: 'Fiscal', type: 'egreso', amount: -14800 },
-];
-
-function renderTransactions() {
-  const tbody = document.getElementById('recentTxBody');
-  const allTbody = document.getElementById('allTxBody');
-  const recent = mockTx.slice(0,5);
-
-  tbody.innerHTML = recent.map(tx => `
-    <tr>
-      <td style="font-weight:500">${tx.desc}</td>
-      <td style="color:var(--muted)">${fmtDate(tx.date)}</td>
-      <td><span class="tx-badge tx-${tx.type}">${tx.type === 'ingreso' ? 'Ingreso' : 'Egreso'}</span></td>
-      <td style="text-align:right" class="tx-amount ${tx.amount > 0 ? 'pos' : 'neg'}">${fmt(Math.abs(tx.amount))}</td>
-    </tr>
-  `).join('');
-
-  allTbody.innerHTML = mockTx.map(tx => `
-    <tr>
-      <td style="font-weight:500">${tx.desc}</td>
-      <td style="color:var(--muted)">${fmtDate(tx.date)}</td>
-      <td style="color:var(--muted)">${tx.cat}</td>
-      <td><span class="tx-badge tx-${tx.type}">${tx.type === 'ingreso' ? 'Ingreso' : 'Egreso'}</span></td>
-      <td style="text-align:right" class="tx-amount ${tx.amount > 0 ? 'pos' : 'neg'}">${fmt(Math.abs(tx.amount))}</td>
-    </tr>
-  `).join('');
-}
-
-// ── NAVIGATION ─────────────────────────────────────────────
-function showView(viewId, el) {
-  document.querySelectorAll('.section-view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const view = document.getElementById('view-' + viewId);
-  if (view) view.classList.add('active');
-  if (el) el.classList.add('active');
-  else {
-    const target = document.querySelector(`[data-view="${viewId}"]`);
-    if (target) target.classList.add('active');
-  }
   const titles = {
-    resumen:'Resumen', pyg:'P&G / Resultados', cashflow:'Flujo de Caja',
-    balance:'Balance General', isr:'ISR / SAT', iva:'IVA',
-    transacciones:'Transacciones', cuentas:'Cuentas Bancarias', proveedores:'Proveedores'
+    overview:     ['⚡ One-Minute Check', '— Tu salud financiera al instante'],
+    transactions: ['📊 Transacciones',    '— Belvo + SAT unificados'],
+    accounts:     ['🏦 Cuentas',          '— balance_available en tiempo real'],
+    debts:        ['💳 Deudas',           '— credit_data de Belvo'],
+    taxes:        ['🧾 SAT / Fiscal',     '— IVA e ISR automáticos'],
+    nova:         ['🤖 NOVA IA',          '— CFO Virtual'],
+    integrations: ['🔗 Integraciones',    '— Open Banking & SAT'],
+    alerts:       ['🔔 Alertas',          ''],
+    settings:     ['⚙️ Configuración',    '']
   };
-  document.getElementById('pageTitle').textContent = titles[viewId] || viewId;
+  const t = titles[id] || [id, ''];
+  document.getElementById('topbarTitle').innerHTML =
+    `${t[0]} <span class="topbar-sub">${t[1]}</span>`;
 
-  // Re-render charts when switching to cashflow
-  if (viewId === 'cashflow') {
-    setTimeout(renderCharts, 50);
+  if (id === 'transactions') loadTx();
+  if (id === 'accounts')     renderAccounts();
+  if (id === 'debts')        renderDebts();
+  if (id === 'taxes')        loadTaxes();
+  if (id === 'alerts')       loadAlerts();
+  if (id === 'integrations') loadSyncHist();
+}
+
+// ── Metrics ───────────────────────────────────────────────────
+async function loadMetrics() {
+  try {
+    const { data, error } = await db.rpc('get_liquidity_metrics', { p_user_id: _user.id });
+    if (error || !data) { fallbackMetrics(); return; }
+    renderMetrics(data);
+  } catch(e) { fallbackMetrics(); }
+}
+
+function renderMetrics(m) {
+  const semColor = { green: 'var(--ok)', yellow: 'var(--warn)', red: 'var(--err)' }[m.semaforo];
+
+  // KPI 1: Caja Libre
+  const liqEl = document.getElementById('kpiLiq');
+  liqEl.className = `kpi-val ${m.caja_libre >= 0 ? 'c-green' : 'c-red'}`;
+  liqEl.textContent = fmt(m.caja_libre);
+  document.getElementById('kpiLiqSub').innerHTML =
+    `Disponible: <strong>${fmt(m.caja_total)}</strong>` +
+    (m.debts_30d > 0   ? ` − Deudas 30d: ${fmt(m.debts_30d)}`          : '') +
+    (m.cutting_reserve > 0 ? ` − Corte TDC: ${fmt(m.cutting_reserve)}`  : '') +
+    (m.tax_pending > 0 ? ` − SAT: ${fmt(m.tax_pending)}`                : '');
+
+  const rPct = Math.min(100, (m.runway_days / 180) * 100);
+  const rColor = m.runway_days < 30 ? 'var(--err)' : m.runway_days < 90 ? 'var(--warn)' : 'var(--p)';
+  document.getElementById('runwayFill').style.cssText = `width:${rPct}%;background:${rColor}`;
+  document.getElementById('runwayTxt').innerHTML =
+    m.runway_days >= 999
+      ? '<span style="color:var(--p)">∞ Sin egresos registrados</span>'
+      : `<span style="color:${rColor};font-weight:700">${m.runway_days} días de runway</span>`;
+  document.getElementById('kpiLiqCard').className = `kpi ${m.caja_libre < 0 ? 'red' : 'green'}`;
+
+  // KPI 2: Margen
+  const marEl = document.getElementById('kpiMar');
+  const marColor = m.margen_neto >= 15 ? 'c-green' : m.margen_neto >= 0 ? 'c-yellow' : 'c-red';
+  marEl.className = `kpi-val ${marColor}`;
+  marEl.textContent = m.margen_neto.toFixed(1) + '%';
+  document.getElementById('kpiMarSub').textContent =
+    `Ingresos: ${fmt(m.income_30d)} · Egresos: ${fmt(m.expense_30d)}`;
+  document.getElementById('marChips').innerHTML =
+    `<span class="chip" style="background:${m.margen_neto >= 0 ? 'rgba(16,185,129,.12)' : 'rgba(244,63,94,.1)'};color:${m.margen_neto >= 0 ? 'var(--ok)' : 'var(--err)'};border-color:transparent">
+      ${m.margen_neto >= 0 ? '▲' : '▼'} ${Math.abs(m.margen_neto).toFixed(1)}% últimos 30d</span>` +
+    `<span class="chip" style="background:rgba(255,255,255,.05);color:var(--muted);border-color:transparent">
+      Burn: ${fmt(m.burn_rate)}/mes</span>`;
+  document.getElementById('kpiMarCard').className = `kpi ${m.margen_neto >= 15 ? 'green' : m.margen_neto >= 0 ? 'yellow' : 'red'}`;
+
+  // KPI 3: Semáforo
+  const semLabels = { green: 'SALUDABLE', yellow: 'ATENCIÓN', red: 'ALERTA CRÍTICA' };
+  const semMsgs   = { green: 'Finanzas bajo control.', yellow: 'Hay áreas que requieren atención.', red: '¡Acción inmediata requerida!' };
+  document.getElementById('semRow').className = '';
+  document.getElementById('semRow').innerHTML =
+    `<div class="sem-row"><div class="sem-light ${m.semaforo}"></div>
+    <div class="sem-txt" style="color:${semColor}">${semLabels[m.semaforo]}</div></div>`;
+  document.getElementById('kpiSemSub').textContent = semMsgs[m.semaforo];
+  document.getElementById('kpiSemCard').className = `kpi ${m.semaforo}`;
+
+  // Alert chips
+  const chips = [];
+  if (m.runway_days < 30 && m.runway_days < 999)
+    chips.push({ t: `⚠️ Runway ${m.runway_days}d`, c: 'var(--err)' });
+  if (m.cutting_reserve > 0)
+    chips.push({ t: `📅 Corte TDC: ${fmt(m.cutting_reserve)}`, c: 'var(--warn)' });
+  if (m.tax_pending > 0)
+    chips.push({ t: `🧾 SAT: ${fmt(m.tax_pending)}`, c: 'var(--warn)' });
+  if (m.caja_libre < 0)
+    chips.push({ t: '🔴 Caja libre negativa', c: 'var(--err)' });
+  document.getElementById('alertChips').innerHTML = chips.length
+    ? chips.map(c => `<span class="chip" style="background:${c.c}22;color:${c.c};border-color:${c.c}44">${c.t}</span>`).join('')
+    : `<span style="font-size:.75rem;color:var(--ok);font-weight:600">✓ Sin alertas activas</span>`;
+  document.getElementById('notifDot').style.display = chips.length ? 'block' : 'none';
+
+  // Summary 30d
+  const pct = m.income_30d > 0 ? Math.min(100, (m.expense_30d / m.income_30d) * 100) : 0;
+  const util = m.income_30d - m.expense_30d;
+  document.getElementById('summary30d').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:.75rem">
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.3rem">
+          <span style="color:var(--ok);font-weight:700">↑ Ingresos</span>
+          <span style="font-weight:700">${fmt(m.income_30d)}</span>
+        </div>
+        <div style="height:5px;background:rgba(255,255,255,.06);border-radius:50px">
+          <div style="width:100%;height:100%;background:var(--ok);border-radius:50px"></div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.3rem">
+          <span style="color:var(--err);font-weight:700">↓ Egresos</span>
+          <span style="font-weight:700">${fmt(m.expense_30d)}</span>
+        </div>
+        <div style="height:5px;background:rgba(255,255,255,.06);border-radius:50px">
+          <div style="width:${pct}%;height:100%;background:var(--err);border-radius:50px;transition:width .8s"></div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-top:.6rem;border-top:1px solid var(--border)">
+        <span style="font-size:.8rem;color:var(--muted)">Utilidad neta</span>
+        <span style="font-size:.95rem;font-weight:800;color:${util >= 0 ? 'var(--ok)' : 'var(--err)'}">${fmt(util)}</span>
+      </div>
+    </div>`;
+
+  // Alert banners for critical
+  loadAlertBanners(m);
+}
+
+function fallbackMetrics() {
+  // Client-side calculation from loaded accounts
+  const liq = _accounts.filter(a => ['CHECKING','SAVINGS','CASH','INVESTMENT'].includes(a.type))
+                        .reduce((s,a) => s + (a.balance_available || a.balance_current || 0), 0);
+  document.getElementById('kpiLiq').className = 'kpi-val c-green';
+  document.getElementById('kpiLiq').textContent = fmt(liq);
+  document.getElementById('kpiLiqSub').textContent = 'Suma de balance_available de cuentas líquidas';
+  document.getElementById('runwayTxt').textContent = 'Agrega transacciones para calcular runway';
+  document.getElementById('kpiMar').className = 'kpi-val c-yellow';
+  document.getElementById('kpiMar').textContent = '—';
+  document.getElementById('kpiMarSub').textContent = 'Sin datos de flujo todavía';
+  document.getElementById('semRow').innerHTML =
+    `<div class="sem-row"><div class="sem-light green"></div><div class="sem-txt" style="color:var(--ok)">INICIANDO</div></div>`;
+  document.getElementById('kpiSemSub').textContent = 'Agrega cuentas y transacciones para activar.';
+}
+
+function loadAlertBanners(m) {
+  const banners = [];
+  if (m.cutting_reserve > 0 && m.semaforo !== 'green')
+    banners.push({ sev:'warning', ico:'📅', ttl:`Fecha de corte TDC en los próximos 7 días`, msg:`Reservar ${fmt(m.cutting_reserve)} para el pago` });
+  if (m.caja_libre < 0)
+    banners.push({ sev:'critical', ico:'🔴', ttl:'Caja libre negativa', msg:'Tus compromisos superan tu liquidez disponible' });
+  if (m.runway_days < 30 && m.runway_days < 999)
+    banners.push({ sev:'critical', ico:'⚠️', ttl:`Runway crítico: ${m.runway_days} días de vida`, msg:'Reduce gastos o aumenta ingresos inmediatamente' });
+  document.getElementById('alertBanners').innerHTML = banners.length
+    ? `<div class="alert-list">${banners.map(b => `
+        <div class="alert-item ${b.sev}">
+          <span>${b.ico}</span>
+          <div><div class="alert-ttl">${b.ttl}</div><div class="alert-msg">${b.msg}</div></div>
+        </div>`).join('')}</div>` : '';
+}
+
+// ── Accounts ─────────────────────────────────────────────────
+async function loadAccounts() {
+  const { data } = await db.from('accounts').select('*')
+    .eq('user_id', _user.id).order('sort_order').order('created_at');
+  _accounts = data || [];
+  renderAccPreview();
+  updateNetWorth();
+  // Populate account select in tx modal
+  const sel = document.getElementById('txAcct');
+  sel.innerHTML = '<option value="">Sin cuenta específica</option>' +
+    _accounts.map(a =>
+      `<option value="${a.id}">${a.name}${a.institution_name ? ` (${a.institution_name})` : ''}</option>`
+    ).join('');
+}
+
+function accColor(type) {
+  return { CHECKING:'var(--p)', SAVINGS:'#10b981', CREDIT_CARD:'var(--err)', LOAN:'var(--warn)', INVESTMENT:'var(--sec)', CASH:'#22c55e' }[type] || 'var(--p)';
+}
+function accIcon(type) {
+  return { CHECKING:'🏦', SAVINGS:'💰', CREDIT_CARD:'💳', LOAN:'🏛️', INVESTMENT:'📈', CASH:'💵' }[type] || '🏦';
+}
+
+function renderAccPreview() {
+  const el = document.getElementById('accPreview');
+  if (!_accounts.length) {
+    el.innerHTML = `<div class="empty" style="padding:1.25rem"><div class="eico">🏦</div><div class="etxt">Sin cuentas</div><button class="ecta" onclick="showPage('accounts');openModal('accModal')">+ Agregar</button></div>`;
+    return;
+  }
+  el.innerHTML = _accounts.slice(0,3).map(a => {
+    const avail = a.balance_available ?? a.balance_current ?? 0;
+    const isNeg = ['CREDIT_CARD','LOAN'].includes(a.type) || avail < 0;
+    return `<div style="display:flex;align-items:center;gap:.65rem;padding:.58rem 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:1rem">${accIcon(a.type)}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name}</div>
+        <div style="font-size:.68rem;color:var(--muted)">${a.institution_name || a.type}</div>
+      </div>
+      <div style="font-size:.92rem;font-weight:800;color:${isNeg ? 'var(--err)' : 'var(--text)'};flex-shrink:0">${fmt(avail)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderAccounts() {
+  const grid = document.getElementById('accGrid');
+  if (!_accounts.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1;padding:3rem"><div class="eico">🏦</div><div class="etxt">Agrega tus cuentas o conecta Belvo para ver tus saldos en tiempo real</div><button class="ecta" onclick="openModal('accModal')">+ Primera cuenta</button></div>`;
+    updateNetWorth();
+    return;
+  }
+  grid.innerHTML = _accounts.map(a => {
+    const avail   = a.balance_available ?? a.balance_current ?? 0;
+    const current = a.balance_current ?? a.balance_available ?? 0;
+    const color   = accColor(a.type);
+    const typeLabels = { CHECKING:'Cheques', SAVINGS:'Ahorro', CREDIT_CARD:'TDC', LOAN:'Préstamo', INVESTMENT:'Inversión', CASH:'Efectivo' };
+    return `<div class="acc-card">
+      <div class="acc-top-bar" style="background:${color}"></div>
+      <div class="acc-ico">${accIcon(a.type)}</div>
+      <div class="acc-name">${a.name}</div>
+      <div class="acc-inst">${a.institution_name || ''}${a.last4 ? ` •••• ${a.last4}` : ''}</div>
+      <div class="acc-avail" style="color:${avail < 0 ? 'var(--err)' : 'var(--text)'}">${fmt(avail)}</div>
+      <div class="acc-current">Contable: ${fmt(current)}</div>
+      <div class="acc-type-pill" style="background:${color}1a;color:${color}">${typeLabels[a.type] || a.type}</div>
+    </div>`;
+  }).join('') +
+  `<div class="acc-card acc-add" onclick="openModal('accModal')">
+    <div style="text-align:center;color:var(--muted)"><div style="font-size:1.4rem;margin-bottom:.35rem">+</div><div style="font-size:.8rem;font-weight:600">Nueva cuenta</div></div>
+  </div>`;
+  updateNetWorth();
+}
+
+function updateNetWorth() {
+  const avail = _accounts.filter(a => ['CHECKING','SAVINGS','CASH','INVESTMENT'].includes(a.type))
+                          .reduce((s,a) => s + (a.balance_available ?? a.balance_current ?? 0), 0);
+  const debt  = _accounts.filter(a => ['CREDIT_CARD','LOAN'].includes(a.type))
+                          .reduce((s,a) => s + Math.abs(a.balance_available ?? a.balance_current ?? 0), 0);
+  const neto  = avail - debt;
+  document.getElementById('totalAvail').textContent = fmt(avail);
+  document.getElementById('totalDebt').textContent  = fmt(debt);
+  const nEl = document.getElementById('netWorth');
+  nEl.textContent  = fmt(neto);
+  nEl.style.color  = neto >= 0 ? 'var(--ok)' : 'var(--err)';
+}
+
+// ── Transactions ──────────────────────────────────────────────
+async function loadRecentTx() {
+  const { data } = await db.from('transactions')
+    .select('*,accounts(name,institution_name)')
+    .eq('user_id', _user.id)
+    .order('date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(8);
+  const tbody = document.getElementById('recentTxBody');
+  if (!data?.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty" style="padding:1.75rem"><div class="eico">📊</div><div class="etxt">Sin transacciones aún</div><button class="ecta" onclick="openModal('txModal')">+ Primera transacción</button></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(tx => txRowShort(tx)).join('');
+}
+
+async function loadTx() {
+  const month = document.getElementById('txMonth').value;
+  let q = db.from('transactions').select('*,accounts(name,institution_name)')
+    .eq('user_id', _user.id);
+  if (month) q = q.gte('date', month + '-01').lte('date', month + '-31');
+  if (_txFilter === 'ingreso') q = q.eq('type','ingreso');
+  if (_txFilter === 'egreso')  q = q.eq('type','egreso');
+  if (_txFilter === 'fiscal')  q = q.eq('is_fiscal', true);
+  if (_txFilter === 'belvo')   q = q.eq('source', 'belvo');
+  q = q.order('date', { ascending: false }).order('created_at', { ascending: false });
+
+  const { data } = await q;
+  const tbody = document.getElementById('txBody');
+  if (!data?.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty" style="padding:2rem"><div class="eico">📊</div><div class="etxt">Sin transacciones en este período</div><button class="ecta" onclick="openModal('txModal')">+ Nueva</button></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(tx => txRowFull(tx)).join('');
+}
+
+function txRowShort(tx) {
+  const src = tx.source || 'manual';
+  const sign = tx.type === 'ingreso' ? '+' : tx.type === 'egreso' ? '-' : '↔';
+  return `<tr>
+    <td><div style="font-weight:500;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tx.description}</div>${tx.counterpart ? `<div style="font-size:.68rem;color:var(--muted)">${tx.counterpart}</div>` : ''}</td>
+    <td><span class="cat-pill">${tx.category || '—'}</span></td>
+    <td><span class="src-tag src-${src}">${srcLabel(src)}</span></td>
+    <td>${tx.is_fiscal ? '<span class="fiscal-tag">CFDI</span>' : '<span style="color:var(--muted);font-size:.8rem">—</span>'}</td>
+    <td style="color:var(--muted);font-size:.8rem">${fmtDate(tx.date)}</td>
+    <td class="${tx.type === 'ingreso' ? 'amt-in' : 'amt-out'}" style="text-align:right">${sign}${fmt(Math.abs(tx.amount))}</td>
+  </tr>`;
+}
+
+function txRowFull(tx) {
+  const src = tx.source || 'manual';
+  const sign = tx.type === 'ingreso' ? '+' : tx.type === 'egreso' ? '-' : '↔';
+  return `<tr>
+    <td><div style="font-weight:500;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tx.description}</div></td>
+    <td style="font-size:.8rem;color:var(--muted)">${tx.accounts?.name || '—'}</td>
+    <td><span class="cat-pill">${tx.category || '—'}</span></td>
+    <td><span class="src-tag src-${src}">${srcLabel(src)}</span></td>
+    <td>${tx.is_fiscal ? '<span class="fiscal-tag">CFDI</span>' : '<span style="color:var(--muted);font-size:.8rem">—</span>'}</td>
+    <td style="font-size:.75rem;color:var(--muted);font-family:monospace;max-width:110px;overflow:hidden;text-overflow:ellipsis">${tx.rfc_emisor || '—'}</td>
+    <td style="color:var(--muted);font-size:.8rem">${fmtDate(tx.date)}</td>
+    <td class="${tx.type === 'ingreso' ? 'amt-in' : 'amt-out'}" style="text-align:right">${sign}${fmt(Math.abs(tx.amount))}</td>
+    <td><button onclick="deleteTx('${tx.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.78rem" onmouseover="this.style.color='var(--err)'" onmouseout="this.style.color='var(--muted)'">✕</button></td>
+  </tr>`;
+}
+
+function srcLabel(src) {
+  return { manual:'Manual', belvo:'Belvo', sat_cfdi:'SAT', pdf_ocr:'OCR', whatsapp:'WhatsApp' }[src] || src;
+}
+
+function filterTx(type, el) {
+  _txFilter = type;
+  document.querySelectorAll('#txFilterTabs .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadTx();
+}
+
+// ── Debts ─────────────────────────────────────────────────────
+async function loadDebts() {
+  const { data } = await db.from('debts').select('*')
+    .eq('user_id', _user.id).eq('is_active', true)
+    .order('next_payment_date', { ascending: true, nullsFirst: false });
+  _debts = data || [];
+
+  // Badge — deudas con corte o pago en ≤ 7 días
+  const today = new Date();
+  const urgent = _debts.filter(d => {
+    const cut  = d.cutting_date  ? new Date(d.cutting_date)  : null;
+    const pay  = d.next_payment_date ? new Date(d.next_payment_date) : null;
+    const days7 = new Date(today.getTime() + 7 * 86400000);
+    return (cut && cut <= days7) || (pay && pay <= days7);
+  });
+  const badge = document.getElementById('debtBadge');
+  badge.textContent     = urgent.length;
+  badge.style.display   = urgent.length ? 'inline-block' : 'none';
+
+  renderDebts();
+}
+
+function renderDebts() {
+  const list = document.getElementById('debtList');
+  if (!_debts.length) {
+    list.innerHTML = `<div class="empty"><div class="eico">💳</div><div class="etxt">Sin deudas — ¡Excelente!</div><button class="ecta" onclick="openModal('debtModal')">Registrar deuda</button></div>`;
+    document.getElementById('dTotal').textContent   = fmt(0);
+    document.getElementById('dMonthly').textContent = fmt(0);
+    document.getElementById('dRate').textContent    = '—';
+    return;
+  }
+  const icons = { credit_card:'💳', bank_loan:'🏦', personal_loan:'👤', supplier_credit:'🤝', tax_debt:'🧾', other:'📋' };
+  const today = new Date();
+
+  list.innerHTML = _debts.map(d => {
+    // Fecha de corte (cutting_date) — CRÍTICO
+    const cut = d.cutting_date ? new Date(d.cutting_date) : null;
+    const pay = d.next_payment_date ? new Date(d.next_payment_date) : null;
+    const daysToCut = cut ? Math.ceil((cut - today) / 86400000) : null;
+    const daysToPay = pay ? Math.ceil((pay - today) / 86400000) : null;
+
+    const cutClass = daysToCut === null ? '' : daysToCut <= 3 ? 'urgent' : daysToCut <= 7 ? 'soon' : 'ok';
+    const payClass = daysToPay === null ? '' : daysToPay <= 3 ? 'urgent' : daysToPay <= 10 ? 'soon' : 'ok';
+
+    const pct = d.total_amount > 0 ? Math.min(100, (d.outstanding_balance / d.total_amount) * 100) : 0;
+
+    return `<div class="debt-item">
+      <div class="debt-ico">${icons[d.type] || '📋'}</div>
+      <div class="debt-info">
+        <div class="debt-name">${d.name}</div>
+        <div class="debt-meta">
+          ${d.institution || ''}
+          ${d.interest_rate > 0 ? ` · ${(d.interest_rate * 100).toFixed(1)}% anual` : ''}
+          ${d.last_payment_date ? ` · Últ. pago: ${fmtDate(d.last_payment_date)}` : ''}
+        </div>
+      </div>
+      ${d.total_amount ? `<div class="debt-prog"><div class="debt-prog-bar"><div class="debt-prog-fill" style="width:${pct}%"></div></div><div style="font-size:.63rem;color:var(--muted);margin-top:.2rem;text-align:center">${pct.toFixed(0)}% usado</div></div>` : ''}
+      ${daysToCut !== null ? `<span class="debt-cut ${cutClass}">✂️ Corte ${daysToCut === 0 ? 'hoy' : daysToCut < 0 ? `hace ${Math.abs(daysToCut)}d` : `en ${daysToCut}d`}</span>` : ''}
+      ${daysToPay !== null ? `<span class="debt-cut ${payClass}">💳 Pago ${daysToPay === 0 ? 'hoy' : daysToPay < 0 ? `vencido ${Math.abs(daysToPay)}d` : `en ${daysToPay}d`}</span>` : ''}
+      <div class="debt-amt">
+        <div class="debt-bal">${fmt(d.outstanding_balance)}</div>
+        <div class="debt-min">Mín: ${fmt(d.minimum_payment || 0)}/mes</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const total   = _debts.reduce((s, d) => s + (d.outstanding_balance || 0), 0);
+  const monthly = _debts.reduce((s, d) => s + (d.minimum_payment || 0), 0);
+  const rates   = _debts.filter(d => d.interest_rate > 0);
+  const avgRate = rates.length ? rates.reduce((s, d) => s + d.interest_rate, 0) / rates.length : 0;
+  document.getElementById('dTotal').textContent   = fmt(total);
+  document.getElementById('dMonthly').textContent = fmt(monthly);
+  document.getElementById('dRate').textContent    = avgRate ? (avgRate * 100).toFixed(1) + '%' : '—';
+}
+
+// ── Taxes ─────────────────────────────────────────────────────
+async function loadTaxes() {
+  const periods = [];
+  const now = new Date();
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    periods.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  const { data } = await db.from('tax_reserves').select('*')
+    .eq('user_id', _user.id).in('period', periods).order('period', { ascending: false });
+
+  const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const grid = document.getElementById('taxGrid');
+  if (!data?.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="eico">🧾</div><div class="etxt">Sin reservas fiscales. Agrega transacciones con CFDI (is_fiscal=true) para calcularlas.</div></div>`;
+  } else {
+    grid.innerHTML = data.map(r => {
+      const [y, mo] = r.period.split('-');
+      const pending = (!r.has_paid_iva ? (r.iva_net || 0) : 0) + (!r.has_paid_isr ? (r.isr_estimated || 0) : 0);
+      return `<div class="tax-card">
+        <div class="tax-period-lbl">${months[parseInt(mo) - 1]} ${y}</div>
+        <div class="tax-row"><span class="tax-lbl">IVA cobrado</span><span class="tax-val" style="color:var(--ok)">+${fmt(r.iva_collected)}</span></div>
+        <div class="tax-row"><span class="tax-lbl">IVA pagado</span><span class="tax-val" style="color:var(--err)">-${fmt(r.iva_paid)}</span></div>
+        <div class="tax-row"><span class="tax-lbl">ISR estimado (30%)</span><span class="tax-val" style="color:var(--warn)">${fmt(r.isr_estimated)}</span></div>
+        <div class="tax-total">
+          <span class="tax-total-lbl">A pagar al SAT</span>
+          <span class="tax-total-val">${fmt(pending)}</span>
+        </div>
+        <div class="tax-pills">
+          <span class="tax-pill ${r.has_paid_iva ? 'paid' : 'due'}">${r.has_paid_iva ? '✓ IVA pagado' : '⚡ IVA pendiente'}</span>
+          <span class="tax-pill ${r.has_paid_isr ? 'paid' : 'due'}">${r.has_paid_isr ? '✓ ISR pagado' : '⚡ ISR pendiente'}</span>
+        </div>
+      </div>`;
+    }).join('');
   }
 
-  closeSidebar();
+  // CFDI stats
+  const [fiscal, all] = await Promise.all([
+    db.from('transactions').select('id').eq('user_id', _user.id).eq('is_fiscal', true),
+    db.from('transactions').select('id').eq('user_id', _user.id)
+  ]);
+  const fCount = fiscal.data?.length || 0;
+  const total  = all.data?.length    || 0;
+  const pct    = total > 0 ? ((fCount / total) * 100).toFixed(0) : 0;
+  document.getElementById('cfdiStats').innerHTML = `
+    <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+      <div><div style="font-size:1.75rem;font-weight:900;color:var(--p)">${fCount}</div><div style="font-size:.7rem;color:var(--muted)">Con CFDI (sat_uuid)</div></div>
+      <div><div style="font-size:1.75rem;font-weight:900">${total}</div><div style="font-size:.7rem;color:var(--muted)">Total</div></div>
+      <div style="flex:1;min-width:120px">
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.3rem">
+          <span>Cobertura fiscal</span><span style="font-weight:700;color:var(--p)">${pct}%</span>
+        </div>
+        <div style="height:7px;background:rgba(255,255,255,.06);border-radius:50px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:var(--p);border-radius:50px;transition:width .8s"></div>
+        </div>
+      </div>
+    </div>`;
 }
 
-function setPeriod(p, el) {
-  document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+// ── Alerts ────────────────────────────────────────────────────
+async function loadAlerts() {
+  const { data } = await db.from('alerts').select('*')
+    .eq('user_id', _user.id).eq('is_dismissed', false)
+    .order('created_at', { ascending: false }).limit(25);
+  const el = document.getElementById('alertsList');
+  if (!data?.length) {
+    el.innerHTML = `<div class="empty"><div class="eico">✅</div><div class="etxt">Sin alertas activas — todo bajo control</div></div>`;
+    document.getElementById('notifDot').style.display = 'none';
+    return;
+  }
+  document.getElementById('notifDot').style.display = 'block';
+  el.innerHTML = `<div class="alert-list">${data.map(a => `
+    <div class="alert-item ${a.severity}">
+      <span>${a.severity === 'critical' ? '🔴' : a.severity === 'warning' ? '🟡' : 'ℹ️'}</span>
+      <div><div class="alert-ttl">${a.title}</div>${a.message ? `<div class="alert-msg">${a.message}</div>` : ''}</div>
+      <button class="alert-close" onclick="dismissAlert('${a.id}')">✕</button>
+    </div>`).join('')}</div>`;
 }
 
-// ── SIDEBAR MOBILE ──────────────────────────────────────────
-function openSidebar() {
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('sidebarOverlay').classList.add('open');
-}
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarOverlay').classList.remove('open');
+async function dismissAlert(id) {
+  await db.from('alerts').update({ is_dismissed: true }).eq('id', id);
+  loadAlerts();
 }
 
-// ── USER MENU ────────────────────────────────────────────────
-function toggleUserMenu() {
-  const m = document.getElementById('userMenu');
-  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+async function loadSyncHist() {
+  const { data } = await db.from('sync_logs').select('*')
+    .eq('user_id', _user.id).order('created_at', { ascending: false }).limit(10);
+  const el = document.getElementById('syncHist');
+  if (!data?.length) return;
+  const statusColors = { completed:'var(--ok)', failed:'var(--err)', pending:'var(--warn)', processing:'var(--p)', partial:'var(--warn)' };
+  el.innerHTML = `<table class="tx-tbl" style="margin-top:.5rem"><thead><tr><th>Fuente</th><th>Estado</th><th>Registros</th><th>Fecha</th></tr></thead><tbody>` +
+    data.map(s => `<tr>
+      <td>${s.source}</td>
+      <td style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:${statusColors[s.status]||'var(--muted)'}">${s.status}</td>
+      <td>${s.records_imported}/${s.records_total}</td>
+      <td style="color:var(--muted);font-size:.78rem">${fmtRelative(s.created_at)}</td>
+    </tr>`).join('') + '</tbody></table>';
 }
+
+// ── Save Transaction ──────────────────────────────────────────
+async function saveTx() {
+  const btn = document.getElementById('txSaveBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  const type   = document.getElementById('txType').value;
+  const amount = parseFloat(document.getElementById('txAmt').value);
+  const desc   = document.getElementById('txDesc').value.trim();
+  const date   = document.getElementById('txDate').value;
+  const cat    = document.getElementById('txCat').value;
+  const acct   = document.getElementById('txAcct').value;
+  const fiscal = document.getElementById('txFiscal').checked;
+  const iva    = parseFloat(document.getElementById('txIva').value)    || 0;
+  const satUUID = document.getElementById('txSatUUID').value.trim();
+  const rfcEm  = document.getElementById('txRFCEmisor').value.trim().toUpperCase();
+  const rfcRx  = document.getElementById('txRFCReceptor').value.trim().toUpperCase();
+  const notes  = document.getElementById('txNotes').value.trim();
+
+  if (!desc || isNaN(amount) || amount <= 0 || !date) {
+    toast('Completa los campos obligatorios', 'error');
+    btn.disabled = false; btn.textContent = 'Guardar'; return;
+  }
+
+  const payload = {
+    user_id:      _user.id,
+    description:  desc,
+    amount:       type === 'egreso' ? -Math.abs(amount) : Math.abs(amount),
+    type,
+    category:     cat  || null,
+    date,
+    is_fiscal:    fiscal,
+    source:       'manual',
+    iva_amount:   fiscal ? iva : 0,
+    notes:        notes || null,
+    account_id:   acct  || null,
+    rfc_emisor:   fiscal && rfcEm   ? rfcEm  : null,
+    rfc_receptor: fiscal && rfcRx   ? rfcRx  : null,
+  };
+  if (fiscal && satUUID) {
+    // Validate UUID format loosely
+    if (/^[0-9a-f-]{36}$/i.test(satUUID)) payload.sat_uuid = satUUID;
+  }
+
+  const { error } = await db.from('transactions').insert(payload);
+  btn.disabled = false; btn.textContent = 'Guardar';
+
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Transacción guardada ✓', 'success');
+  closeModal('txModal');
+  resetTxForm();
+  await Promise.all([loadMetrics(), loadRecentTx()]);
+}
+
+function resetTxForm() {
+  ['txAmt','txDesc','txNotes','txIva','txSatUUID','txRFCEmisor','txRFCReceptor'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('txCat').value  = '';
+  document.getElementById('txType').value = 'egreso';
+  document.getElementById('txFiscal').checked = false;
+  document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
+  toggleFiscal();
+}
+
+function toggleFiscal() {
+  document.getElementById('fiscalFields').style.display = document.getElementById('txFiscal').checked ? 'block' : 'none';
+}
+
+async function deleteTx(id) {
+  if (!confirm('¿Eliminar transacción?')) return;
+  await db.from('transactions').delete().eq('id', id);
+  toast('Transacción eliminada', 'info');
+  loadTx(); loadMetrics();
+}
+
+// ── Save Account ──────────────────────────────────────────────
+async function saveAcc() {
+  const btn = document.getElementById('accSaveBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  const name    = document.getElementById('accName').value.trim();
+  const type    = document.getElementById('accType').value;
+  const inst    = document.getElementById('accInst').value.trim();
+  const avail   = parseFloat(document.getElementById('accAvail').value)   || 0;
+  const current = parseFloat(document.getElementById('accCurrent').value) || avail;
+  const last4   = document.getElementById('accLast4').value.trim();
+
+  if (!name) { toast('Ingresa un nombre', 'error'); btn.disabled = false; btn.textContent = 'Guardar'; return; }
+
+  const isDebt  = ['CREDIT_CARD','LOAN'].includes(type);
+  const { error } = await db.from('accounts').insert({
+    user_id:          _user.id,
+    name, type,
+    institution_name: inst    || null,
+    balance_available: isDebt ? -Math.abs(avail)   : avail,
+    balance_current:   isDebt ? -Math.abs(current) : current,
+    last4:            last4   || null,
+  });
+
+  btn.disabled = false; btn.textContent = 'Guardar';
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Cuenta agregada ✓', 'success');
+  closeModal('accModal');
+  ['accName','accInst','accAvail','accCurrent','accLast4'].forEach(id => document.getElementById(id).value = '');
+  await loadAccounts();
+  renderAccounts();
+  loadMetrics();
+}
+
+// ── Save Debt ─────────────────────────────────────────────────
+async function saveDebt() {
+  const btn = document.getElementById('dSaveBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  const name    = document.getElementById('dName').value.trim();
+  const type    = document.getElementById('dType').value;
+  const inst    = document.getElementById('dInst').value.trim();
+  const balance = parseFloat(document.getElementById('dBalance').value) || 0;
+  const min     = parseFloat(document.getElementById('dMin').value)     || 0;
+  const rate    = parseFloat(document.getElementById('dRate').value)    / 100 || 0;
+  const cutDate = document.getElementById('dCutDate').value || null;
+  const nextPay = document.getElementById('dNextPay').value || null;
+  const lastPay = document.getElementById('dLastPay').value || null;
+
+  if (!name) { toast('Ingresa un nombre', 'error'); btn.disabled = false; btn.textContent = 'Guardar'; return; }
+
+  const { error } = await db.from('debts').insert({
+    user_id:             _user.id,
+    name, type,
+    institution:         inst     || null,
+    outstanding_balance: balance,
+    minimum_payment:     min,
+    interest_rate:       rate,
+    cutting_date:        cutDate,   // ← Belvo credit_data.cutting_date
+    next_payment_date:   nextPay,   // ← Belvo credit_data.next_payment_date
+    last_payment_date:   lastPay,   // ← Belvo credit_data.last_payment_date
+  });
+
+  btn.disabled = false; btn.textContent = 'Guardar';
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Deuda registrada ✓', 'success');
+  closeModal('debtModal');
+  ['dName','dInst','dBalance','dMin','dRate','dCutDate','dNextPay','dLastPay'].forEach(id => document.getElementById(id).value = '');
+  await loadDebts();
+  loadMetrics();
+}
+
+// ── Profile ───────────────────────────────────────────────────
+async function saveProfile() {
+  const { error } = await db.from('profiles').update({
+    full_name:    document.getElementById('sName').value.trim(),
+    company_name: document.getElementById('sCompany').value.trim(),
+    rfc:          document.getElementById('sRFC').value.trim().toUpperCase(),
+  }).eq('id', _user.id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Perfil actualizado ✓', 'success');
+  document.getElementById('userName').textContent = document.getElementById('sName').value.trim() || _user.email;
+}
+
+// ── Integrations placeholders ─────────────────────────────────
+function connectBelvo() { toast('Integración Belvo — disponible en plan Pro', 'info'); }
+function connectSAT()   { toast('Conexión SAT vía RFC — próximamente', 'info'); }
+function joinNova() {
+  const email = document.getElementById('novaEmail').value.trim();
+  if (!email.includes('@')) { toast('Ingresa un correo válido', 'error'); return; }
+  toast('¡Listo! Te avisamos cuando NOVA esté disponible 🚀', 'success');
+  document.getElementById('novaEmail').value = '';
+}
+function syncNow() {
+  toast('Sincronizando...', 'info');
+  setTimeout(async () => {
+    await Promise.all([loadAccounts(), loadDebts()]);
+    await loadMetrics(); loadRecentTx();
+    toast('Datos actualizados ✓', 'success');
+  }, 1100);
+}
+
+// ── Auth ──────────────────────────────────────────────────────
+function confirmSignOut() { if (confirm('¿Cerrar sesión?')) signOut(); }
+
+// ── Modal helpers ─────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open');  document.body.style.overflow = 'hidden'; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
+document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); }));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(o => closeModal(o.id)); });
 </script>
 </body>
 </html>
