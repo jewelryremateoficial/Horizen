@@ -7,6 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Belvo Connect Widget — https://developers.belvo.com/docs/connect-widget -->
+<script src="https://cdn.belvo.io/js/widget.js"></script>
 <style>
 :root{
   --p:#00d4aa;--p2:#00a884;--sec:#6366f1;
@@ -474,9 +476,15 @@ function renderOverview() {
 
     <!-- ── 3 KPIs Financieros — Mi Empresa ──────────────── -->
     <div class="fin-wrap" id="finHealthWrap">
-      <div class="fin-hdr">
+      <div class="fin-hdr" style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
         <div class="fin-tag">Mi Empresa</div>
-        <div class="fin-ttl">Salud financiera en tiempo real · Belvo + SAT</div>
+        <div class="fin-ttl" style="flex:1">Salud financiera en tiempo real · Belvo + SAT</div>
+        <button
+          id="belvoCta"
+          onclick="openBelvoWidget()"
+          class="btn btn-primary"
+          style="font-size:.76rem;padding:.4rem .9rem;gap:.35rem;flex-shrink:0"
+        >🏦 Conectar cuenta</button>
       </div>
       <div class="fin-grid">
 
@@ -1490,6 +1498,144 @@ function downloadCSV(rows, filename) {
 function copyText(txt) {
   navigator.clipboard.writeText(txt).then(() => toast('Copiado al portapapeles', 'ok'));
 }
+
+// ══ BELVO CONNECT WIDGET ════════════════════════════════════════
+// Documentación: https://developers.belvo.com/docs/connect-widget
+// Guía técnica:  Manus — "Guía de Integración: Belvo Connect Widget"
+// ────────────────────────────────────────────────────────────────
+// CREDENCIALES SANDBOX — consíguelas GRATIS en app.belvo.com
+// Luego ponlas en belvo-connect.php (nunca aquí en el frontend)
+// ────────────────────────────────────────────────────────────────
+
+async function openBelvoWidget() {
+  const btn = document.getElementById('belvoCta');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando token...'; }
+
+  let access_token;
+  try {
+    // ── 1. Pedir access_token al backend (nunca exponer claves en JS) ──
+    const res = await fetch('/belvo-connect.php');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.hint || `HTTP ${res.status} — ¿Pusiste tus llaves en belvo-connect.php?`);
+    }
+    const payload = await res.json();
+    if (!payload.access_token) throw new Error('belvo-connect.php no devolvió un token válido');
+    access_token = payload.access_token;
+  } catch (err) {
+    toast('Error obteniendo token: ' + err.message, 'err');
+    if (btn) { btn.disabled = false; btn.textContent = '🏦 Conectar cuenta'; }
+    return;
+  }
+
+  if (btn) { btn.textContent = '🏦 Abriendo widget...'; }
+
+  // ── 2. Abrir Belvo Widget ─────────────────────────────────────
+  // API según guía Manus: belvo.setup({ access_token, onSuccess, onExit, onError }).open()
+  try {
+    belvo.setup({
+      access_token,
+
+      // ── Localización y filtros ─────────────────────────────────
+      locale:           'es',
+      country_codes:    ['MX'],
+      institution_types: ['bank', 'business'],
+      access_mode:      'recurrent', // mantener acceso para sync diario
+
+      // ── Callback general (telemetría) ──────────────────────────
+      callback: (event, data) => {
+        console.log('[Belvo Widget]', event, data);
+      },
+
+      // ── Éxito: banco conectado ─────────────────────────────────
+      // result.link        = link_id (clave para todos los calls futuros a Belvo)
+      // result.institution = nombre del banco ("BBVA", "Nu", "Santander"…)
+      onSuccess: async (result) => {
+        console.log('[Belvo] ✓ Link creado:', result);
+        toast(`✓ ${result.institution} conectado. Sincronizando...`, 'info');
+        await saveBelvoLink(result.link, result.institution);
+      },
+
+      // ── Usuario cerró el widget ────────────────────────────────
+      onExit: (data) => {
+        console.log('[Belvo] Widget cerrado', data);
+        if (btn) { btn.disabled = false; btn.textContent = '🏦 Conectar cuenta'; }
+      },
+
+      // ── Error del widget ──────────────────────────────────────
+      onError: (error) => {
+        console.error('[Belvo] Error:', error);
+        toast('Error en el widget de Belvo: ' + (error.message || JSON.stringify(error)), 'err');
+        if (btn) { btn.disabled = false; btn.textContent = '🏦 Conectar cuenta'; }
+      }
+
+    }).open(); // ← abre el modal con la lista de bancos
+
+  } catch (widgetErr) {
+    toast('No se pudo abrir el widget: ' + widgetErr.message, 'err');
+    if (btn) { btn.disabled = false; btn.textContent = '🏦 Conectar cuenta'; }
+  }
+}
+
+// ── Guardar link_id en Supabase (tabla accounts) ───────────────
+// Según guía Manus: guardar link_id + institution + user_id
+// En nuestro schema: accounts.belvo_account_id almacena el link
+// belvo-sync.php actualiza los saldos reales después de este paso
+async function saveBelvoLink(link_id, institution_name) {
+  const userId = adminSession?.user?.id;
+  if (!userId) { toast('Sin sesión activa', 'err'); return; }
+
+  // ── a) Guardar link_id en tabla accounts (referencia inicial) ─
+  const { error: accErr } = await db.from('accounts').upsert(
+    {
+      user_id:           userId,
+      name:              institution_name,
+      type:              'CHECKING',          // tipo provisional hasta que sync actualice
+      institution_name:  institution_name,
+      belvo_account_id:  link_id,             // link_id como referencia Belvo
+      balance_available: 0,
+      balance_current:   0,
+      is_active:         true,
+      last_synced_at:    new Date().toISOString(),
+    },
+    { onConflict: 'belvo_account_id' }        // no duplicar si ya existe
+  );
+
+  if (accErr) {
+    console.error('[Supabase] Error guardando cuenta:', accErr);
+    toast('Error al guardar cuenta: ' + accErr.message, 'err');
+    return;
+  }
+
+  // ── b) Disparar sync completo (cuentas + transacciones + deudas) ─
+  try {
+    const syncRes = await fetch('/belvo-sync.php', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ link_id, institution_name, user_id: userId }),
+    });
+    const syncData = await syncRes.json();
+
+    if (syncData.success) {
+      toast(
+        `✓ ${institution_name}: ${syncData.accounts} cuentas · ${syncData.transactions} transacciones importadas`,
+        'ok'
+      );
+    } else {
+      toast(`Cuenta guardada. El sync se completará en segundo plano.`, 'info');
+    }
+  } catch (syncErr) {
+    // El link_id ya está guardado; el sync puede reintentarse
+    toast(`Cuenta guardada (${institution_name}). Sync pendiente.`, 'info');
+  }
+
+  // ── c) Refrescar los KPIs financieros del overview ────────────
+  const btn = document.getElementById('belvoCta');
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Reconectar'; }
+  await loadFinancialHealth();
+}
+
+// ════════════════════════════════════════════════════════════════
 
 function toast(msg, type = 'ok') {
   const colors = { ok:'var(--ok)', err:'var(--danger)', info:'var(--info)' };
