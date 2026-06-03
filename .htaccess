@@ -1,20 +1,19 @@
 # ============================================================
-# FinancialOS — .htaccess
-# Prioridad: index.html > index.php  (WordPress queda atrás)
+# FinancialOS — Horizen.com.mx
+# App SaaS 100% independiente — sin WordPress
 # ============================================================
 
-# 1. index.html primero, WordPress de respaldo
-DirectoryIndex index.html index.php
+DirectoryIndex index.html
 
 Options -MultiViews
 RewriteEngine On
 RewriteBase /
 
-# ── A: Redirigir .html → URL limpia (301) ───────────────────
+# ── Redirigir .html → URL limpia ────────────────────────────
 RewriteCond %{THE_REQUEST} \s/+(.+?)\.html[\s?] [NC]
 RewriteRule ^ /%1 [R=301,L,NE]
 
-# ── B: Nuestras páginas sin extensión (ANTES que WordPress) ─
+# ── Rutas de la app ──────────────────────────────────────────
 RewriteRule ^login/?$              login.html              [L]
 RewriteRule ^signup/?$             signup.html             [L]
 RewriteRule ^pricing/?$            pricing.html            [L]
@@ -22,19 +21,14 @@ RewriteRule ^dashboard/?$          dashboard.html          [L]
 RewriteRule ^reset-password/?$     reset-password.html     [L]
 RewriteRule ^admin/dashboard/?$    admin/dashboard.html    [L]
 
-# ── C: Archivos y carpetas reales pasan directo ─────────────
+# ── Archivos y carpetas reales pasan directo ─────────────────
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# ── D: Genérico — cualquier otro .html sin extensión ────────
+# ── Genérico: .html sin extensión ───────────────────────────
 RewriteCond %{REQUEST_FILENAME}.html -f
 RewriteRule ^(.+?)/?$ $1.html [L]
-
-# ── E: Todo lo demás → WordPress (wp-admin, API REST, etc.) ─
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /index.php [L]
 
 # Seguridad
 Options -Indexes
