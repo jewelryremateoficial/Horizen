@@ -18,16 +18,10 @@ serve(async (req) => {
     const auth = btoa(BELVO_ID + ':' + BELVO_PWD)
 
     const requestBody = {
-      id:       BELVO_ID,
-      password: BELVO_PWD,
-      scopes:   'read_institutions,write_links,read_consents,write_consents,write_consent_callback,delete_consents',
-      widget: {
-        callback_urls: {
-          success: 'https://horizen.com.mx/dashboard.html?status=success',
-          exit:    'https://horizen.com.mx/dashboard.html?status=exit',
-          event:   'https://horizen.com.mx/dashboard.html?status=event',
-        }
-      }
+      id:              BELVO_ID,
+      password:        BELVO_PWD,
+      scopes:          'read_institutions,write_links,read_consents',
+      fetch_resources: ['ACCOUNTS', 'TRANSACTIONS', 'OWNERS'],
     }
 
     console.log('Calling Belvo /api/token/ with body keys:', Object.keys(requestBody))
