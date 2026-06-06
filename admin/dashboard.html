@@ -1515,7 +1515,7 @@ async function openBelvoWidget() {
   let access_token;
   try {
     // ── 1. Pedir access_token al backend (nunca exponer claves en JS) ──
-    const res = await fetch('/belvo-connect.php');
+    const res = await fetch('https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/belvo-token');
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.hint || `HTTP ${res.status} — ¿Pusiste tus llaves en belvo-connect.php?`);
