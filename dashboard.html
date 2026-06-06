@@ -1485,7 +1485,7 @@ async function saveProfile() {
 
 // ══ BELVO CONNECT WIDGET ════════════════════════════════════════
 // SDK:  https://cdn.belvo.io/js/widget.js  (cargado en <head>)
-// Auth: belvo-connect.php genera el access_token con las API Keys
+// Auth: Supabase Edge Function belvo-auth genera el access_token
 // Sync: belvo-sync.php importa cuentas, deudas y transacciones
 
 async function openBelvoWidget() {
@@ -1495,13 +1495,13 @@ async function openBelvoWidget() {
   // ── 1. Obtener access_token del backend ──────────────────────
   let access_token;
   try {
-    const res = await fetch('https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/belvo-token');
+    const res = await fetch('https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/belvo-auth');
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.hint || `HTTP ${res.status}`);
     }
     const data = await res.json();
-    if (!data.access_token) throw new Error('Token inválido de belvo-connect.php');
+    if (!data.access_token) throw new Error('Token inválido — revisa la Edge Function belvo-auth en Supabase');
     access_token = data.access_token;
   } catch (err) {
     toast('Error obteniendo token Belvo: ' + err.message, 'error');
