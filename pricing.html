@@ -287,10 +287,10 @@ let annualMode = false;
 // Init
 (async () => {
   const session = await getSession();
-  if (!session) { window.location.href = '/login'; return; }
+  if (!session) { window.location.href = '/login.html'; return; }
   currentUser = session.user;
   const profile = await getProfile(currentUser.id);
-  if (profile?.subscription_status === 'active') { window.location.href = '/dashboard'; return; }
+  if (profile?.subscription_status === 'active') { window.location.href = '/dashboard.html'; return; }
   const name = profile?.full_name || currentUser.email || '';
   document.getElementById('userEmail').textContent = name;
   document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
@@ -370,7 +370,7 @@ async function handlePayPalSuccess(data, plan) {
   });
 
   toast('¡Suscripción activada! Bienvenido a FinancialOS 🎉', 'success');
-  setTimeout(() => window.location.href = '/dashboard', 2000);
+  setTimeout(() => window.location.href = '/dashboard.html', 2000);
 }
 
 function openPayPalModal(plan) {
@@ -384,7 +384,7 @@ function closeModal() { document.getElementById('paypalModal').className = 'moda
 
 async function skipForNow() {
   if (!currentUser) return;
-  window.location.href = '/dashboard';
+  window.location.href = '/dashboard.html';
 }
 
 function toggleFaq(el) {

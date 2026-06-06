@@ -7,16 +7,26 @@ const SUPABASE_URL = 'https://upcbznfkpswtxiffgsgj.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_2rL4lnWnN_6c3h2KMRt8TA_yz2Bb8yZ';
 const PAYPAL_CLIENT_ID = 'Ab9gde9vp6tmdo_5bc2w-jWtvA4xd_dwWuRoTBxSTJeyd77Gu2EQeOEsFhdd4RmanITAXlDDJKpv8wNI';
 
-// PayPal Plan IDs (crear en PayPal Dashboard → Subscriptions → Plans)
+// PayPal Plan IDs
 const PAYPAL_PLANS = {
   basico:  'P-79321420JS938303KNIOSOJA',   // $990 MXN/mes
   pro:     'P-30241692SC5349045NIOSOJI',   // $1,990 MXN/mes
   empresa: 'P-2KG00541GJ147021VNIOSOJI'   // $3,990 MXN/mes
 };
 
-// Init Supabase
+// ── Init Supabase ─────────────────────────────────────────
+// flowType: 'pkce' → tokens vienen como ?code= (query param),
+// NO como #access_token (hash). Los query params SÍ se preservan
+// en redirects del servidor; el hash se pierde. Crítico para OAuth.
 const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    flowType:           'pkce',  // OAuth seguro; tokens en URL param, no en hash
+    detectSessionInUrl:  true,   // detecta ?code= al cargar la página
+    persistSession:      true,   // guarda sesión en localStorage
+    autoRefreshToken:    true    // renueva el token antes de que expire
+  }
+});
 
 // ── Auth helpers ──────────────────────────────────────────
 async function getSession() {
@@ -34,20 +44,20 @@ async function getProfile(userId) {
   return data;
 }
 
-async function requireAuth(redirectTo = '/login') {
+async function requireAuth(redirectTo = '/login.html') {
   const session = await getSession();
   if (!session) { window.location.href = redirectTo; return null; }
   return session;
 }
 
 async function requireAdmin() {
-  const session = await requireAuth();
+  const session = await requireAuth('/login.html');
   if (!session) return null;
   const user = session.user;
   // Check Auth metadata first (bypasses RLS, always reliable)
   const isAdmin = user?.app_metadata?.is_admin === true ||
                   user?.user_metadata?.is_admin === true;
-  if (!isAdmin) { window.location.href = '/dashboard'; return null; }
+  if (!isAdmin) { window.location.href = '/dashboard.html'; return null; }
   // Load profile for display (non-blocking if RLS has issues)
   let profile = {};
   try { profile = (await getProfile(user.id)) || {}; } catch(e) {}
@@ -56,7 +66,7 @@ async function requireAdmin() {
 
 async function signOut() {
   await db.auth.signOut();
-  window.location.href = '/login';
+  window.location.href = '/login.html';
 }
 
 // ── Format helpers ────────────────────────────────────────

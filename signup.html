@@ -143,7 +143,7 @@ select option{background:var(--bg2)}
       </button>
     </form>
 
-    <div class="footer-link">¿Ya tienes cuenta? <a href="/login">Iniciar sesión</a></div>
+    <div class="footer-link">¿Ya tienes cuenta? <a href="/login.html">Iniciar sesión</a></div>
   </div>
 </div>
 
@@ -151,7 +151,7 @@ select option{background:var(--bg2)}
 <script src="/assets/app.js"></script>
 <script src="/assets/auth.js"></script>
 <script>
-getSession().then(s => { if (s) window.location.href = '/dashboard'; });
+getSession().then(s => { if (s) window.location.href = '/dashboard.html'; });
 
 function checkStrength(val) {
   const fill = document.getElementById('strengthFill');
@@ -241,7 +241,7 @@ async function handleSignup(e) {
 
   // Si no requiere confirmación de email, redirigir a pricing
   if (data.session) {
-    setTimeout(() => window.location.href = '/pricing', 1500);
+    setTimeout(() => window.location.href = '/pricing.html', 1500);
   }
 }
 

@@ -1,14 +1,13 @@
 // ============================================================
-// FinancialOS — Auth Module v1.0
+// FinancialOS — Auth Module v1.1
 // Centraliza: Google OAuth · Routing inteligente · Persistencia
 // Cargar DESPUÉS de app.js (depende de: db, getProfile, PLANS)
 // ============================================================
 
 // ── Destinos OAuth ────────────────────────────────────────────
-// Siempre redirigimos al dashboard regular; él decide si el
-// usuario es admin y reenvía a /admin/dashboard.
-const AUTH_REDIRECT_LOGIN  = 'https://horizen.com.mx/dashboard';
-const AUTH_REDIRECT_SIGNUP = 'https://horizen.com.mx/pricing';
+// URLs registradas en Supabase → Authentication → URL Configuration
+const AUTH_REDIRECT_LOGIN  = 'https://horizen.com.mx/dashboard.html';
+const AUTH_REDIRECT_SIGNUP = 'https://horizen.com.mx/pricing.html';
 
 // ── Helper ────────────────────────────────────────────────────
 function isAdminUser(user) {
@@ -17,6 +16,7 @@ function isAdminUser(user) {
 }
 
 // ── Google OAuth — Login ──────────────────────────────────────
+// redirectTo debe estar en la lista de Supabase → URL Configuration
 async function loginWithGoogle() {
   const { error } = await db.auth.signInWithOAuth({
     provider: 'google',
@@ -47,94 +47,70 @@ async function signupWithGoogle() {
 }
 
 // ── Routing inteligente post-autenticación ────────────────────
-// Llamar después de password-login Y como admin-guard en dashboard.
-// Orden de prioridad:
-//   1. app_metadata.is_admin (set en Supabase, nunca lo pone el usuario)
-//   2. profile.is_admin      (tabla profiles)
-//   3. plan === free / null  → /pricing   (aún no paga)
-//   4. cualquier otro plan   → /dashboard
 async function redirectAfterAuth(user) {
   if (!user) return;
 
-  // Fast-path: metadata de auth (no pasa por RLS, siempre fiable)
+  // Fast-path: app_metadata.is_admin (no pasa por RLS, siempre fiable)
   if (isAdminUser(user)) {
-    window.location.replace('/admin/dashboard');
+    window.location.replace('/admin/dashboard.html');
     return;
   }
 
-  // Slow-path: perfil en base de datos
+  // Slow-path: leer plan del perfil
   try {
     const profile = await getProfile(user.id);
     if (profile?.is_admin) {
-      window.location.replace('/admin/dashboard');
+      window.location.replace('/admin/dashboard.html');
     } else if (!profile?.plan || profile.plan === 'free') {
-      window.location.replace('/pricing');
+      window.location.replace('/pricing.html');
     } else {
-      window.location.replace('/dashboard');
+      window.location.replace('/dashboard.html');
     }
   } catch (_) {
-    window.location.replace('/dashboard');
+    window.location.replace('/dashboard.html');
   }
 }
 
 // ── Auth State Listener ───────────────────────────────────────
-// Detecta automáticamente:
-//   • Callback OAuth (SIGNED_IN después del redirect de Google)
-//   • Sesión existente al refrescar (INITIAL_SESSION)
-//   • Cierre de sesión (SIGNED_OUT)
-//
-// Reglas por página:
-//   /login  /signup  → si hay sesión, redirigir al destino correcto
-//   /dashboard       → si es admin, mover a /admin/dashboard
-//   /admin/dashboard → si NO es admin, mover a /dashboard
-//   cualquier página protegida → si SIGNED_OUT, ir a /login
-
+// Se ejecuta automáticamente al cargar cualquier página que incluya auth.js.
+// Maneja: callback OAuth (PKCE ?code=), restaurar sesión, sign-out.
 (function setupAuthListener() {
-  const path       = window.location.pathname;
-  const isLogin    = path.includes('/login')  || path.includes('/login.html');
-  const isSignup   = path.includes('/signup') || path.includes('/signup.html');
-  const isDash     = path.includes('/dashboard') && !path.includes('/admin');
-  const isAdminDash= path.includes('/admin');
-  const isProtected= isDash || isAdminDash || path.includes('/pricing');
+  const path        = window.location.pathname;
+  const isLogin     = /\/(login(\.html)?)?$/.test(path);   // / o /login o /login.html
+  const isSignup    = path.includes('/signup');
+  const isDash      = path.includes('/dashboard') && !path.includes('/admin');
+  const isAdminDash = path.includes('/admin');
+  const isProtected = isDash || isAdminDash || path.includes('/pricing');
 
   db.auth.onAuthStateChange(async (event, session) => {
-    console.log('[Auth]', event, session?.user?.email || '—');
+    console.log('[Auth]', event, '|', path, '|', session?.user?.email || '—');
 
-    // Sesión iniciada (OAuth callback o restauración de localStorage)
+    // ── Sesión detectada (OAuth callback o restore de localStorage) ─
     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
       const user = session.user;
 
       if (isLogin || isSignup) {
-        // Páginas de auth → redirigir al destino correcto
+        // En página de auth → enrutar al destino correcto
         await redirectAfterAuth(user);
         return;
       }
 
       if (isDash && isAdminUser(user)) {
-        // Admin aterrizó en dashboard normal → mover al admin dashboard
-        window.location.replace('/admin/dashboard');
+        // Admin aterrizó en dashboard normal → al admin dashboard
+        window.location.replace('/admin/dashboard.html');
         return;
       }
 
       if (isAdminDash && !isAdminUser(user)) {
-        // Usuario normal intentó entrar al admin → mover a dashboard
-        window.location.replace('/dashboard');
+        // Usuario normal intentó entrar al admin → al dashboard normal
+        window.location.replace('/dashboard.html');
         return;
       }
     }
 
-    // Sesión cerrada → kick a login
+    // ── Sesión cerrada → kick al login ────────────────────────────
     if (event === 'SIGNED_OUT' && isProtected) {
-      window.location.replace('/login');
+      window.location.replace('/login.html');
     }
   });
 })();
-
-// ── Verificar sesión al cargar (para OAuth hash en URL) ───────
-// Supabase v2 auto-detecta el #access_token en la URL al cargar;
-// onAuthStateChange dispara automáticamente. Esta función es solo
-// para diagnóstico / uso manual.
-async function checkSession() {
-  const { data: { session } } = await db.auth.getSession();
-  return session;
-}

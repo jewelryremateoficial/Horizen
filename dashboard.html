@@ -757,7 +757,7 @@ let _accounts = [], _debts = [], _txFilter = 'all';
   // 2. Admin-guard: si un admin llega aquí vía OAuth, lo mandamos a su dashboard
   //    (auth.js también lo hace vía onAuthStateChange, esto es doble seguro)
   if (_user?.app_metadata?.is_admin === true || _user?.user_metadata?.is_admin === true) {
-    window.location.replace('/admin/dashboard');
+    window.location.replace('/admin/dashboard.html');
     return;
   }
 

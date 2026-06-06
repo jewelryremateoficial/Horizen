@@ -1462,7 +1462,7 @@ async function saveProfile() {
 async function sendSelfReset() {
   const email = adminSession?.user?.email;
   if (!email) return;
-  await db.auth.resetPasswordForEmail(email, { redirectTo: 'https://horizen.com.mx/reset-password' });
+  await db.auth.resetPasswordForEmail(email, { redirectTo: 'https://horizen.com.mx/reset-password.html' });
   toast('Enlace enviado a ' + email, 'ok');
 }
 

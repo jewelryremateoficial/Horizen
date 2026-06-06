@@ -9,11 +9,16 @@ Options -MultiViews
 RewriteEngine On
 RewriteBase /
 
-# ── Redirigir .html → URL limpia ────────────────────────────
-RewriteCond %{THE_REQUEST} \s/+(.+?)\.html[\s?] [NC]
-RewriteRule ^ /%1 [R=301,L,NE]
+# ── Archivos y carpetas reales (incluyendo .html) pasan directo
+# IMPORTANTE: este bloque va PRIMERO para que dashboard.html
+# no sea capturado por las reglas de abajo y se sirva directo,
+# preservando el ?code= de Supabase OAuth (PKCE).
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
 
-# ── Rutas de la app ──────────────────────────────────────────
+# ── URLs limpias → sirve el .html SIN redirigir (sin 301) ───
+# Permite /dashboard Y /dashboard.html — ambas funcionan.
 RewriteRule ^login/?$              login.html              [L]
 RewriteRule ^signup/?$             signup.html             [L]
 RewriteRule ^pricing/?$            pricing.html            [L]
@@ -21,12 +26,7 @@ RewriteRule ^dashboard/?$          dashboard.html          [L]
 RewriteRule ^reset-password/?$     reset-password.html     [L]
 RewriteRule ^admin/dashboard/?$    admin/dashboard.html    [L]
 
-# ── Archivos y carpetas reales pasan directo ─────────────────
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
-
-# ── Genérico: .html sin extensión ───────────────────────────
+# ── Genérico: cualquier ruta sin extensión → busca el .html ──
 RewriteCond %{REQUEST_FILENAME}.html -f
 RewriteRule ^(.+?)/?$ $1.html [L]
 
