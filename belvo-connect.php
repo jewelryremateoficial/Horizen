@@ -13,14 +13,18 @@ $belvo_password = 'qmn7GAxM0_bEZJ2TiHIsPWQZWZ7_@xW7uvkRdQr93k1CkzZ29oCJHTKA1x1K1
 $belvo_url      = 'https://sandbox.belvo.com/api/token/';
 
 // ── Llamada a Belvo API (sin scopes — no necesarios para Sandbox) ──
+$payload = json_encode([
+  'scopes' => 'read_institutions,write_links,read_consents,write_consents,write_consent_callback,delete_consents'
+]);
+
 $ch = curl_init($belvo_url);
 curl_setopt_array($ch, [
   CURLOPT_POST           => true,
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_USERPWD        => $belvo_id . ':' . $belvo_password,
-  CURLOPT_POSTFIELDS     => '{}',
+  CURLOPT_POSTFIELDS     => $payload,
   CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-  CURLOPT_TIMEOUT        => 15,
+  CURLOPT_TIMEOUT        => 60,
 ]);
 
 $response = curl_exec($ch);
