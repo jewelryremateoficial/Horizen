@@ -1484,27 +1484,32 @@ async function saveProfile() {
 }
 
 // ══ BELVO CONNECT WIDGET ════════════════════════════════════════
-// SDK:  https://cdn.belvo.io/js/widget.js  (cargado en <head>)
+// SDK:  https://cdn.belvo.io/belvo-widget-1-stable.js  (cargado en <head>)
 // Auth: Supabase Edge Function belvo-auth genera el access_token
 // Sync: belvo-sync.php importa cuentas, deudas y transacciones
+// API:  belvoSDK.createWidget(access_token, config).build()
 
 async function openBelvoWidget() {
   const btn = document.getElementById('belvoCtaUser');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Conectando...'; }
 
-  // ── 1. Obtener access_token del backend ──────────────────────
+  // ── 1. Verificar que el SDK cargó ───────────────────────────
+  if (typeof belvoSDK === 'undefined') {
+    toast('SDK de Belvo no cargó. Recarga la página e intenta de nuevo.', 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '🔗 Conectar Banco (Belvo)'; }
+    return;
+  }
+
+  // ── 2. Obtener access_token del backend ──────────────────────
   let access_token;
   try {
     const res = await fetch('https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/belvo-auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.hint || `HTTP ${res.status}`);
-    }
     const data = await res.json();
-    if (!data.access_token) throw new Error('Token inválido — revisa la Edge Function belvo-auth en Supabase');
+    if (!res.ok) throw new Error(JSON.stringify(data));
+    if (!data.access_token) throw new Error('Token inválido: ' + JSON.stringify(data));
     access_token = data.access_token;
   } catch (err) {
     toast('Error obteniendo token Belvo: ' + err.message, 'error');
@@ -1512,26 +1517,25 @@ async function openBelvoWidget() {
     return;
   }
 
-  if (btn) btn.textContent = '🏦 Abriendo lista de bancos...';
+  if (btn) btn.textContent = '🏦 Abriendo bancos...';
 
-  // ── 2. Abrir Belvo Widget ─────────────────────────────────────
-  // API: belvo.setup({ access_token, onSuccess, onExit, onError }).open()
+  // ── 3. Abrir Belvo Widget ─────────────────────────────────────
+  // API real: belvoSDK.createWidget(access_token, config).build()
+  // callback(link, institution) = éxito
+  // onExit(data)                = usuario cerró
+  // onEvent(data)               = eventos intermedios
   try {
-    belvo.setup({
-      access_token,
+    belvoSDK.createWidget(access_token, {
       locale:            'es',
       country_codes:     ['MX'],
-      institution_types: ['bank', 'business'],
-      access_mode:       'recurrent',   // mantiene acceso para sync diario
+      institution_types: ['retail', 'business'],
+      access_mode:       'recurrent',
 
-      callback: (event, data) => console.log('[Belvo]', event, data),
-
-      onSuccess: async (result) => {
-        // result.link        = link_id  (clave para Belvo API)
-        // result.institution = nombre del banco ("BBVA", "Nu"…)
-        console.log('[Belvo] ✓ Banco conectado:', result);
-        toast(`✓ ${result.institution} conectado. Importando datos...`, 'info');
-        await saveBelvoLink(result.link, result.institution);
+      callback: async (link, institution) => {
+        console.log('[Belvo] ✓ Banco conectado:', link, institution);
+        toast(`✓ ${institution} conectado. Importando datos...`, 'info');
+        if (btn) { btn.disabled = false; btn.innerHTML = '🔗 Conectar Banco (Belvo)'; }
+        await saveBelvoLink(link, institution);
       },
 
       onExit: (data) => {
@@ -1539,12 +1543,11 @@ async function openBelvoWidget() {
         if (btn) { btn.disabled = false; btn.innerHTML = '🔗 Conectar Banco (Belvo)'; }
       },
 
-      onError: (error) => {
-        console.error('[Belvo] Error:', error);
-        toast('Error en widget Belvo: ' + (error.message || JSON.stringify(error)), 'error');
-        if (btn) { btn.disabled = false; btn.innerHTML = '🔗 Conectar Banco (Belvo)'; }
-      }
-    }).open();
+      onEvent: (data) => {
+        console.log('[Belvo] Evento:', data);
+      },
+
+    }).build();
 
   } catch (widgetErr) {
     toast('No se pudo abrir el widget: ' + widgetErr.message, 'error');
