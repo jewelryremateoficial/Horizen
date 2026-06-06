@@ -22,10 +22,7 @@ serve(async (req) => {
         'Authorization': 'Basic ' + auth,
       },
       body: JSON.stringify({
-        widget: {
-          scopes:      'read_institutions,write_links,read_links',
-          widget_type: 'fill_data',
-        }
+        scopes: 'read_institutions,write_links,read_links',
       }),
     })
 
