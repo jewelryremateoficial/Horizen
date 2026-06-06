@@ -1622,5 +1622,7 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); }));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(o => closeModal(o.id)); });
 </script>
+<!-- Belvo Connect Widget necesita este div para montarse -->
+<div id="belvo"></div>
 </body>
 </html>

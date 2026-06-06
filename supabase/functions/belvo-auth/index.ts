@@ -12,7 +12,7 @@ serve(async (req) => {
 
   try {
     const BELVO_ID  = 'b1c99559-5abb-4537-9293-bb6db898227c'
-    const BELVO_PWD = 'qmn7GAxM0_bEZJ*2TiHIsPWQZWZ7_@xW*7uvkRdQr93k1CkzZ29oCJHTKA1x1K1n'
+    const BELVO_PWD = 'qmn7GAxM0_bEZJ2TiHIsPWQZWZ7_@xW7uvkRdQr93k1CkzZ29oCJHTKA1x1K1n'
 
     // Belvo requiere Basic Auth en el header Y id+password en el body
     const auth = btoa(BELVO_ID + ':' + BELVO_PWD)
@@ -20,7 +20,14 @@ serve(async (req) => {
     const requestBody = {
       id:       BELVO_ID,
       password: BELVO_PWD,
-      scopes:   'read_institutions,write_links,read_links',
+      scopes:   'read_institutions,write_links,read_consents,write_consents,write_consent_callback,delete_consents',
+      widget: {
+        callback_urls: {
+          success: 'https://horizen.com.mx/dashboard.html?status=success',
+          exit:    'https://horizen.com.mx/dashboard.html?status=exit',
+          event:   'https://horizen.com.mx/dashboard.html?status=event',
+        }
+      }
     }
 
     console.log('Calling Belvo /api/token/ with body keys:', Object.keys(requestBody))
