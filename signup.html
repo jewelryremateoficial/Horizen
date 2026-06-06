@@ -149,6 +149,7 @@ select option{background:var(--bg2)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
+<script src="/assets/auth.js"></script>
 <script>
 getSession().then(s => { if (s) window.location.href = '/dashboard'; });
 
@@ -244,20 +245,7 @@ async function handleSignup(e) {
   }
 }
 
-async function signupWithGoogle() {
-  const { error } = await db.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: window.location.origin + '/pricing',
-      queryParams: { access_type: 'offline', prompt: 'consent' }
-    }
-  });
-  if (error) {
-    const alert = document.getElementById('formAlert');
-    alert.textContent = error.message;
-    alert.className = 'alert alert-error show';
-  }
-}
+// signupWithGoogle() viene de assets/auth.js — redirige a /pricing
 </script>
 </body>
 </html>

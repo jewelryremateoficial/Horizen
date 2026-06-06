@@ -735,6 +735,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 </div>
 
 <script src="/assets/app.js"></script>
+<script src="/assets/auth.js"></script>
 <script>
 // ============================================================
 // FinancialOS Dashboard — Belvo Compatible v2.1
@@ -748,9 +749,17 @@ let _accounts = [], _debts = [], _txFilter = 'all';
 
 // ── Init ──────────────────────────────────────────────────────
 (async () => {
+  // 1. Verificar sesión activa (getSession() — también detecta hash OAuth en URL)
   const session = await requireAuth('/login');
   if (!session) return;
   _user = session.user;
+
+  // 2. Admin-guard: si un admin llega aquí vía OAuth, lo mandamos a su dashboard
+  //    (auth.js también lo hace vía onAuthStateChange, esto es doble seguro)
+  if (_user?.app_metadata?.is_admin === true || _user?.user_metadata?.is_admin === true) {
+    window.location.replace('/admin/dashboard');
+    return;
+  }
 
   try { _profile = await getProfile(_user.id); } catch(e) {}
 

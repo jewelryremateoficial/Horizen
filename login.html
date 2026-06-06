@@ -154,50 +154,21 @@ blockquote::before{content:'"';font-size:3rem;color:var(--p);line-height:0;verti
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
+<script src="/assets/auth.js"></script>
 <script>
-// Helper: check admin from Auth metadata (bypasses RLS)
-function isAdminUser(user) {
-  return user?.app_metadata?.is_admin === true ||
-         user?.user_metadata?.is_admin === true;
-}
-
-async function redirectAfterLogin(user) {
-  if (isAdminUser(user)) {
-    window.location.href = '/admin/dashboard';
-    return;
-  }
-  // Fallback: try profile (may fail if RLS blocks)
-  try {
-    const profile = await getProfile(user.id);
-    if (profile?.is_admin) {
-      window.location.href = '/admin/dashboard';
-    } else if (profile?.plan === 'free' || !profile?.plan) {
-      window.location.href = '/pricing';
-    } else {
-      window.location.href = '/dashboard';
-    }
-  } catch(e) {
-    window.location.href = '/pricing';
-  }
-}
-
-// Redirigir si ya está logueado
-getSession().then(async session => {
-  if (session) {
-    await redirectAfterLogin(session.user);
-  }
-});
+// loginWithGoogle() y redirectAfterAuth() viven en assets/auth.js
+// onAuthStateChange también está en auth.js — redirige automático si ya hay sesión
 
 async function handleLogin(e) {
   e.preventDefault();
-  const btn = document.getElementById('submitBtn');
+  const btn       = document.getElementById('submitBtn');
   const formError = document.getElementById('formError');
   formError.className = 'error-msg';
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Iniciando sesión...';
 
-  const email = document.getElementById('email').value.trim();
+  const email    = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
 
   const { data, error } = await db.auth.signInWithPassword({ email, password });
@@ -212,15 +183,8 @@ async function handleLogin(e) {
     return;
   }
 
-  await redirectAfterLogin(data.user);
-}
-
-async function loginWithGoogle() {
-  const { error } = await db.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: window.location.origin + '/admin/dashboard' }
-  });
-  if (error) toast(error.message, 'error');
+  // redirectAfterAuth viene de auth.js — rutea admin vs usuario normal
+  await redirectAfterAuth(data.user);
 }
 </script>
 </body>
