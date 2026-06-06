@@ -19,8 +19,8 @@ header('X-Content-Type-Options: nosniff');
 // ════════════════════════════════════════════════════════════
 //  🔑  CREDENCIALES  ← mismas que en belvo-connect.php
 // ════════════════════════════════════════════════════════════
-define('BELVO_SECRET_ID',       'd3357bc7-ecb2-4621-9031-1b5cf0f38568');
-define('BELVO_SECRET_PASSWORD', 'P8Crbc7kprSDyKcbV1nhUClY9SaWGtIsNprENJWtUof7vgwXfTQ8Q08*L30qrYs1');
+define('BELVO_SECRET_ID',       'b1c99559-5abb-4537-9293-bb6db898227c');
+define('BELVO_SECRET_PASSWORD', 'qmn7GAxM0_bEZJ2TiHIsPWQZWZ7_@xW7uvkRdQr93k1CkzZ29oCJHTKA1x1K1n');
 define('BELVO_ENV',             'sandbox');
 
 define('SUPABASE_URL',          'https://upcbznfkpswtxiffgsgj.supabase.co');
