@@ -296,6 +296,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" onclick="showPage('accounts')"><span class="ico">🏦</span>Cuentas</button>
 
     <div class="nav-lbl">Finanzas</div>
+    <button class="ni" onclick="showPage('ingresos')"><span class="ico">💰</span>Ingresos</button>
     <button class="ni" onclick="showPage('gastos')"><span class="ico">📅</span>Gastos Fijos</button>
     <button class="ni" onclick="showPage('debts')">
       <span class="ico">💳</span>Deudas
@@ -304,6 +305,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" onclick="showPage('taxes')"><span class="ico">🧾</span>SAT / Fiscal</button>
 
     <div class="nav-lbl">Inteligencia</div>
+    <button class="ni" onclick="showPage('finplan')"><span class="ico">🧠</span>Plan Financiero</button>
     <button class="ni" onclick="showPage('nova')"><span class="ico">🤖</span>NOVA IA — CFO</button>
     <button class="ni" onclick="showPage('integrations')"><span class="ico">🔗</span>Integraciones</button>
 
@@ -487,6 +489,101 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           onmouseover="this.style.background='rgba(99,102,241,.2)'"
           onmouseout="this.style.background='rgba(99,102,241,.12)'"
         >🔗 Conectar banco</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: Ingresos ══════════════════════════════════════ -->
+  <div class="page" id="page-ingresos">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.2rem">
+      <div>
+        <div class="section-ttl">💰 Ingresos</div>
+        <div class="section-sub">Todas tus fuentes de ingreso y cuánto entra al mes</div>
+      </div>
+      <button class="tb-btn tb-primary" onclick="openModal('ingresoModal')">+ Nueva fuente</button>
+    </div>
+
+    <!-- KPIs ingresos -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.2rem">
+      <div class="card" style="padding:1.1rem">
+        <div style="font-size:.65rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">Ingreso mensual total</div>
+        <div style="font-size:1.5rem;font-weight:900;color:var(--ok)" id="iTotalMensual">—</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:.3rem" id="iFuentesCnt">— fuentes activas</div>
+      </div>
+      <div class="card" style="padding:1.1rem">
+        <div style="font-size:.65rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">Ingreso anual estimado</div>
+        <div style="font-size:1.5rem;font-weight:900" id="iTotalAnual">—</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:.3rem">suma de todas las fuentes</div>
+      </div>
+      <div class="card" style="padding:1.1rem">
+        <div style="font-size:.65rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">Ingreso principal</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--p)" id="iMainSource">—</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:.3rem" id="iMainPct">— del total</div>
+      </div>
+    </div>
+
+    <!-- Lista de fuentes + desglose -->
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:1rem">
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-ttl">📋 Mis fuentes de ingreso</div>
+        </div>
+        <div id="ingresoList">
+          <div class="sk" style="height:60px;border-radius:10px"></div>
+          <div class="sk" style="height:60px;border-radius:10px;margin-top:.5rem"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-ttl" style="margin-bottom:1rem">📊 Por tipo</div>
+        <div id="iCatBreakdown" style="display:flex;flex-direction:column;gap:.7rem">
+          <div class="sk" style="height:28px;border-radius:8px"></div>
+          <div class="sk" style="height:28px;border-radius:8px"></div>
+        </div>
+        <div style="margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--border)">
+          <div style="font-size:.65rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem">Próximos cobros</div>
+          <div id="iUpcoming" style="display:flex;flex-direction:column;gap:.4rem"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: Plan Financiero ════════════════════════════════ -->
+  <div class="page" id="page-finplan">
+    <div style="margin-bottom:1.2rem">
+      <div class="section-ttl">🧠 Plan Financiero</div>
+      <div class="section-sub">Análisis de tu situación y decisiones recomendadas</div>
+    </div>
+
+    <!-- Salud financiera general -->
+    <div class="card" style="margin-bottom:1rem;background:linear-gradient(135deg,rgba(0,212,170,.08),rgba(99,102,241,.05))">
+      <div class="card-hdr">
+        <div class="card-ttl">🏥 Diagnóstico Financiero</div>
+        <button class="card-act" onclick="calcFinPlan()">↺ Recalcular</button>
+      </div>
+      <div id="fpDiagnostico">
+        <div class="sk" style="height:80px;border-radius:10px"></div>
+      </div>
+    </div>
+
+    <!-- Regla 50/30/20 -->
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-hdr">
+        <div class="card-ttl">📐 Regla 50/30/20</div>
+        <div style="font-size:.72rem;color:var(--muted)">Necesidades · Deseos · Ahorro</div>
+      </div>
+      <div id="fp5030" style="display:flex;flex-direction:column;gap:.9rem">
+        <div class="sk" style="height:50px;border-radius:10px"></div>
+        <div class="sk" style="height:50px;border-radius:10px"></div>
+        <div class="sk" style="height:50px;border-radius:10px"></div>
+      </div>
+    </div>
+
+    <!-- Decisiones recomendadas -->
+    <div class="card">
+      <div class="card-ttl" style="margin-bottom:1rem">🎯 Decisiones recomendadas</div>
+      <div id="fpDecisiones">
+        <div class="sk" style="height:60px;border-radius:10px"></div>
+        <div class="sk" style="height:60px;border-radius:10px;margin-top:.5rem"></div>
       </div>
     </div>
   </div>
@@ -844,6 +941,45 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   </div>
 </div>
 
+<!-- ══ MODAL: Ingreso ════════════════════════════════════════ -->
+<div class="overlay" id="ingresoModal">
+  <div class="modal">
+    <div class="modal-ttl" id="ingresoModalTtl">💰 Nueva Fuente de Ingreso</div>
+    <input type="hidden" id="ingresoId">
+    <div class="fg"><label class="flbl">Nombre</label><input class="finp" id="ingresoName" placeholder="Ej. Salario, Freelance, Renta depto..."></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Monto (MXN)</label><input class="finp" type="number" id="ingresoAmount" placeholder="0.00" step="0.01" min="0"></div>
+      <div class="fg"><label class="flbl">Día que cobras (1-31)</label><input class="finp" type="number" id="ingresoDueDay" placeholder="1" min="1" max="31"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Tipo</label>
+        <select class="fsel" id="ingresoCat">
+          <option value="salario">💼 Salario / Nómina</option>
+          <option value="freelance">🖥️ Freelance / Honorarios</option>
+          <option value="negocio">🏪 Negocio propio</option>
+          <option value="renta">🏠 Renta / Arrendamiento</option>
+          <option value="inversiones">📈 Inversiones / Dividendos</option>
+          <option value="pension">👴 Pensión / Jubilación</option>
+          <option value="otros">📦 Otros</option>
+        </select>
+      </div>
+      <div class="fg"><label class="flbl">Frecuencia</label>
+        <select class="fsel" id="ingresoFreq">
+          <option value="mensual">Mensual</option>
+          <option value="quincenal">Quincenal</option>
+          <option value="semanal">Semanal</option>
+          <option value="anual">Anual</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="flbl">Notas (opcional)</label><input class="finp" id="ingresoNotes" placeholder="Ej. Empresa XYZ, incluye bonos..."></div>
+    <div class="mod-footer">
+      <button class="btn-cancel" onclick="closeModal('ingresoModal');clearIngresoForm()">Cancelar</button>
+      <button class="btn-save" id="ingresoSaveBtn" onclick="saveIngreso()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL: Gasto Fijo ══════════════════════════════════════ -->
 <div class="overlay" id="gastoModal">
   <div class="modal">
@@ -957,6 +1093,8 @@ function showPage(id) {
     overview:     ['⚡ One-Minute Check', '— Tu salud financiera al instante'],
     transactions: ['📊 Transacciones',    '— Belvo + SAT unificados'],
     accounts:     ['🏦 Cuentas',          '— balance_available en tiempo real'],
+    ingresos:     ['💰 Ingresos',          '— Fuentes de ingreso y total mensual'],
+    finplan:      ['🧠 Plan Financiero',  '— Diagnóstico y decisiones recomendadas'],
     gastos:       ['📅 Gastos Fijos',     '— Compromisos mensuales y desglose'],
     debts:        ['💳 Deudas',           '— credit_data de Belvo'],
     taxes:        ['🧾 SAT / Fiscal',     '— IVA e ISR automáticos'],
@@ -971,6 +1109,8 @@ function showPage(id) {
 
   if (id === 'transactions') loadTx();
   if (id === 'accounts')     renderAccounts();
+  if (id === 'ingresos')     loadIngresos();
+  if (id === 'finplan')      calcFinPlan();
   if (id === 'gastos')       loadGastos();
   if (id === 'debts')        renderDebts();
   if (id === 'taxes')        loadTaxes();
@@ -1741,6 +1881,338 @@ function openModal(id)  { document.getElementById(id).classList.add('open');  do
 function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
 document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); }));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(o => closeModal(o.id)); });
+
+// ══════════════════════════════════════════════════════════════
+// INGRESOS
+// ══════════════════════════════════════════════════════════════
+
+let _ingresosData = [];
+
+const ING_CAT_ICONS = {
+  salario:     '💼',
+  freelance:   '🖥️',
+  negocio:     '🏪',
+  renta:       '🏠',
+  inversiones: '📈',
+  pension:     '👴',
+  otros:       '📦',
+};
+
+const ING_CAT_LABELS = {
+  salario:     'Salario',
+  freelance:   'Freelance',
+  negocio:     'Negocio',
+  renta:       'Renta',
+  inversiones: 'Inversiones',
+  pension:     'Pensión',
+  otros:       'Otros',
+};
+
+function toMensual(amount, freq) {
+  if (freq === 'anual')     return amount / 12;
+  if (freq === 'semanal')   return amount * 4.33;
+  if (freq === 'quincenal') return amount * 2;
+  return amount;
+}
+
+async function loadIngresos() {
+  const { data, error } = await db
+    .from('income_sources')
+    .select('*')
+    .eq('user_id', _user.id)
+    .eq('is_active', true)
+    .order('amount', { ascending: false });
+  if (error) { console.error('loadIngresos:', error); return; }
+  _ingresosData = data || [];
+  renderIngresos();
+  renderIngresosKPIs();
+  renderIngresosCatBreakdown();
+  renderIngresosUpcoming();
+  // Sincronizar ingreso en localStorage para Gastos Fijos
+  const totalMensual = _ingresosData.reduce((s,i) => s + toMensual(i.amount, i.frequency), 0);
+  if (totalMensual > 0) setIncome(totalMensual);
+}
+
+function renderIngresosKPIs() {
+  const fmt = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 });
+  const totalMensual = _ingresosData.reduce((s,i) => s + toMensual(i.amount, i.frequency), 0);
+  const totalAnual   = totalMensual * 12;
+  const main         = _ingresosData[0];
+
+  document.getElementById('iTotalMensual').textContent = fmt(totalMensual);
+  document.getElementById('iTotalAnual').textContent   = fmt(totalAnual);
+  document.getElementById('iFuentesCnt').textContent   = `${_ingresosData.length} fuente${_ingresosData.length !== 1 ? 's' : ''} activa${_ingresosData.length !== 1 ? 's' : ''}`;
+
+  if (main) {
+    const mainMensual = toMensual(main.amount, main.frequency);
+    const pct = totalMensual > 0 ? Math.round((mainMensual / totalMensual) * 100) : 0;
+    document.getElementById('iMainSource').textContent = main.name;
+    document.getElementById('iMainPct').textContent    = `${pct}% del total`;
+  } else {
+    document.getElementById('iMainSource').textContent = '—';
+    document.getElementById('iMainPct').textContent    = 'Agrega tu primer ingreso';
+  }
+}
+
+function renderIngresos() {
+  const el  = document.getElementById('ingresoList');
+  const fmt = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 });
+
+  if (_ingresosData.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="eico">💰</div><div class="etxt">Aún no tienes fuentes de ingreso</div><button class="ecta" onclick="openModal('ingresoModal')">+ Agregar</button></div>`;
+    return;
+  }
+
+  el.innerHTML = _ingresosData.map(i => {
+    const mensual = toMensual(i.amount, i.frequency);
+    return `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.7rem .9rem;background:var(--bg3);border-radius:10px;border:1px solid var(--border);margin-bottom:.45rem">
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <span style="font-size:1.3rem">${ING_CAT_ICONS[i.category] || '📦'}</span>
+        <div>
+          <div style="font-size:.85rem;font-weight:700">${i.name}</div>
+          <div style="font-size:.7rem;color:var(--muted)">
+            ${ING_CAT_LABELS[i.category] || 'Otros'} · día ${i.due_day || '—'} · ${i.frequency}
+            ${i.notes ? `· ${i.notes}` : ''}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.8rem">
+        <div>
+          <div style="font-size:.95rem;font-weight:800;color:var(--ok)">${fmt(i.amount)}</div>
+          ${i.frequency !== 'mensual' ? `<div style="font-size:.68rem;color:var(--muted);text-align:right">${fmt(mensual)}/mes</div>` : ''}
+        </div>
+        <button onclick="editIngreso('${i.id}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.85rem">✏️</button>
+        <button onclick="deleteIngreso('${i.id}')" style="background:none;border:none;cursor:pointer;color:var(--err);font-size:.85rem">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderIngresosCatBreakdown() {
+  const el  = document.getElementById('iCatBreakdown');
+  const fmt = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 });
+  const bycat = {};
+  _ingresosData.forEach(i => {
+    const m = toMensual(i.amount, i.frequency);
+    bycat[i.category] = (bycat[i.category] || 0) + m;
+  });
+  const total = Object.values(bycat).reduce((s,v) => s + v, 0);
+  if (total === 0) { el.innerHTML = `<div style="color:var(--muted);font-size:.8rem;text-align:center;padding:1rem">Sin ingresos</div>`; return; }
+  el.innerHTML = Object.entries(bycat).sort((a,b) => b[1]-a[1]).map(([cat, amt]) => {
+    const pct = Math.round((amt / total) * 100);
+    return `<div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:.25rem">
+        <span style="font-size:.78rem;font-weight:600">${ING_CAT_ICONS[cat]||'📦'} ${ING_CAT_LABELS[cat]||cat}</span>
+        <span style="font-size:.78rem;color:var(--muted)">${fmt(amt)}</span>
+      </div>
+      <div style="background:var(--bg3);border-radius:99px;height:5px;overflow:hidden">
+        <div style="background:var(--ok);height:100%;width:${pct}%;border-radius:99px;transition:width .4s"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderIngresosUpcoming() {
+  const el    = document.getElementById('iUpcoming');
+  const today = new Date().getDate();
+  const fmt   = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 });
+  const upcoming = _ingresosData
+    .filter(i => i.due_day >= today)
+    .sort((a,b) => a.due_day - b.due_day)
+    .slice(0, 3);
+  if (!el) return;
+  if (upcoming.length === 0) { el.innerHTML = `<div style="font-size:.75rem;color:var(--muted)">Ya cobraste todo este mes ✅</div>`; return; }
+  el.innerHTML = upcoming.map(i => {
+    const dias = i.due_day - today;
+    return `<div style="display:flex;justify-content:space-between;font-size:.78rem;padding:.3rem 0;border-bottom:1px solid var(--border)">
+      <span>${ING_CAT_ICONS[i.category]||'📦'} ${i.name} <span style="color:var(--muted)">día ${i.due_day}</span></span>
+      <span style="color:var(--ok);font-weight:700">${fmt(toMensual(i.amount,i.frequency))}</span>
+    </div>`;
+  }).join('');
+}
+
+async function saveIngreso() {
+  const btn   = document.getElementById('ingresoSaveBtn');
+  const id    = document.getElementById('ingresoId').value;
+  const name  = document.getElementById('ingresoName').value.trim();
+  const amt   = parseFloat(document.getElementById('ingresoAmount').value);
+  const day   = parseInt(document.getElementById('ingresoDueDay').value) || 1;
+  const cat   = document.getElementById('ingresoCat').value;
+  const freq  = document.getElementById('ingresoFreq').value;
+  const notes = document.getElementById('ingresoNotes').value.trim();
+
+  if (!name)            { toast('Escribe el nombre del ingreso', 'error'); return; }
+  if (isNaN(amt)||amt<=0) { toast('Ingresa un monto válido', 'error'); return; }
+
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const payload = { user_id: _user.id, name, amount: amt, due_day: day, category: cat, frequency: freq, notes: notes||null, is_active: true };
+  let error;
+  if (id) {
+    ({ error } = await db.from('income_sources').update(payload).eq('id', id).eq('user_id', _user.id));
+  } else {
+    ({ error } = await db.from('income_sources').insert(payload));
+  }
+  btn.disabled = false; btn.textContent = 'Guardar';
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast(id ? '✅ Ingreso actualizado' : '✅ Ingreso agregado', 'ok');
+  closeModal('ingresoModal');
+  clearIngresoForm();
+  loadIngresos();
+}
+
+function editIngreso(id) {
+  const i = _ingresosData.find(x => x.id === id);
+  if (!i) return;
+  document.getElementById('ingresoModalTtl').textContent = '✏️ Editar Ingreso';
+  document.getElementById('ingresoId').value     = i.id;
+  document.getElementById('ingresoName').value   = i.name;
+  document.getElementById('ingresoAmount').value = i.amount;
+  document.getElementById('ingresoDueDay').value = i.due_day;
+  document.getElementById('ingresoCat').value    = i.category;
+  document.getElementById('ingresoFreq').value   = i.frequency;
+  document.getElementById('ingresoNotes').value  = i.notes || '';
+  openModal('ingresoModal');
+}
+
+async function deleteIngreso(id) {
+  if (!confirm('¿Eliminar esta fuente de ingreso?')) return;
+  const { error } = await db.from('income_sources').update({ is_active: false }).eq('id', id).eq('user_id', _user.id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Ingreso eliminado', 'ok');
+  loadIngresos();
+}
+
+function clearIngresoForm() {
+  document.getElementById('ingresoModalTtl').textContent = '💰 Nueva Fuente de Ingreso';
+  ['ingresoId','ingresoName','ingresoAmount','ingresoDueDay','ingresoNotes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ingresoCat').value  = 'salario';
+  document.getElementById('ingresoFreq').value = 'mensual';
+}
+
+// ══════════════════════════════════════════════════════════════
+// PLAN FINANCIERO — Motor de decisiones
+// ══════════════════════════════════════════════════════════════
+
+function calcFinPlan() {
+  const fmt = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 });
+
+  const ingreso     = _ingresosData.reduce((s,i) => s + toMensual(i.amount, i.frequency), 0) || getIncome();
+  const gastosFijos = _gastosData.reduce((s,g) => s + toMensual(g.amount, g.frequency), 0);
+  const libre       = ingreso - gastosFijos;
+  const pctGastos   = ingreso > 0 ? (gastosFijos / ingreso) * 100 : 0;
+  const ahorro20    = ingreso * 0.20;
+
+  // ── Diagnóstico ─────────────────────────────────────────────
+  let score = 100;
+  let color = 'var(--ok)';
+  let emoji = '💚';
+  let statusTxt = 'Finanzas saludables';
+  if (pctGastos > 80) { score = 30; color = 'var(--err)'; emoji = '🔴'; statusTxt = 'Situación crítica'; }
+  else if (pctGastos > 60) { score = 55; color = 'var(--warn)'; emoji = '🟡'; statusTxt = 'Requiere atención'; }
+  else if (pctGastos > 50) { score = 72; color = 'var(--warn)'; emoji = '🟠'; statusTxt = 'Ajuste recomendado'; }
+
+  const diagEl = document.getElementById('fpDiagnostico');
+  diagEl.innerHTML = `
+    <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+      <div style="font-size:3rem">${emoji}</div>
+      <div>
+        <div style="font-size:1.1rem;font-weight:800;color:${color}">${statusTxt}</div>
+        <div style="font-size:.82rem;color:var(--muted);margin-top:.3rem">
+          Gastos fijos: ${fmt(gastosFijos)} · Ingreso: ${fmt(ingreso)} · Libre: <strong style="color:${libre>=0?'var(--ok)':'var(--err)'}">${fmt(libre)}</strong>
+        </div>
+      </div>
+      <div style="margin-left:auto;text-align:center">
+        <div style="font-size:2rem;font-weight:900;color:${color}">${score}</div>
+        <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Score</div>
+      </div>
+    </div>
+    <div style="margin-top:1rem;background:var(--bg3);border-radius:99px;height:8px;overflow:hidden">
+      <div style="background:${color};height:100%;width:${score}%;border-radius:99px;transition:width .6s"></div>
+    </div>`;
+
+  // ── Regla 50/30/20 ──────────────────────────────────────────
+  if (ingreso > 0) {
+    const necesidades = gastosFijos;
+    const deseos      = Math.max(0, libre - ahorro20);
+    const ahorroReal  = Math.min(libre, ahorro20);
+
+    const pctN = Math.min(100, Math.round((necesidades / ingreso) * 100));
+    const pctD = Math.min(100, Math.round((deseos      / ingreso) * 100));
+    const pctA = Math.min(100, Math.round((ahorroReal  / ingreso) * 100));
+
+    const row = (label, ideal, real, pctReal, color, fmtAmt) => `
+      <div style="padding:.85rem;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;margin-bottom:.5rem">
+          <div>
+            <span style="font-weight:700;font-size:.85rem">${label}</span>
+            <span style="font-size:.72rem;color:var(--muted);margin-left:.4rem">Ideal: ${ideal}%</span>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:800;font-size:.9rem;color:${color}">${fmt(fmtAmt)}</div>
+            <div style="font-size:.7rem;color:var(--muted)">${pctReal}% de tu ingreso</div>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border-radius:99px;height:7px;overflow:hidden">
+          <div style="background:${color};height:100%;width:${Math.min(pctReal,100)}%;border-radius:99px;transition:width .5s"></div>
+        </div>
+        ${pctReal > parseInt(ideal) ? `<div style="font-size:.7rem;color:${color};margin-top:.35rem">⚠️ ${pctReal - parseInt(ideal)}% por encima del ideal</div>` : `<div style="font-size:.7rem;color:var(--ok);margin-top:.35rem">✅ Dentro del rango ideal</div>`}
+      </div>`;
+
+    document.getElementById('fp5030').innerHTML =
+      row('🏠 Necesidades (gastos fijos)', '50', pctN, pctN, pctN > 50 ? 'var(--err)' : 'var(--ok)', necesidades) +
+      row('🎯 Deseos (libre para gastar)', '30', pctD, pctD, pctD > 30 ? 'var(--warn)' : 'var(--ok)', deseos) +
+      row('💎 Ahorro / Inversión', '20', pctA, pctA, pctA < 20 ? 'var(--warn)' : 'var(--ok)', ahorroReal);
+  } else {
+    document.getElementById('fp5030').innerHTML = `<div style="color:var(--muted);font-size:.85rem;padding:1rem;text-align:center">Agrega tus ingresos para ver el análisis 50/30/20</div>`;
+  }
+
+  // ── Decisiones recomendadas ──────────────────────────────────
+  const decisiones = [];
+
+  if (ingreso === 0) {
+    decisiones.push({ emoji:'💰', prioridad:'Alta', color:'var(--err)', titulo:'Registra tus ingresos', desc:'Ve a la sección Ingresos y agrega tus fuentes. Sin eso no podemos darte recomendaciones precisas.' });
+  }
+  if (gastosFijos === 0 && ingreso > 0) {
+    decisiones.push({ emoji:'📅', prioridad:'Alta', color:'var(--err)', titulo:'Registra tus gastos fijos', desc:'Agrega renta, servicios, suscripciones y créditos para ver cuánto margen real tienes.' });
+  }
+  if (pctGastos > 80 && ingreso > 0) {
+    decisiones.push({ emoji:'🚨', prioridad:'Urgente', color:'var(--err)', titulo:'Tus gastos fijos consumen el ' + Math.round(pctGastos) + '% del ingreso', desc:'Identifica qué gastos puedes reducir o eliminar. El objetivo es bajar al 50% o menos.' });
+  }
+  if (pctGastos > 50 && pctGastos <= 80 && ingreso > 0) {
+    decisiones.push({ emoji:'⚠️', prioridad:'Media', color:'var(--warn)', titulo:'Gastos fijos al ' + Math.round(pctGastos) + '% — revisar', desc:'Estás por encima del 50% recomendado. Revisa suscripciones y servicios que puedas cancelar o reducir.' });
+  }
+  if (libre >= ahorro20 && ingreso > 0) {
+    decisiones.push({ emoji:'💎', prioridad:'Oportunidad', color:'var(--ok)', titulo:'Tienes margen para ahorrar ' + fmt(ahorro20) + '/mes', desc:'Con tu ingreso actual puedes cubrir el 20% de ahorro recomendado. Considera CETES, fondos de inversión o una cuenta de ahorro separada.' });
+  }
+  if (libre > 0 && libre < ahorro20 && ingreso > 0) {
+    decisiones.push({ emoji:'📈', prioridad:'Media', color:'var(--warn)', titulo:'Ahorra lo que puedas: ' + fmt(libre) + '/mes', desc:'No llegas al 20% ideal, pero ahorrar algo siempre es mejor que nada. Automatiza una transferencia mensual.' });
+  }
+  if (libre < 0 && ingreso > 0) {
+    decisiones.push({ emoji:'🔴', prioridad:'Urgente', color:'var(--err)', titulo:'Gastos fijos mayores que el ingreso: ' + fmt(Math.abs(libre)) + ' en déficit', desc:'Estás gastando más de lo que ganas en compromisos fijos. Revisa urgentemente qué puedes renegociar o cancelar.' });
+  }
+  // Siempre mostrar fondo de emergencia
+  if (ingreso > 0) {
+    decisiones.push({ emoji:'🏦', prioridad:'Importante', color:'var(--sec)', titulo:'Fondo de emergencia: meta ' + fmt(gastosFijos * 3), desc:'Tener 3 meses de gastos fijos ahorrados (' + fmt(gastosFijos * 3) + ') te da tranquilidad ante imprevistos. Prioriza esto antes de invertir.' });
+  }
+
+  const fpEl = document.getElementById('fpDecisiones');
+  if (decisiones.length === 0) {
+    fpEl.innerHTML = `<div style="color:var(--muted);font-size:.85rem;padding:1rem;text-align:center">Agrega ingresos y gastos para ver recomendaciones</div>`;
+    return;
+  }
+  fpEl.innerHTML = decisiones.map(d => `
+    <div style="display:flex;gap:.9rem;padding:.85rem;background:var(--bg3);border-radius:10px;border-left:3px solid ${d.color};margin-bottom:.5rem">
+      <span style="font-size:1.4rem;flex-shrink:0">${d.emoji}</span>
+      <div>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.25rem">
+          <span style="font-size:.82rem;font-weight:800">${d.titulo}</span>
+          <span style="font-size:.62rem;font-weight:700;color:${d.color};background:${d.color}22;padding:.1rem .45rem;border-radius:99px">${d.prioridad}</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.4">${d.desc}</div>
+      </div>
+    </div>`).join('');
+}
 
 // ══════════════════════════════════════════════════════════════
 // GASTOS FIJOS
