@@ -6,6 +6,8 @@
 <title>Dashboard — FinancialOS</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Belvo Connect Widget SDK — https://developers.belvo.com/docs/connect-widget -->
+<script src="https://cdn.belvo.io/js/widget.js"></script>
 <style>
 /* ── Design Tokens ────────────────────────────────────────── */
 :root{
@@ -445,18 +447,46 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
   <!-- ══ PAGE: Accounts ══════════════════════════════════════ -->
   <div class="page" id="page-accounts">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div><div class="section-ttl">🏦 Cuentas</div><div class="section-sub">Saldos Belvo: balance_available (disponible real)</div></div>
-      <button class="tb-btn tb-primary" onclick="openModal('accModal')">+ Nueva cuenta</button>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.75rem">
+      <div><div class="section-ttl">🏦 Cuentas</div><div class="section-sub">Saldos en tiempo real vía Belvo Open Banking</div></div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+        <!-- Botón principal: conecta banco automático vía Belvo -->
+        <button
+          id="belvoCtaUser"
+          onclick="openBelvoWidget()"
+          style="display:inline-flex;align-items:center;gap:.5rem;
+                 background:linear-gradient(135deg,#6366f1,#00d4aa);
+                 color:#fff;border:none;border-radius:10px;
+                 padding:.62rem 1.15rem;font-size:.86rem;font-weight:700;
+                 cursor:pointer;transition:opacity .2s;white-space:nowrap"
+          onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'"
+        >🔗 Conectar Banco (Belvo)</button>
+        <!-- Botón secundario: captura manual -->
+        <button class="tb-btn tb-ghost" onclick="openModal('accModal')">+ Manual</button>
+      </div>
     </div>
+
     <div class="acc-grid" id="accGrid">
       <div class="sk" style="height:130px;border-radius:12px"></div>
       <div class="sk" style="height:130px;border-radius:12px"></div>
     </div>
-    <div class="card" style="display:flex;gap:2rem;flex-wrap:wrap">
+
+    <!-- Totales — justo arriba: el botón Belvo en el card -->
+    <div class="card" style="display:flex;gap:2rem;flex-wrap:wrap;align-items:center">
       <div><div style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.35rem">Activos Disponibles</div><div style="font-size:1.8rem;font-weight:900;letter-spacing:-1px;color:var(--p)" id="totalAvail">—</div></div>
       <div><div style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.35rem">Deuda Total (TDC+Loans)</div><div style="font-size:1.8rem;font-weight:900;letter-spacing:-1px;color:var(--err)" id="totalDebt">—</div></div>
       <div><div style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.35rem">Patrimonio Neto</div><div style="font-size:1.8rem;font-weight:900;letter-spacing:-1px" id="netWorth">—</div></div>
+      <div style="margin-left:auto">
+        <button
+          onclick="openBelvoWidget()"
+          style="display:inline-flex;align-items:center;gap:.45rem;
+                 background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.35);
+                 color:#818cf8;border-radius:9px;padding:.45rem .9rem;
+                 font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s"
+          onmouseover="this.style.background='rgba(99,102,241,.2)'"
+          onmouseout="this.style.background='rgba(99,102,241,.12)'"
+        >🔗 Conectar banco</button>
+      </div>
     </div>
   </div>
 
@@ -1453,8 +1483,114 @@ async function saveProfile() {
   document.getElementById('userName').textContent = document.getElementById('sName').value.trim() || _user.email;
 }
 
-// ── Integrations placeholders ─────────────────────────────────
-function connectBelvo() { toast('Integración Belvo — disponible en plan Pro', 'info'); }
+// ══ BELVO CONNECT WIDGET ════════════════════════════════════════
+// SDK:  https://cdn.belvo.io/js/widget.js  (cargado en <head>)
+// Auth: belvo-connect.php genera el access_token con las API Keys
+// Sync: belvo-sync.php importa cuentas, deudas y transacciones
+
+async function openBelvoWidget() {
+  const btn = document.getElementById('belvoCtaUser');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Conectando...'; }
+
+  // ── 1. Obtener access_token del backend ──────────────────────
+  let access_token;
+  try {
+    const res = await fetch('/belvo-connect.php');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.hint || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    if (!data.access_token) throw new Error('Token inválido de belvo-connect.php');
+    access_token = data.access_token;
+  } catch (err) {
+    toast('Error obteniendo token Belvo: ' + err.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '🔗 Conectar Banco (Belvo)'; }
+    return;
+  }
+
+  if (btn) btn.textContent = '🏦 Abriendo lista de bancos...';
+
+  // ── 2. Abrir Belvo Widget ─────────────────────────────────────
+  // API: belvo.setup({ access_token, onSuccess, onExit, onError }).open()
+  try {
+    belvo.setup({
+      access_token,
+      locale:            'es',
+      country_codes:     ['MX'],
+      institution_types: ['bank', 'business'],
+      access_mode:       'recurrent',   // mantiene acceso para sync diario
+
+      callback: (event, data) => console.log('[Belvo]', event, data),
+
+      onSuccess: async (result) => {
+        // result.link        = link_id  (clave para Belvo API)
+        // result.institution = nombre del banco ("BBVA", "Nu"…)
+        console.log('[Belvo] ✓ Banco conectado:', result);
+        toast(`✓ ${result.institution} conectado. Importando datos...`, 'info');
+        await saveBelvoLink(result.link, result.institution);
+      },
+
+      onExit: (data) => {
+        console.log('[Belvo] Widget cerrado', data);
+        if (btn) { btn.disabled = false; btn.innerHTML = '🔗 Conectar Banco (Belvo)'; }
+      },
+
+      onError: (error) => {
+        console.error('[Belvo] Error:', error);
+        toast('Error en widget Belvo: ' + (error.message || JSON.stringify(error)), 'error');
+        if (btn) { btn.disabled = false; btn.innerHTML = '🔗 Conectar Banco (Belvo)'; }
+      }
+    }).open();
+
+  } catch (widgetErr) {
+    toast('No se pudo abrir el widget: ' + widgetErr.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '🔗 Conectar Banco (Belvo)'; }
+  }
+}
+
+// ── Guardar link_id + disparar sync completo ──────────────────
+async function saveBelvoLink(link_id, institution_name) {
+  // a) Registro inicial en accounts (se actualiza con datos reales en el sync)
+  await db.from('accounts').upsert(
+    {
+      user_id:           _user.id,
+      name:              institution_name,
+      type:              'CHECKING',
+      institution_name:  institution_name,
+      belvo_account_id:  link_id,
+      balance_available: 0,
+      balance_current:   0,
+      is_active:         true,
+      last_synced_at:    new Date().toISOString(),
+    },
+    { onConflict: 'belvo_account_id' }
+  );
+
+  // b) Sync completo: cuentas + deudas + transacciones (últimos 90 días)
+  try {
+    const res = await fetch('/belvo-sync.php', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ link_id, institution_name, user_id: _user.id }),
+    });
+    const sync = await res.json();
+    if (sync.success) {
+      toast(`✓ ${institution_name}: ${sync.accounts} cuentas · ${sync.transactions} movimientos`, 'success');
+    } else {
+      toast(`Banco guardado. Sync en proceso...`, 'info');
+    }
+  } catch (_) {
+    toast(`Banco guardado. Sync pendiente.`, 'info');
+  }
+
+  // c) Refrescar cuentas y KPIs
+  const btn = document.getElementById('belvoCtaUser');
+  if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Reconectar'; }
+  await loadAccounts();
+  renderAccounts();
+  loadMetrics();
+}
 function connectSAT()   { toast('Conexión SAT vía RFC — próximamente', 'info'); }
 function joinNova() {
   const email = document.getElementById('novaEmail').value.trim();
