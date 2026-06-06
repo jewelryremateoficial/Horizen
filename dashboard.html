@@ -296,6 +296,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" onclick="showPage('accounts')"><span class="ico">🏦</span>Cuentas</button>
 
     <div class="nav-lbl">Finanzas</div>
+    <button class="ni" onclick="showPage('gastos')"><span class="ico">📅</span>Gastos Fijos</button>
     <button class="ni" onclick="showPage('debts')">
       <span class="ico">💳</span>Deudas
       <span class="badge" id="debtBadge" style="display:none"></span>
@@ -486,6 +487,85 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           onmouseover="this.style.background='rgba(99,102,241,.2)'"
           onmouseout="this.style.background='rgba(99,102,241,.12)'"
         >🔗 Conectar banco</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: Gastos Fijos ══════════════════════════════════ -->
+  <div class="page" id="page-gastos">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.2rem">
+      <div>
+        <div class="section-ttl">📅 Gastos Fijos</div>
+        <div class="section-sub">Compromisos mensuales, desglose y cuánto te queda</div>
+      </div>
+      <button class="tb-btn tb-primary" onclick="openModal('gastoModal')">+ Nuevo gasto fijo</button>
+    </div>
+
+    <!-- Resumen financiero -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.2rem">
+      <div class="card" style="padding:1.1rem">
+        <div style="font-size:.65rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">Ingreso mensual</div>
+        <div style="font-size:1.4rem;font-weight:900;color:var(--p)" id="gIncome">—</div>
+        <button onclick="editIncome()" style="font-size:.68rem;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;margin-top:.3rem">✏️ Editar</button>
+      </div>
+      <div class="card" style="padding:1.1rem">
+        <div style="font-size:.65rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">Total gastos fijos</div>
+        <div style="font-size:1.4rem;font-weight:900;color:var(--err)" id="gTotal">—</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:.3rem" id="gPct">—% del ingreso</div>
+      </div>
+      <div class="card" style="padding:1.1rem">
+        <div style="font-size:.65rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">Lo que te queda</div>
+        <div style="font-size:1.4rem;font-weight:900" id="gRemaining">—</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:.3rem">después de gastos fijos</div>
+      </div>
+      <div class="card" style="padding:1.1rem">
+        <div style="font-size:.65rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">Ahorro recomendado</div>
+        <div style="font-size:1.4rem;font-weight:900;color:var(--ok)" id="gSavings">—</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:.3rem">regla del 20%</div>
+      </div>
+    </div>
+
+    <!-- Próximos pagos -->
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-hdr">
+        <div class="card-ttl">⏰ Próximos pagos este mes</div>
+        <div style="font-size:.75rem;color:var(--muted)" id="gNextDays"></div>
+      </div>
+      <div id="gUpcoming" style="display:flex;flex-direction:column;gap:.5rem">
+        <div class="sk" style="height:48px;border-radius:10px"></div>
+        <div class="sk" style="height:48px;border-radius:10px"></div>
+      </div>
+    </div>
+
+    <!-- Lista completa + desglose por categoría -->
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:1rem">
+      <div class="card">
+        <div class="card-hdr">
+          <div class="card-ttl">📋 Todos mis gastos fijos</div>
+          <select id="gCatFilter" onchange="renderGastos()" style="font-size:.75rem;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:.3rem .6rem">
+            <option value="">Todas las categorías</option>
+            <option value="vivienda">🏠 Vivienda</option>
+            <option value="servicios">💡 Servicios</option>
+            <option value="suscripciones">📱 Suscripciones</option>
+            <option value="seguros">🛡️ Seguros</option>
+            <option value="creditos">🏦 Créditos</option>
+            <option value="otros">📦 Otros</option>
+          </select>
+        </div>
+        <div id="gastoList">
+          <div class="sk" style="height:60px;border-radius:10px"></div>
+          <div class="sk" style="height:60px;border-radius:10px;margin-top:.5rem"></div>
+        </div>
+      </div>
+
+      <!-- Desglose por categoría -->
+      <div class="card">
+        <div class="card-ttl" style="margin-bottom:1rem">📊 Por categoría</div>
+        <div id="gCatBreakdown" style="display:flex;flex-direction:column;gap:.7rem">
+          <div class="sk" style="height:28px;border-radius:8px"></div>
+          <div class="sk" style="height:28px;border-radius:8px"></div>
+          <div class="sk" style="height:28px;border-radius:8px"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -764,6 +844,44 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   </div>
 </div>
 
+<!-- ══ MODAL: Gasto Fijo ══════════════════════════════════════ -->
+<div class="overlay" id="gastoModal">
+  <div class="modal">
+    <div class="modal-ttl" id="gastoModalTtl">📅 Nuevo Gasto Fijo</div>
+    <input type="hidden" id="gastoId">
+    <div class="fg"><label class="flbl">Nombre del gasto</label><input class="finp" id="gastoName" placeholder="Ej. Renta, Netflix, Internet"></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Monto mensual (MXN)</label><input class="finp" type="number" id="gastoAmount" placeholder="0.00" step="0.01" min="0"></div>
+      <div class="fg"><label class="flbl">Día de pago (1-31)</label><input class="finp" type="number" id="gastoDueDay" placeholder="1" min="1" max="31"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Categoría</label>
+        <select class="fsel" id="gastoCat">
+          <option value="vivienda">🏠 Vivienda</option>
+          <option value="servicios">💡 Servicios</option>
+          <option value="suscripciones">📱 Suscripciones</option>
+          <option value="seguros">🛡️ Seguros</option>
+          <option value="creditos">🏦 Créditos</option>
+          <option value="otros">📦 Otros</option>
+        </select>
+      </div>
+      <div class="fg"><label class="flbl">Frecuencia</label>
+        <select class="fsel" id="gastoFreq">
+          <option value="mensual">Mensual</option>
+          <option value="quincenal">Quincenal</option>
+          <option value="anual">Anual</option>
+          <option value="semanal">Semanal</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="flbl">Notas (opcional)</label><input class="finp" id="gastoNotes" placeholder="Ej. Vence en diciembre, incluye 2 meses..."></div>
+    <div class="mod-footer">
+      <button class="btn-cancel" onclick="closeModal('gastoModal');clearGastoForm()">Cancelar</button>
+      <button class="btn-save" id="gastoSaveBtn" onclick="saveGasto()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <script src="/assets/app.js"></script>
 <script src="/assets/auth.js"></script>
 <script>
@@ -839,6 +957,7 @@ function showPage(id) {
     overview:     ['⚡ One-Minute Check', '— Tu salud financiera al instante'],
     transactions: ['📊 Transacciones',    '— Belvo + SAT unificados'],
     accounts:     ['🏦 Cuentas',          '— balance_available en tiempo real'],
+    gastos:       ['📅 Gastos Fijos',     '— Compromisos mensuales y desglose'],
     debts:        ['💳 Deudas',           '— credit_data de Belvo'],
     taxes:        ['🧾 SAT / Fiscal',     '— IVA e ISR automáticos'],
     nova:         ['🤖 NOVA IA',          '— CFO Virtual'],
@@ -852,6 +971,7 @@ function showPage(id) {
 
   if (id === 'transactions') loadTx();
   if (id === 'accounts')     renderAccounts();
+  if (id === 'gastos')       loadGastos();
   if (id === 'debts')        renderDebts();
   if (id === 'taxes')        loadTaxes();
   if (id === 'alerts')       loadAlerts();
@@ -1621,6 +1741,278 @@ function openModal(id)  { document.getElementById(id).classList.add('open');  do
 function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
 document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); }));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(o => closeModal(o.id)); });
+
+// ══════════════════════════════════════════════════════════════
+// GASTOS FIJOS
+// ══════════════════════════════════════════════════════════════
+
+let _gastosData = [];
+
+const GASTO_CAT_ICONS = {
+  vivienda:      '🏠',
+  servicios:     '💡',
+  suscripciones: '📱',
+  seguros:       '🛡️',
+  creditos:      '🏦',
+  otros:         '📦',
+};
+
+const GASTO_CAT_LABELS = {
+  vivienda:      'Vivienda',
+  servicios:     'Servicios',
+  suscripciones: 'Suscripciones',
+  seguros:       'Seguros',
+  creditos:      'Créditos',
+  otros:         'Otros',
+};
+
+// Carga todos los gastos fijos del usuario
+async function loadGastos() {
+  const { data, error } = await db
+    .from('fixed_expenses')
+    .select('*')
+    .eq('user_id', _user.id)
+    .eq('is_active', true)
+    .order('due_day', { ascending: true });
+
+  if (error) { console.error('loadGastos:', error); return; }
+  _gastosData = data || [];
+  renderGastos();
+  renderGastosResumen();
+  renderGastosUpcoming();
+  renderGastosCatBreakdown();
+}
+
+// Ingreso mensual guardado en localStorage por usuario
+function getIncome() {
+  return parseFloat(localStorage.getItem(`horizen_income_${_user?.id}`) || '0');
+}
+function setIncome(v) {
+  localStorage.setItem(`horizen_income_${_user?.id}`, v);
+}
+
+function editIncome() {
+  const current = getIncome();
+  const val = prompt('¿Cuál es tu ingreso mensual aproximado? (MXN)', current || '');
+  if (val === null) return;
+  const num = parseFloat(val.replace(/,/g, ''));
+  if (isNaN(num) || num < 0) { toast('Ingresa un número válido', 'error'); return; }
+  setIncome(num);
+  renderGastosResumen();
+}
+
+// Resumen financiero (4 tarjetas superiores)
+function renderGastosResumen() {
+  const income   = getIncome();
+  const total    = _gastosData.reduce((s, g) => {
+    // Normalizar a mensual
+    let monthly = g.amount;
+    if (g.frequency === 'anual')     monthly = g.amount / 12;
+    if (g.frequency === 'semanal')   monthly = g.amount * 4.33;
+    if (g.frequency === 'quincenal') monthly = g.amount * 2;
+    return s + monthly;
+  }, 0);
+
+  const remaining = income - total;
+  const savings   = income * 0.20;
+  const pct       = income > 0 ? Math.round((total / income) * 100) : 0;
+
+  const fmt = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 });
+
+  document.getElementById('gIncome').textContent    = income > 0 ? fmt(income) : '— Editar';
+  document.getElementById('gTotal').textContent     = fmt(total);
+  document.getElementById('gPct').textContent       = income > 0 ? `${pct}% del ingreso` : 'Agrega tu ingreso';
+  document.getElementById('gRemaining').textContent = income > 0 ? fmt(remaining) : '—';
+  document.getElementById('gRemaining').style.color = remaining >= 0 ? 'var(--ok)' : 'var(--err)';
+  document.getElementById('gSavings').textContent   = income > 0 ? fmt(savings) : '—';
+}
+
+// Próximos pagos este mes
+function renderGastosUpcoming() {
+  const el    = document.getElementById('gUpcoming');
+  const info  = document.getElementById('gNextDays');
+  const today = new Date().getDate();
+  const fmt   = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 });
+
+  const upcoming = _gastosData
+    .filter(g => g.due_day >= today)
+    .sort((a, b) => a.due_day - b.due_day)
+    .slice(0, 5);
+
+  if (upcoming.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="eico">✅</div><div class="etxt">Ya pagaste todo este mes</div></div>`;
+    info.textContent = '';
+    return;
+  }
+
+  const nextDays = upcoming[0].due_day - today;
+  info.textContent = nextDays === 0 ? '¡Hoy vence un pago!' : `Próximo en ${nextDays} día${nextDays === 1 ? '' : 's'}`;
+
+  el.innerHTML = upcoming.map(g => {
+    const dias = g.due_day - today;
+    const urgency = dias === 0 ? 'var(--err)' : dias <= 3 ? 'var(--warn)' : 'var(--muted)';
+    return `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.65rem .9rem;background:var(--bg3);border-radius:10px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:.7rem">
+        <span style="font-size:1.2rem">${GASTO_CAT_ICONS[g.category] || '📦'}</span>
+        <div>
+          <div style="font-size:.85rem;font-weight:600">${g.name}</div>
+          <div style="font-size:.7rem;color:${urgency};font-weight:600">
+            ${dias === 0 ? '¡Vence hoy!' : `En ${dias} día${dias === 1 ? '' : 's'} — día ${g.due_day}`}
+          </div>
+        </div>
+      </div>
+      <div style="font-size:.95rem;font-weight:800">${fmt(g.amount)}</div>
+    </div>`;
+  }).join('');
+}
+
+// Lista completa de gastos
+function renderGastos() {
+  const el     = document.getElementById('gastoList');
+  const filter = document.getElementById('gCatFilter')?.value || '';
+  const fmt    = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 });
+
+  let data = _gastosData;
+  if (filter) data = data.filter(g => g.category === filter);
+
+  if (data.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="eico">📅</div><div class="etxt">${filter ? 'Sin gastos en esta categoría' : 'Aún no tienes gastos fijos'}</div><button class="ecta" onclick="openModal('gastoModal')">+ Agregar</button></div>`;
+    return;
+  }
+
+  el.innerHTML = data.map(g => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.7rem .9rem;background:var(--bg3);border-radius:10px;border:1px solid var(--border);margin-bottom:.45rem">
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <span style="font-size:1.3rem">${GASTO_CAT_ICONS[g.category] || '📦'}</span>
+        <div>
+          <div style="font-size:.85rem;font-weight:700">${g.name}</div>
+          <div style="font-size:.7rem;color:var(--muted)">
+            ${GASTO_CAT_LABELS[g.category] || 'Otros'} · día ${g.due_day} · ${g.frequency}
+            ${g.notes ? `· ${g.notes}` : ''}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.8rem">
+        <div style="font-size:.95rem;font-weight:800">${fmt(g.amount)}</div>
+        <button onclick="editGasto('${g.id}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.85rem" title="Editar">✏️</button>
+        <button onclick="deleteGasto('${g.id}')" style="background:none;border:none;cursor:pointer;color:var(--err);font-size:.85rem" title="Eliminar">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+// Desglose por categoría
+function renderGastosCatBreakdown() {
+  const el  = document.getElementById('gCatBreakdown');
+  const fmt = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 });
+
+  const bycat = {};
+  _gastosData.forEach(g => {
+    let monthly = g.amount;
+    if (g.frequency === 'anual')     monthly = g.amount / 12;
+    if (g.frequency === 'semanal')   monthly = g.amount * 4.33;
+    if (g.frequency === 'quincenal') monthly = g.amount * 2;
+    bycat[g.category] = (bycat[g.category] || 0) + monthly;
+  });
+
+  const total = Object.values(bycat).reduce((s, v) => s + v, 0);
+
+  if (total === 0) {
+    el.innerHTML = `<div style="color:var(--muted);font-size:.8rem;text-align:center;padding:1rem">Sin gastos registrados</div>`;
+    return;
+  }
+
+  el.innerHTML = Object.entries(bycat)
+    .sort((a, b) => b[1] - a[1])
+    .map(([cat, amt]) => {
+      const pct = Math.round((amt / total) * 100);
+      return `
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:.25rem">
+          <span style="font-size:.78rem;font-weight:600">${GASTO_CAT_ICONS[cat] || '📦'} ${GASTO_CAT_LABELS[cat] || cat}</span>
+          <span style="font-size:.78rem;color:var(--muted)">${fmt(amt)}</span>
+        </div>
+        <div style="background:var(--bg3);border-radius:99px;height:5px;overflow:hidden">
+          <div style="background:var(--p);height:100%;width:${pct}%;border-radius:99px;transition:width .4s"></div>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+// Guardar gasto (nuevo o edición)
+async function saveGasto() {
+  const btn  = document.getElementById('gastoSaveBtn');
+  const id   = document.getElementById('gastoId').value;
+  const name = document.getElementById('gastoName').value.trim();
+  const amt  = parseFloat(document.getElementById('gastoAmount').value);
+  const day  = parseInt(document.getElementById('gastoDueDay').value) || 1;
+  const cat  = document.getElementById('gastoCat').value;
+  const freq = document.getElementById('gastoFreq').value;
+  const notes= document.getElementById('gastoNotes').value.trim();
+
+  if (!name)       { toast('Escribe el nombre del gasto', 'error'); return; }
+  if (isNaN(amt) || amt <= 0) { toast('Ingresa un monto válido', 'error'); return; }
+
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  const payload = {
+    user_id:  _user.id,
+    name, amount: amt, due_day: day,
+    category: cat, frequency: freq,
+    notes: notes || null, is_active: true,
+  };
+
+  let error;
+  if (id) {
+    ({ error } = await db.from('fixed_expenses').update(payload).eq('id', id).eq('user_id', _user.id));
+  } else {
+    ({ error } = await db.from('fixed_expenses').insert(payload));
+  }
+
+  btn.disabled = false; btn.textContent = 'Guardar';
+
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+
+  toast(id ? '✅ Gasto actualizado' : '✅ Gasto agregado', 'ok');
+  closeModal('gastoModal');
+  clearGastoForm();
+  loadGastos();
+}
+
+// Abrir modal en modo edición
+function editGasto(id) {
+  const g = _gastosData.find(x => x.id === id);
+  if (!g) return;
+  document.getElementById('gastoModalTtl').textContent     = '✏️ Editar Gasto Fijo';
+  document.getElementById('gastoId').value                 = g.id;
+  document.getElementById('gastoName').value               = g.name;
+  document.getElementById('gastoAmount').value             = g.amount;
+  document.getElementById('gastoDueDay').value             = g.due_day;
+  document.getElementById('gastoCat').value                = g.category;
+  document.getElementById('gastoFreq').value               = g.frequency;
+  document.getElementById('gastoNotes').value              = g.notes || '';
+  openModal('gastoModal');
+}
+
+// Eliminar gasto
+async function deleteGasto(id) {
+  if (!confirm('¿Eliminar este gasto fijo?')) return;
+  const { error } = await db.from('fixed_expenses')
+    .update({ is_active: false })
+    .eq('id', id).eq('user_id', _user.id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Gasto eliminado', 'ok');
+  loadGastos();
+}
+
+function clearGastoForm() {
+  document.getElementById('gastoModalTtl').textContent = '📅 Nuevo Gasto Fijo';
+  ['gastoId','gastoName','gastoAmount','gastoDueDay','gastoNotes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('gastoCat').value  = 'vivienda';
+  document.getElementById('gastoFreq').value = 'mensual';
+}
 </script>
 <!-- Belvo Connect Widget necesita este div para montarse -->
 <div id="belvo"></div>
