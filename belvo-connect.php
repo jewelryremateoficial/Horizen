@@ -1,42 +1,38 @@
 <?php
-/**
- * FinancialOS / Horizen — Belvo Token Generator
- * ─────────────────────────────────────────────────────────────
- * Genera el access_token para el Belvo Connect Widget.
- * Usa HTTP Basic Auth con base64 manual (evita bugs de CURLOPT_USERPWD
- * con caracteres especiales en el password: @, _, *, etc.)
- *
- * Endpoint: GET /belvo-connect.php
- * Responde: { "access_token": "eyJ..." }  ← alimenta al Widget JS
- */
-
 header('Content-Type: application/json');
 
-// ── Credenciales Sandbox ──────────────────────────────────────
-$secret_id  = 'b1c99559-5abb-4537-9293-bb6db898227c';
-$secret_pwd = 'qmn7GAxM0_bEZJ2TiHIsPWQZWZ7_@xW7uvkRdQr93k1CkzZ29oCJHTKA1x1K1n';
+// ── 1. Credenciales con trim() ────────────────────────────────
+$secret_id  = trim('b1c99559-5abb-4537-9293-bb6db898227c');
+$secret_pwd = trim('qmn7GAxM0_bEZJ2TiHIsPWQZWZ7_@xW7uvkRdQr93k1CkzZ29oCJHTKA1x1K1n');
 $endpoint   = 'https://sandbox.belvo.com/api/token/';
 
-// ── Build Basic Auth manualmente (100 % seguro con chars especiales) ──
-// base64("secret_id:secret_password") — estándar RFC 7617
-$basic_token = base64_encode($secret_id . ':' . $secret_pwd);
+// ── 2. Basic Auth manual en base64 (neutraliza @ y chars especiales) ──
+$basic = base64_encode($secret_id . ':' . $secret_pwd);
 
-// ── Body: scopes requeridos por el Widget ─────────────────────
-$body = json_encode([
-    'scopes' => 'read_institutions,write_links,read_consents,write_consents,write_consent_callback,delete_consents'
-]);
+// ── 3. Body con scopes mínimos seguros ───────────────────────
+$body = json_encode(['scopes' => 'read_institutions,write_links,read_links']);
 
-// ── cURL request ──────────────────────────────────────────────
+// ── 5. Log: payload exacto que se va a mandar ─────────────────
+$log = fopen(__DIR__ . '/belvo-connect.log', 'a');
+fwrite($log, "\n" . str_repeat('-', 60) . "\n");
+fwrite($log, date('Y-m-d H:i:s') . " | REQUEST\n");
+fwrite($log, "endpoint : $endpoint\n");
+fwrite($log, "body     : $body\n");
+fwrite($log, "auth_len : " . strlen($basic) . " chars (base64)\n");
+
+// ── 4. cURL con User-Agent de navegador ───────────────────────
 $ch = curl_init($endpoint);
 curl_setopt_array($ch, [
     CURLOPT_POST           => true,
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_TIMEOUT        => 30,
     CURLOPT_POSTFIELDS     => $body,
+    CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36',
     CURLOPT_HTTPHEADER     => [
-        'Authorization: Basic ' . $basic_token,
+        'Authorization: Basic ' . $basic,
         'Content-Type: application/json',
         'Content-Length: ' . strlen($body),
+        'Accept: application/json',
     ],
 ]);
 
@@ -45,33 +41,30 @@ $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $curl_err  = curl_error($ch);
 curl_close($ch);
 
-// ── Log detallado (sin exponer llaves) ────────────────────────
+// ── 5. Log: respuesta completa de Belvo ───────────────────────
 $parsed   = json_decode($response, true) ?? [];
 $req_id   = $parsed['request_id'] ?? '—';
-$log_line = sprintf(
-    "%s | HTTP %d | request_id: %s | curl_err: %s | body: %s\n",
-    date('Y-m-d H:i:s'),
-    $http_code,
-    $req_id,
-    $curl_err ?: 'none',
-    // log solo campos seguros, nunca el token completo
-    json_encode(array_diff_key($parsed, array_flip(['access', 'refresh'])))
-);
-file_put_contents(__DIR__ . '/belvo-connect.log', $log_line, FILE_APPEND);
 
-// ── Manejo de errores ─────────────────────────────────────────
+fwrite($log, date('Y-m-d H:i:s') . " | RESPONSE\n");
+fwrite($log, "http_code  : $http_code\n");
+fwrite($log, "curl_error : " . ($curl_err ?: 'none') . "\n");
+fwrite($log, "request_id : $req_id\n");
+fwrite($log, "response   : " . json_encode(array_diff_key($parsed, ['access' => 1, 'refresh' => 1])) . "\n");
+fclose($log);
+
+// ── Errores ───────────────────────────────────────────────────
 if ($curl_err) {
     http_response_code(500);
-    echo json_encode(['error' => 'Conexión fallida', 'detail' => $curl_err]);
+    echo json_encode(['error' => 'CURL falló', 'detail' => $curl_err]);
     exit;
 }
 
 if ($http_code === 401) {
     http_response_code(502);
     echo json_encode([
-        'error'      => 'Credenciales inválidas (Belvo 401)',
+        'error'      => 'Belvo 401 — credenciales rechazadas',
         'request_id' => $req_id,
-        'hint'       => 'Verifica que las API Keys estén activas en app.belvo.com → Sandbox',
+        'next'       => 'Lleva este request_id a app.belvo.com → Support',
     ]);
     exit;
 }
@@ -79,7 +72,7 @@ if ($http_code === 401) {
 if ($http_code >= 400) {
     http_response_code(502);
     echo json_encode([
-        'error'      => "Belvo error HTTP $http_code",
+        'error'      => "Belvo HTTP $http_code",
         'request_id' => $req_id,
         'detail'     => $parsed,
     ]);
@@ -88,7 +81,7 @@ if ($http_code >= 400) {
 
 if (empty($parsed['access'])) {
     http_response_code(502);
-    echo json_encode(['error' => 'Belvo no devolvió access token', 'response' => $parsed]);
+    echo json_encode(['error' => 'Sin access token en respuesta', 'response' => $parsed]);
     exit;
 }
 
