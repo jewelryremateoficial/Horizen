@@ -12,7 +12,7 @@ serve(async (req) => {
 
   try {
     const id       = 'b1c99559-5abb-4537-9293-bb6db898227c'
-    const password = 'qmn7GAxM0_bEZJ2TiHIsPWQZWZ7_@xW7uvkRdQr93k1CkzZ29oCJHTKA1x1K1n'
+    const password = 'qmn7GAxM0_bEZJ*2TiHIsPWQZWZ7_@xW*7uvkRdQr93k1CkzZ29oCJHTKA1x1K1n'
     const auth     = btoa(id + ':' + password)
 
     const response = await fetch('https://sandbox.belvo.com/api/token/', {
