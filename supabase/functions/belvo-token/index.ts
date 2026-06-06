@@ -34,6 +34,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const encoded     = btoa(credentials);            // btoa = base64 nativo en Deno
 
     // ── POST a Belvo Sandbox ─────────────────────────────────────
+    // IMPORTANTE: Belvo requiere id y password en el body ADEMÁS del header Basic Auth
     const belvoRes = await fetch(BELVO_URL, {
       method:  'POST',
       headers: {
@@ -42,7 +43,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
         'Accept':        'application/json',
       },
       body: JSON.stringify({
-        scopes: 'read_institutions,write_links,read_links',
+        id:       BELVO_ID,
+        password: BELVO_PWD,
+        scopes:   'read_institutions,write_links,read_links',
       }),
     });
 
