@@ -1787,8 +1787,8 @@ async function openBelvoWidget() {
   try {
     belvoSDK.createWidget(access_token, {
       locale:            'es',
-      country_codes:     ['MX'],
-      institution_types: ['retail', 'business'],
+      // Sin filtros en sandbox para que aparezcan los bancos de prueba (Erebor, Gringotts)
+      // En producción agregar: country_codes: ['MX'], institution_types: ['retail','business']
       access_mode:       'recurrent',
 
       callback: async (link, institution) => {
