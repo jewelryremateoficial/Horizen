@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,27 +24,40 @@ serve(async (req) => {
 
   try {
     const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
-    if (!ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY no está configurada en los secretos de Supabase')
+    if (!ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY no configurada')
+
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+    const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     const body = await req.json()
-    const { fileBase64, fileType, fileName } = body
+    const { storagePath, fileType } = body
+    if (!storagePath) throw new Error('No se recibió la ruta del archivo')
 
-    if (!fileBase64) throw new Error('No se recibió el archivo')
+    // Descargar archivo desde Supabase Storage
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    const { data: fileBlob, error: dlErr } = await supabase.storage
+      .from('statements')
+      .download(storagePath)
+    if (dlErr) throw new Error('Error descargando archivo: ' + dlErr.message)
 
-    const isPDF = fileType === 'application/pdf' || fileName?.toLowerCase().endsWith('.pdf')
+    // Convertir a base64
+    const arrayBuffer = await fileBlob.arrayBuffer()
+    const bytes = new Uint8Array(arrayBuffer)
+    let binary = ''
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+    const fileBase64 = btoa(binary)
+
+    const isPDF = fileType === 'application/pdf' || storagePath.toLowerCase().endsWith('.pdf')
 
     let messageContent
     if (isPDF) {
       messageContent = [
-        {
-          type: 'document',
-          source: { type: 'base64', media_type: 'application/pdf', data: fileBase64 }
-        },
+        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: fileBase64 } },
         { type: 'text', text: PROMPT }
       ]
     } else {
-      const csvText = atob(fileBase64)
-      messageContent = [{ type: 'text', text: `${PROMPT}\n\nContenido del archivo CSV:\n${csvText}` }]
+      const csvText = new TextDecoder().decode(bytes)
+      messageContent = [{ type: 'text', text: `${PROMPT}\n\nContenido del CSV:\n${csvText}` }]
     }
 
     const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
@@ -52,10 +66,9 @@ serve(async (req) => {
         'Content-Type': 'application/json',
         'x-api-key': ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'pdfs-2024-09-25',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4096,
         messages: [{ role: 'user', content: messageContent }]
       })
@@ -63,7 +76,7 @@ serve(async (req) => {
 
     if (!anthropicRes.ok) {
       const err = await anthropicRes.json()
-      throw new Error('Error de Claude API: ' + JSON.stringify(err))
+      throw new Error('Claude API error: ' + JSON.stringify(err))
     }
 
     const anthropicData = await anthropicRes.json()
@@ -74,12 +87,15 @@ serve(async (req) => {
       const cleaned = rawText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
       parsed = JSON.parse(cleaned)
     } catch (_e) {
-      throw new Error('La IA no devolvió JSON válido. Intenta con otro archivo.')
+      throw new Error('Respuesta IA no válida: ' + rawText.slice(0, 300))
     }
 
     if (!Array.isArray(parsed.transactions)) {
       throw new Error('No se encontraron transacciones en el archivo')
     }
+
+    // Eliminar archivo de Storage después de procesar
+    await supabase.storage.from('statements').remove([storagePath])
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

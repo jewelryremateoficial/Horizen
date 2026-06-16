@@ -2969,16 +2969,16 @@ async function procesarEstado() {
   document.getElementById('estadosStep2').style.display = 'block';
   setEstadoStep(2);
 
+  let storagePath = null;
   try {
-    // Leer archivo como base64
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = e => resolve(e.target.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(_estadoFile);
-    });
+    // 1. Subir archivo a Supabase Storage
+    document.getElementById('procMsg').textContent = 'Subiendo archivo...';
+    storagePath = `${_user.id}/${Date.now()}_${_estadoFile.name}`;
+    const { error: upErr } = await db.storage.from('statements').upload(storagePath, _estadoFile);
+    if (upErr) throw new Error('Error subiendo archivo: ' + upErr.message);
 
-    // Llamar Edge Function
+    // 2. Llamar Edge Function con la ruta (no el archivo completo)
+    document.getElementById('procMsg').textContent = 'La IA está analizando tus transacciones... (15-30 seg)';
     const session = await db.auth.getSession();
     const token = session.data.session?.access_token;
 
@@ -2989,11 +2989,7 @@ async function procesarEstado() {
         'Authorization': 'Bearer ' + token,
         'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwY2J6bmZrcHN3dHhpZmZnc2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1Mzk5MTksImV4cCI6MjA1OTExNTkxOX0.hm_qlmOi6OKPN3nCWNr0xH0bqLqHfxkPYYyJj2YJVNY',
       },
-      body: JSON.stringify({
-        fileBase64: base64,
-        fileType: _estadoFile.type,
-        fileName: _estadoFile.name,
-      })
+      body: JSON.stringify({ storagePath, fileType: _estadoFile.type })
     });
 
     const data = await res.json();
