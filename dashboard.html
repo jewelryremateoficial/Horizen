@@ -6,6 +6,7 @@
 <title>Dashboard — FinancialOS</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- Belvo Connect Widget SDK — URL correcta (la anterior daba 404) -->
 <script src="https://cdn.belvo.io/belvo-widget-1-stable.js"></script>
 <style>
@@ -276,9 +277,41 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   padding:.2rem;transition:color .15s;margin-left:auto;flex-shrink:0}
 .alert-close:hover{color:var(--text)}
 
+/* ── CALENDAR ────────────────────────────────────────────────── */
+.cal-hdr-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.cal-month-title{font-size:1.25rem;font-weight:800;flex:1;min-width:150px}
+.cal-nav-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.42rem .85rem;border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:600;transition:all .15s}
+.cal-nav-btn:hover{border-color:var(--p);color:var(--p)}
+.cal-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.cal-sum-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center}
+.cal-sum-label{font-size:.62rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.35rem}
+.cal-sum-val{font-size:1.3rem;font-weight:900}
+.cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.cal-weekday{text-align:center;font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;padding:.35rem 0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-cell{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:.55rem .5rem;min-height:85px;cursor:pointer;transition:all .14s;overflow:hidden}
+.cal-cell:hover{border-color:var(--p);transform:translateY(-1px)}
+.cal-cell.empty{background:transparent;border-color:transparent;cursor:default;pointer-events:none}
+.cal-cell.today{border-color:var(--p);box-shadow:0 0 0 2px rgba(0,212,170,.18)}
+.cal-cell.green{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.22)}
+.cal-cell.red{background:rgba(244,63,94,.07);border-color:rgba(244,63,94,.22)}
+.cal-day-num{font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:.25rem}
+.cal-cell.today .cal-day-num{color:var(--p)}
+.cal-day-in{font-size:.58rem;color:var(--ok);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-day-out{font-size:.58rem;color:var(--err);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-day-net{font-size:.62rem;margin-top:.2rem;padding-top:.2rem;border-top:1px solid var(--border);font-weight:700;white-space:nowrap;overflow:hidden}
+.cal-layout{display:grid;grid-template-columns:1fr 290px;gap:1.25rem;align-items:start}
+.cal-day-panel{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:1.2rem;position:sticky;top:66px;max-height:calc(100vh - 120px);overflow-y:auto}
+.cal-chart-wrap{height:200px;position:relative}
+.cal-item-row{display:flex;justify-content:space-between;align-items:center;padding:.42rem 0;border-bottom:1px solid var(--border)}
+.cal-item-row:last-child{border-bottom:none}
+.cal-item-desc{font-size:.82rem;font-weight:500}
+.cal-item-sub{font-size:.65rem;color:var(--muted);margin-top:.1rem}
+.cal-section-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:0 0 .5rem}
+
 /* ── RESPONSIVE ──────────────────────────────────────────────── */
 @media(max-width:900px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.kpi-grid{grid-template-columns:1fr}}
-@media(max-width:640px){.page{padding:1rem}.topbar{padding:0 1rem}.frow{grid-template-columns:1fr}}
+@media(max-width:640px){.page{padding:1rem}.topbar{padding:0 1rem}.frow{grid-template-columns:1fr}.cal-summary{grid-template-columns:1fr}.cal-layout{grid-template-columns:1fr}.cal-cell{min-height:60px}}
 </style>
 </head>
 <body>
@@ -298,6 +331,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="nav-lbl">Finanzas</div>
     <button class="ni" onclick="showPage('ingresos')"><span class="ico">💰</span>Ingresos</button>
     <button class="ni" onclick="showPage('gastos')"><span class="ico">📅</span>Gastos Fijos</button>
+    <button class="ni" onclick="showPage('calendario')"><span class="ico">📆</span>Calendario</button>
     <button class="ni" onclick="showPage('debts')">
       <span class="ico">💳</span>Deudas
       <span class="badge" id="debtBadge" style="display:none"></span>
@@ -667,6 +701,70 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
   </div>
 
+  <!-- ══ PAGE: Calendario Financiero ════════════════════════ -->
+  <div class="page" id="page-calendario">
+
+    <!-- Header -->
+    <div class="cal-hdr-row">
+      <button class="cal-nav-btn" onclick="navCalMes(-1)">← Anterior</button>
+      <div class="cal-month-title" id="calMonthTitle">Cargando...</div>
+      <button class="cal-nav-btn" onclick="navCalMes(1)">Siguiente →</button>
+      <button class="tb-btn tb-primary" onclick="openModal('txModal')">+ Nueva transacción</button>
+    </div>
+
+    <!-- Resumen del mes -->
+    <div class="cal-summary">
+      <div class="cal-sum-card">
+        <div class="cal-sum-label">Total entró</div>
+        <div class="cal-sum-val" style="color:var(--ok)" id="calTotalIn">—</div>
+      </div>
+      <div class="cal-sum-card">
+        <div class="cal-sum-label">Total salió</div>
+        <div class="cal-sum-val" style="color:var(--err)" id="calTotalOut">—</div>
+      </div>
+      <div class="cal-sum-card">
+        <div class="cal-sum-label">Resultado del mes</div>
+        <div class="cal-sum-val" id="calSaldo">—</div>
+      </div>
+    </div>
+
+    <!-- Calendario + panel de día -->
+    <div class="cal-layout">
+      <div>
+        <!-- Días de semana -->
+        <div class="cal-weekdays">
+          <div class="cal-weekday">Lun</div><div class="cal-weekday">Mar</div>
+          <div class="cal-weekday">Mié</div><div class="cal-weekday">Jue</div>
+          <div class="cal-weekday">Vie</div><div class="cal-weekday">Sáb</div>
+          <div class="cal-weekday">Dom</div>
+        </div>
+        <!-- Grid generado por JS -->
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+
+      <!-- Panel detalle del día -->
+      <div class="cal-day-panel" id="calDayPanel" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <div class="card-ttl" id="calDayTitle">—</div>
+          <button onclick="document.getElementById('calDayPanel').style.display='none'"
+            style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem">✕</button>
+        </div>
+        <div id="calDayBody"></div>
+      </div>
+    </div>
+
+    <!-- Gráfico de barras mensual -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-ttl">📊 Flujo diario — ingresos vs egresos</div>
+      </div>
+      <div class="cal-chart-wrap">
+        <canvas id="calChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
   <!-- ══ PAGE: Debts ══════════════════════════════════════════ -->
   <div class="page" id="page-debts">
     <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -816,7 +914,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- ══ MODAL: Nueva Transacción ════════════════════════════ -->
 <div class="overlay" id="txModal">
   <div class="modal">
-    <div class="modal-ttl">📊 Nueva Transacción</div>
+    <div class="modal-ttl" id="txModalTtl">📊 Nueva Transacción</div>
+    <input type="hidden" id="txId">
     <div class="frow">
       <div class="fg"><label class="flbl">Tipo</label>
         <select class="fsel" id="txType">
@@ -1101,7 +1200,8 @@ function showPage(id) {
     nova:         ['🤖 NOVA IA',          '— CFO Virtual'],
     integrations: ['🔗 Integraciones',    '— Open Banking & SAT'],
     alerts:       ['🔔 Alertas',          ''],
-    settings:     ['⚙️ Configuración',    '']
+    settings:     ['⚙️ Configuración',    ''],
+    calendario:   ['📆 Calendario',       '— Flujo diario de ingresos y egresos']
   };
   const t = titles[id] || [id, ''];
   document.getElementById('topbarTitle').innerHTML =
@@ -1112,6 +1212,7 @@ function showPage(id) {
   if (id === 'ingresos')     loadIngresos();
   if (id === 'finplan')      calcFinPlan();
   if (id === 'gastos')       loadGastos();
+  if (id === 'calendario')   loadCalendario();
   if (id === 'debts')        renderDebts();
   if (id === 'taxes')        loadTaxes();
   if (id === 'alerts')       loadAlerts();
@@ -1629,18 +1730,26 @@ async function saveTx() {
     if (/^[0-9a-f-]{36}$/i.test(satUUID)) payload.sat_uuid = satUUID;
   }
 
-  const { error } = await db.from('transactions').insert(payload);
+  const editId = document.getElementById('txId').value;
+  let error;
+  if (editId) {
+    ({ error } = await db.from('transactions').update(payload).eq('id', editId).eq('user_id', _user.id));
+  } else {
+    ({ error } = await db.from('transactions').insert(payload));
+  }
   btn.disabled = false; btn.textContent = 'Guardar';
 
   if (error) { toast('Error: ' + error.message, 'error'); return; }
-  toast('Transacción guardada ✓', 'success');
+  toast(editId ? 'Transacción actualizada ✓' : 'Transacción guardada ✓', 'success');
   closeModal('txModal');
   resetTxForm();
   await Promise.all([loadMetrics(), loadRecentTx()]);
+  if (document.getElementById('page-calendario').classList.contains('active')) loadCalendario();
 }
 
 function resetTxForm() {
-  ['txAmt','txDesc','txNotes','txIva','txSatUUID','txRFCEmisor','txRFCReceptor'].forEach(id => document.getElementById(id).value = '');
+  ['txId','txAmt','txDesc','txNotes','txIva','txSatUUID','txRFCEmisor','txRFCReceptor'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('txModalTtl').textContent = '📊 Nueva Transacción';
   document.getElementById('txCat').value  = '';
   document.getElementById('txType').value = 'egreso';
   document.getElementById('txFiscal').checked = false;
@@ -2483,6 +2592,240 @@ function clearGastoForm() {
   });
   document.getElementById('gastoCat').value  = 'vivienda';
   document.getElementById('gastoFreq').value = 'mensual';
+}
+
+// ══════════════════════════════════════════════════════════════
+// CALENDARIO FINANCIERO
+// ══════════════════════════════════════════════════════════════
+
+let _calYear = null, _calMonth = null, _calDayData = {}, _calChart = null, _calTxData = [];
+const _MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function initCal() {
+  const now = new Date();
+  _calYear  = now.getFullYear();
+  _calMonth = now.getMonth();
+}
+
+async function loadCalendario() {
+  if (_calYear === null) initCal();
+
+  const year  = _calYear;
+  const month = _calMonth;
+  const lastDay   = new Date(year, month + 1, 0).getDate();
+  const firstStr  = `${year}-${String(month+1).padStart(2,'0')}-01`;
+  const lastStr   = `${year}-${String(month+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+
+  // Mostrar skeleton mientras carga
+  document.getElementById('calGrid').innerHTML =
+    Array.from({length:35}).map(() => '<div class="cal-cell sk" style="min-height:85px"></div>').join('');
+
+  const [txRes, incRes, expRes] = await Promise.all([
+    db.from('transactions').select('*').eq('user_id', _user.id).gte('date', firstStr).lte('date', lastStr).order('date'),
+    db.from('income_sources').select('*').eq('user_id', _user.id).eq('is_active', true),
+    db.from('fixed_expenses').select('*').eq('user_id', _user.id).eq('is_active', true),
+  ]);
+
+  _calTxData = txRes.data || [];
+
+  // Inicializar días
+  _calDayData = {};
+  for (let d = 1; d <= lastDay; d++) {
+    _calDayData[d] = { ingresos: [], egresos: [], totalIn: 0, totalOut: 0 };
+  }
+
+  // Transacciones reales
+  _calTxData.forEach(tx => {
+    const day = parseInt(tx.date.split('-')[2]);
+    if (!_calDayData[day]) return;
+    const amt = Math.abs(tx.amount);
+    if (tx.type === 'ingreso') {
+      _calDayData[day].ingresos.push({ desc: tx.description, amount: amt, cat: tx.category || '—', id: tx.id, source: 'tx' });
+      _calDayData[day].totalIn += amt;
+    } else {
+      _calDayData[day].egresos.push({ desc: tx.description, amount: amt, cat: tx.category || '—', id: tx.id, source: 'tx' });
+      _calDayData[day].totalOut += amt;
+    }
+  });
+
+  // Ingresos recurrentes → en su due_day
+  (incRes.data || []).forEach(inc => {
+    const day = Math.min(inc.due_day || 1, lastDay);
+    const amt = toMensual(inc.amount, inc.frequency);
+    _calDayData[day].ingresos.push({ desc: inc.name, amount: amt, cat: inc.category || '—', id: inc.id, source: 'income' });
+    _calDayData[day].totalIn += amt;
+  });
+
+  // Gastos fijos → en su due_day
+  (expRes.data || []).forEach(exp => {
+    const day = Math.min(exp.due_day || 1, lastDay);
+    const amt = toMensual(exp.amount, exp.frequency);
+    _calDayData[day].egresos.push({ desc: exp.name, amount: amt, cat: exp.category || '—', id: exp.id, source: 'expense' });
+    _calDayData[day].totalOut += amt;
+  });
+
+  renderCalMes(year, month, lastDay);
+  renderCalChart(lastDay);
+}
+
+function renderCalMes(year, month, lastDay) {
+  document.getElementById('calMonthTitle').textContent = `${_MONTH_NAMES[month]} ${year}`;
+
+  let totalIn = 0, totalOut = 0;
+  for (let d = 1; d <= lastDay; d++) {
+    totalIn  += _calDayData[d].totalIn;
+    totalOut += _calDayData[d].totalOut;
+  }
+  document.getElementById('calTotalIn').textContent  = fmt(totalIn);
+  document.getElementById('calTotalOut').textContent = fmt(totalOut);
+  const saldo = totalIn - totalOut;
+  const sEl = document.getElementById('calSaldo');
+  sEl.textContent  = fmt(saldo);
+  sEl.style.color  = saldo >= 0 ? 'var(--ok)' : 'var(--err)';
+
+  const today       = new Date();
+  const isThisMes   = today.getFullYear() === year && today.getMonth() === month;
+  const todayDay    = today.getDate();
+  const firstWD     = new Date(year, month, 1).getDay(); // 0=Dom
+  const startOffset = (firstWD + 6) % 7;                // Ajuste a lunes=0
+
+  let html = '';
+  for (let i = 0; i < startOffset; i++) html += '<div class="cal-cell empty"></div>';
+
+  for (let d = 1; d <= lastDay; d++) {
+    const dd  = _calDayData[d];
+    const net = dd.totalIn - dd.totalOut;
+    let cls   = 'cal-cell';
+    if (isThisMes && d === todayDay) cls += ' today';
+    if (dd.totalIn > 0 || dd.totalOut > 0) cls += net >= 0 ? ' green' : ' red';
+
+    html += `<div class="${cls}" onclick="showCalDay(${d})">
+      <div class="cal-day-num">${d}</div>
+      ${dd.totalIn > 0 || dd.totalOut > 0 ? `
+        <div class="cal-day-in">+${fmt(dd.totalIn)}</div>
+        <div class="cal-day-out">-${fmt(dd.totalOut)}</div>
+        <div class="cal-day-net" style="color:${net>=0?'var(--ok)':'var(--err)'}">${fmt(net)}</div>
+      ` : ''}
+    </div>`;
+  }
+
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function showCalDay(day) {
+  const dd = _calDayData[day];
+  if (!dd) return;
+
+  document.getElementById('calDayTitle').textContent =
+    `${day} de ${_MONTH_NAMES[_calMonth]} ${_calYear}`;
+
+  let html = '';
+
+  if (dd.ingresos.length) {
+    html += `<div class="cal-section-lbl" style="color:var(--ok)">↑ Ingresos</div>`;
+    dd.ingresos.forEach(item => {
+      html += `<div class="cal-item-row">
+        <div>
+          <div class="cal-item-desc">${item.desc}</div>
+          <div class="cal-item-sub">${item.cat} · ${item.source === 'tx' ? 'Transacción' : 'Recurrente'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
+          <span style="font-weight:700;color:var(--ok)">+${fmt(item.amount)}</span>
+          ${item.source === 'tx' ? `<button onclick="openEditTxCal('${item.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:.1rem .25rem" title="Editar">✏️</button>` : ''}
+        </div>
+      </div>`;
+    });
+  }
+
+  if (dd.egresos.length) {
+    html += `<div class="cal-section-lbl" style="color:var(--err);margin-top:.85rem">↓ Egresos</div>`;
+    dd.egresos.forEach(item => {
+      html += `<div class="cal-item-row">
+        <div>
+          <div class="cal-item-desc">${item.desc}</div>
+          <div class="cal-item-sub">${item.cat} · ${item.source === 'tx' ? 'Transacción' : 'Gasto fijo'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
+          <span style="font-weight:700;color:var(--err)">-${fmt(item.amount)}</span>
+          ${item.source === 'tx' ? `<button onclick="openEditTxCal('${item.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:.1rem .25rem" title="Editar">✏️</button>` : ''}
+        </div>
+      </div>`;
+    });
+  }
+
+  if (!dd.ingresos.length && !dd.egresos.length) {
+    html = `<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">Sin movimientos este día</div>`;
+  }
+
+  const net = dd.totalIn - dd.totalOut;
+  if (dd.ingresos.length || dd.egresos.length) {
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 0;margin-top:.75rem;border-top:2px solid var(--border)">
+      <span style="font-size:.82rem;font-weight:700">Resultado del día</span>
+      <span style="font-size:1rem;font-weight:900;color:${net>=0?'var(--ok)':'var(--err)'}">${fmt(net)}</span>
+    </div>`;
+  }
+
+  document.getElementById('calDayBody').innerHTML = html;
+  document.getElementById('calDayPanel').style.display = 'block';
+}
+
+function navCalMes(dir) {
+  _calMonth += dir;
+  if (_calMonth < 0)  { _calMonth = 11; _calYear--; }
+  if (_calMonth > 11) { _calMonth = 0;  _calYear++; }
+  document.getElementById('calDayPanel').style.display = 'none';
+  loadCalendario();
+}
+
+function renderCalChart(lastDay) {
+  const labels = [], inData = [], outData = [];
+  for (let d = 1; d <= lastDay; d++) {
+    labels.push(d);
+    inData.push(_calDayData[d]?.totalIn  || 0);
+    outData.push(_calDayData[d]?.totalOut || 0);
+  }
+  const ctx = document.getElementById('calChart').getContext('2d');
+  if (_calChart) _calChart.destroy();
+  _calChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Ingresos', data: inData,  backgroundColor: 'rgba(0,212,170,.65)', borderRadius: 3 },
+        { label: 'Egresos',  data: outData, backgroundColor: 'rgba(244,63,94,.65)', borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#f0f4f8', font: { size: 11 } } },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt(c.raw)}` } }
+      },
+      scales: {
+        x: { ticks: { color: '#f0f4f880', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,.04)' } },
+        y: { ticks: { color: '#f0f4f880', font: { size: 9 },
+              callback: v => v >= 1000 ? '$' + (v/1000).toFixed(0)+'k' : '$'+v },
+             grid: { color: 'rgba(255,255,255,.04)' } }
+      }
+    }
+  });
+}
+
+function openEditTxCal(txId) {
+  const tx = _calTxData.find(t => t.id === txId);
+  if (!tx) { toast('Transacción no encontrada', 'error'); return; }
+  document.getElementById('txModalTtl').textContent = '✏️ Editar Transacción';
+  document.getElementById('txId').value    = tx.id;
+  document.getElementById('txDesc').value  = tx.description || '';
+  document.getElementById('txAmt').value   = Math.abs(tx.amount);
+  document.getElementById('txDate').value  = tx.date || '';
+  document.getElementById('txCat').value   = tx.category || '';
+  document.getElementById('txType').value  = tx.type || 'egreso';
+  if (document.getElementById('txAcct')) document.getElementById('txAcct').value = tx.account_id || '';
+  document.getElementById('txNotes').value = tx.notes || '';
+  document.getElementById('txFiscal').checked = tx.is_fiscal || false;
+  toggleFiscal();
+  openModal('txModal');
 }
 </script>
 <!-- Belvo Connect Widget necesita este div para montarse -->
