@@ -309,6 +309,31 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .cal-item-sub{font-size:.65rem;color:var(--muted);margin-top:.1rem}
 .cal-section-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:0 0 .5rem}
 
+/* ── SUBIR ESTADO DE CUENTA ──────────────────────────────────── */
+.upload-zone{border:2px dashed var(--border);border-radius:16px;padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3);margin-top:1rem}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--p);background:rgba(0,212,170,.05)}
+.upload-ico{font-size:3rem;margin-bottom:.75rem}
+.upload-ttl{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
+.upload-sub{font-size:.78rem;color:var(--muted)}
+.proc-wrap{text-align:center;padding:4rem 2rem}
+.proc-spinner{width:52px;height:52px;border:4px solid var(--border);border-top-color:var(--p);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1.25rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.proc-msg{font-size:.9rem;color:var(--muted)}
+.tx-rev-grid{display:grid;grid-template-columns:105px 1fr 110px 130px 100px 36px;gap:.4rem;align-items:center;padding:.45rem .25rem;border-bottom:1px solid var(--border)}
+.tx-rev-hdr{font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:.5rem .25rem}
+.rev-inp{background:var(--bg4);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.28rem .45rem;font-size:.75rem;width:100%}
+.rev-inp:focus{border-color:var(--p);outline:none}
+.rev-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:.2rem;transition:color .15s}
+.rev-del:hover{color:var(--err)}
+.file-chip{display:inline-flex;align-items:center;gap:.5rem;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);border-radius:8px;padding:.45rem .9rem;font-size:.82rem;font-weight:600;margin-top:1rem}
+.estado-steps{display:flex;gap:.5rem;margin-bottom:1.5rem;align-items:center}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0}
+.step-dot.done{background:var(--ok);color:#fff}
+.step-dot.active{background:var(--p);color:#060b18}
+.step-dot.pending{background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
+.step-line{flex:1;height:2px;background:var(--border)}
+.step-line.done{background:var(--ok)}
+
 /* ── RESPONSIVE ──────────────────────────────────────────────── */
 @media(max-width:900px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.kpi-grid{grid-template-columns:1fr}}
 @media(max-width:640px){.page{padding:1rem}.topbar{padding:0 1rem}.frow{grid-template-columns:1fr}.cal-summary{grid-template-columns:1fr}.cal-layout{grid-template-columns:1fr}.cal-cell{min-height:60px}}
@@ -332,6 +357,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" onclick="showPage('ingresos')"><span class="ico">💰</span>Ingresos</button>
     <button class="ni" onclick="showPage('gastos')"><span class="ico">📅</span>Gastos Fijos</button>
     <button class="ni" onclick="showPage('calendario')"><span class="ico">📆</span>Calendario</button>
+    <button class="ni" onclick="showPage('estados')"><span class="ico">📄</span>Subir Estado</button>
     <button class="ni" onclick="showPage('debts')">
       <span class="ico">💳</span>Deudas
       <span class="badge" id="debtBadge" style="display:none"></span>
@@ -760,6 +786,80 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
       <div class="cal-chart-wrap">
         <canvas id="calChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ PAGE: Subir Estado de Cuenta ════════════════════════ -->
+  <div class="page" id="page-estados">
+
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem">
+      <div>
+        <div class="section-ttl">📄 Subir Estado de Cuenta</div>
+        <div class="section-sub">Sube tu PDF o CSV — la IA extrae y categoriza todas las transacciones automáticamente</div>
+      </div>
+    </div>
+
+    <!-- Indicador de pasos -->
+    <div class="estado-steps">
+      <div class="step-dot active" id="sdot1">1</div>
+      <div class="step-line" id="sline1"></div>
+      <div class="step-dot pending" id="sdot2">2</div>
+      <div class="step-line" id="sline2"></div>
+      <div class="step-dot pending" id="sdot3">3</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-bottom:1.5rem">
+      <span>Seleccionar archivo</span><span>IA procesando</span><span>Revisar y guardar</span>
+    </div>
+
+    <!-- PASO 1: Zona de carga -->
+    <div id="estadosStep1">
+      <div class="upload-zone" id="uploadZone"
+        onclick="document.getElementById('estadoFileInput').click()"
+        ondragover="uploadDragOver(event)" ondragleave="uploadDragLeave(event)" ondrop="uploadDrop(event)">
+        <input type="file" id="estadoFileInput" accept=".pdf,.csv" style="display:none" onchange="estadoFileSelected(event)">
+        <div class="upload-ico">📁</div>
+        <div class="upload-ttl">Arrastra tu estado de cuenta aquí</div>
+        <div class="upload-sub">o da clic para seleccionar · PDF o CSV · máximo 5MB</div>
+      </div>
+      <div id="estadoFileChip" style="display:none;margin-top:1rem">
+        <div class="file-chip" id="estadoFileChipTxt">📄 archivo.pdf</div>
+        <div style="margin-top:1.25rem;display:flex;gap:.75rem">
+          <button class="tb-btn tb-primary" onclick="procesarEstado()">✨ Analizar con IA</button>
+          <button class="tb-btn tb-ghost" onclick="resetEstados()">Cambiar archivo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 2: Procesando -->
+    <div id="estadosStep2" style="display:none">
+      <div class="proc-wrap">
+        <div class="proc-spinner"></div>
+        <div style="font-size:1rem;font-weight:700;margin-bottom:.5rem">La IA está analizando tu estado de cuenta...</div>
+        <div class="proc-msg" id="procMsg">Leyendo transacciones · esto tarda 15-30 segundos</div>
+      </div>
+    </div>
+
+    <!-- PASO 3: Revisar y confirmar -->
+    <div id="estadosStep3" style="display:none">
+      <div class="card" style="margin-bottom:1.25rem">
+        <div class="card-hdr">
+          <div>
+            <div class="card-ttl">✅ Transacciones detectadas</div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem" id="estadosResumen">—</div>
+          </div>
+          <div style="display:flex;gap:.6rem">
+            <button class="tb-btn tb-ghost" onclick="resetEstados()">← Subir otro</button>
+            <button class="tb-btn tb-primary" onclick="confirmarEstado()">💾 Guardar todas</button>
+          </div>
+        </div>
+
+        <!-- Encabezado tabla -->
+        <div class="tx-rev-grid tx-rev-hdr" style="margin-top:1rem">
+          <span>Fecha</span><span>Descripción</span><span>Monto</span><span>Categoría</span><span>Tipo</span><span></span>
+        </div>
+        <div id="estadosTxList"></div>
       </div>
     </div>
 
@@ -1201,7 +1301,8 @@ function showPage(id) {
     integrations: ['🔗 Integraciones',    '— Open Banking & SAT'],
     alerts:       ['🔔 Alertas',          ''],
     settings:     ['⚙️ Configuración',    ''],
-    calendario:   ['📆 Calendario',       '— Flujo diario de ingresos y egresos']
+    calendario:   ['📆 Calendario',       '— Flujo diario de ingresos y egresos'],
+    estados:      ['📄 Subir Estado',     '— IA extrae y categoriza tus transacciones']
   };
   const t = titles[id] || [id, ''];
   document.getElementById('topbarTitle').innerHTML =
@@ -2809,6 +2910,185 @@ function renderCalChart(lastDay) {
       }
     }
   });
+}
+
+// ══════════════════════════════════════════════════════════════
+// SUBIR ESTADO DE CUENTA — IA
+// ══════════════════════════════════════════════════════════════
+
+const EDGE_PROCESS = 'https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/process-statement';
+let _estadoFile = null, _estadoTxs = [], _estadoMeta = {};
+
+function uploadDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('dragover'); }
+function uploadDragLeave(e) { document.getElementById('uploadZone').classList.remove('dragover'); }
+function uploadDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) applyEstadoFile(file);
+}
+
+function estadoFileSelected(e) {
+  const file = e.target.files[0];
+  if (file) applyEstadoFile(file);
+}
+
+function applyEstadoFile(file) {
+  if (file.size > 5 * 1024 * 1024) { toast('El archivo supera 5MB', 'error'); return; }
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['pdf','csv'].includes(ext)) { toast('Solo se aceptan archivos PDF o CSV', 'error'); return; }
+  _estadoFile = file;
+  document.getElementById('estadoFileChipTxt').textContent = `📄 ${file.name} (${(file.size/1024).toFixed(0)} KB)`;
+  document.getElementById('estadoFileChip').style.display = 'block';
+  document.getElementById('uploadZone').style.display = 'none';
+}
+
+function resetEstados() {
+  _estadoFile = null; _estadoTxs = []; _estadoMeta = {};
+  document.getElementById('estadosStep1').style.display = 'block';
+  document.getElementById('estadosStep2').style.display = 'none';
+  document.getElementById('estadosStep3').style.display = 'none';
+  document.getElementById('estadoFileChip').style.display = 'none';
+  document.getElementById('uploadZone').style.display = 'block';
+  document.getElementById('estadoFileInput').value = '';
+  setEstadoStep(1);
+}
+
+function setEstadoStep(step) {
+  [1,2,3].forEach(n => {
+    const dot = document.getElementById('sdot'+n);
+    dot.className = 'step-dot ' + (n < step ? 'done' : n === step ? 'active' : 'pending');
+    if (n < 3) document.getElementById('sline'+n).className = 'step-line' + (n < step ? ' done' : '');
+  });
+}
+
+async function procesarEstado() {
+  if (!_estadoFile) { toast('Selecciona un archivo primero', 'error'); return; }
+
+  document.getElementById('estadosStep1').style.display = 'none';
+  document.getElementById('estadosStep2').style.display = 'block';
+  setEstadoStep(2);
+
+  try {
+    // Leer archivo como base64
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(_estadoFile);
+    });
+
+    // Llamar Edge Function
+    const session = await db.auth.getSession();
+    const token = session.data.session?.access_token;
+
+    const res = await fetch(EDGE_PROCESS, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwY2J6bmZrcHN3dHhpZmZnc2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1Mzk5MTksImV4cCI6MjA1OTExNTkxOX0.hm_qlmOi6OKPN3nCWNr0xH0bqLqHfxkPYYyJj2YJVNY',
+      },
+      body: JSON.stringify({
+        fileBase64: base64,
+        fileType: _estadoFile.type,
+        fileName: _estadoFile.name,
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Error procesando el archivo');
+
+    _estadoMeta = { bank: data.bank, period_start: data.period_start, period_end: data.period_end, currency: data.currency };
+    _estadoTxs = (data.transactions || []).map((tx, i) => ({ ...tx, _id: i, _remove: false }));
+
+    document.getElementById('estadosStep2').style.display = 'none';
+    document.getElementById('estadosStep3').style.display = 'block';
+    setEstadoStep(3);
+    renderEstadosTxs();
+
+  } catch(err) {
+    toast('Error: ' + err.message, 'error');
+    document.getElementById('estadosStep2').style.display = 'none';
+    document.getElementById('estadosStep1').style.display = 'block';
+    setEstadoStep(1);
+  }
+}
+
+function renderEstadosTxs() {
+  const visible = _estadoTxs.filter(t => !t._remove);
+  const totalIn  = visible.filter(t => t.type === 'ingreso').reduce((s,t) => s + t.amount, 0);
+  const totalOut = visible.filter(t => t.type === 'egreso').reduce((s,t) => s + t.amount, 0);
+  document.getElementById('estadosResumen').textContent =
+    `${_estadoMeta.bank || 'Banco desconocido'} · ${visible.length} transacciones · `+
+    `Entró ${fmt(totalIn)} · Salió ${fmt(totalOut)}`;
+
+  const CATS = ['Nómina','Renta','Comida','Transporte','Servicios','Entretenimiento','Transferencia','SAT/Impuestos','Salud','Educación','Otros'];
+  document.getElementById('estadosTxList').innerHTML = visible.map(tx => `
+    <div class="tx-rev-grid" id="txrow-${tx._id}">
+      <input class="rev-inp" type="date" value="${tx.date}" onchange="_estadoTxs.find(t=>t._id===${tx._id}).date=this.value">
+      <input class="rev-inp" type="text" value="${tx.description}" onchange="_estadoTxs.find(t=>t._id===${tx._id}).description=this.value">
+      <input class="rev-inp" type="number" value="${tx.amount}" min="0" step="0.01" onchange="_estadoTxs.find(t=>t._id===${tx._id}).amount=parseFloat(this.value)||0">
+      <select class="rev-inp" onchange="_estadoTxs.find(t=>t._id===${tx._id}).category=this.value">
+        ${CATS.map(c => `<option ${c===tx.category?'selected':''}>${c}</option>`).join('')}
+      </select>
+      <select class="rev-inp" onchange="_estadoTxs.find(t=>t._id===${tx._id}).type=this.value">
+        <option ${tx.type==='ingreso'?'selected':''} value="ingreso">💰 Ingreso</option>
+        <option ${tx.type==='egreso'?'selected':''} value="egreso">💸 Egreso</option>
+      </select>
+      <button class="rev-del" onclick="removeEstadoTx(${tx._id})" title="Eliminar">✕</button>
+    </div>`).join('');
+}
+
+function removeEstadoTx(id) {
+  _estadoTxs = _estadoTxs.map(t => t._id === id ? {...t, _remove: true} : t);
+  renderEstadosTxs();
+}
+
+async function confirmarEstado() {
+  const toSave = _estadoTxs.filter(t => !t._remove);
+  if (!toSave.length) { toast('No hay transacciones que guardar', 'error'); return; }
+
+  const btn = document.querySelector('#page-estados .tb-primary');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  try {
+    // Crear registro en statements
+    const { data: stmt, error: stmtErr } = await db.from('statements').insert({
+      user_id: _user.id,
+      file_name: _estadoFile?.name,
+      bank_name: _estadoMeta.bank,
+      period_start: _estadoMeta.period_start || null,
+      period_end: _estadoMeta.period_end || null,
+      tx_count: toSave.length,
+    }).select().single();
+
+    if (stmtErr) throw stmtErr;
+
+    // Insertar transacciones
+    const payload = toSave.map(tx => ({
+      user_id: _user.id,
+      description: tx.description,
+      amount: tx.type === 'egreso' ? -Math.abs(tx.amount) : Math.abs(tx.amount),
+      type: tx.type,
+      category: tx.category,
+      date: tx.date,
+      source: 'pdf_ocr',
+      statement_id: stmt.id,
+    }));
+
+    const { error: txErr } = await db.from('transactions').insert(payload);
+    if (txErr) throw txErr;
+
+    toast(`✓ ${toSave.length} transacciones guardadas`, 'success');
+    await Promise.all([loadMetrics(), loadRecentTx()]);
+    resetEstados();
+
+  } catch(err) {
+    toast('Error al guardar: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Guardar todas';
+  }
 }
 
 function openEditTxCal(txId) {
