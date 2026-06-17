@@ -326,6 +326,22 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .rev-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:.2rem;transition:color .15s}
 .rev-del:hover{color:var(--err)}
 .file-chip{display:inline-flex;align-items:center;gap:.5rem;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);border-radius:8px;padding:.45rem .9rem;font-size:.82rem;font-weight:600;margin-top:1rem}
+.er-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.25rem}
+.er-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.25rem}
+.er-card-lbl{font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem}
+.er-card-val{font-size:1.45rem;font-weight:900}
+.er-card-val.pos{color:var(--ok)}.er-card-val.neg{color:var(--err)}
+.er-mid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+.er-nova{background:linear-gradient(135deg,rgba(0,212,170,.07),rgba(123,97,255,.07));border:1px solid rgba(0,212,170,.22);margin-bottom:1.25rem}
+.er-nova-ttl{font-size:.85rem;font-weight:800;margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem}
+.er-insight{font-size:.82rem;color:var(--text);padding:.5rem 0;border-bottom:1px solid var(--border);display:flex;gap:.6rem;align-items:flex-start}
+.er-insight:last-child{border-bottom:none;padding-bottom:0}
+.er-insight-ico{flex-shrink:0}
+.er-top-item{display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--border)}
+.er-top-item:last-child{border-bottom:none}
+.er-top-cat{font-size:.78rem;font-weight:600}
+.er-top-val{font-size:.82rem;font-weight:800;color:var(--err)}
+.er-tx-toggle{width:100%;text-align:left;background:none;border:none;color:var(--text);cursor:pointer;padding:.5rem 0;font-size:.82rem;font-weight:700;display:flex;justify-content:space-between;align-items:center}
 .estado-steps{display:flex;gap:.5rem;margin-bottom:1.5rem;align-items:center}
 .step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0}
 .step-dot.done{background:var(--ok);color:#fff}
@@ -841,26 +857,62 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
 
-    <!-- PASO 3: Revisar y confirmar -->
+    <!-- PASO 3: Estado de Resultados Dashboard -->
     <div id="estadosStep3" style="display:none">
-      <div class="card" style="margin-bottom:1.25rem">
-        <div class="card-hdr">
-          <div>
-            <div class="card-ttl">✅ Transacciones detectadas</div>
-            <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem" id="estadosResumen">—</div>
-          </div>
-          <div style="display:flex;gap:.6rem">
-            <button class="tb-btn tb-ghost" onclick="resetEstados()">← Subir otro</button>
-            <button class="tb-btn tb-primary" onclick="confirmarEstado()">💾 Guardar todas</button>
-          </div>
-        </div>
 
-        <!-- Encabezado tabla -->
-        <div class="tx-rev-grid tx-rev-hdr" style="margin-top:1rem">
-          <span>Fecha</span><span>Descripción</span><span>Monto</span><span>Categoría</span><span>Tipo</span><span></span>
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+        <div>
+          <div class="section-ttl" style="margin:0;font-size:1.15rem" id="erBanco">📊 Estado de Resultados</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:.25rem" id="erPeriodo">—</div>
         </div>
-        <div id="estadosTxList"></div>
+        <div style="display:flex;gap:.6rem">
+          <button class="tb-btn tb-ghost" onclick="resetEstados()">← Subir otro</button>
+          <button class="tb-btn tb-primary" id="btnGuardar" onclick="confirmarEstado()">💾 Guardar</button>
+        </div>
       </div>
+
+      <!-- 4 métricas -->
+      <div class="er-metrics">
+        <div class="er-card"><div class="er-card-lbl">Ingresos totales</div><div class="er-card-val pos" id="erIngresos">—</div></div>
+        <div class="er-card"><div class="er-card-lbl">Egresos totales</div><div class="er-card-val neg" id="erEgresos">—</div></div>
+        <div class="er-card"><div class="er-card-lbl">Flujo neto</div><div class="er-card-val" id="erNeto">—</div></div>
+        <div class="er-card"><div class="er-card-lbl">Tasa de ahorro</div><div class="er-card-val" id="erAhorro">—</div></div>
+      </div>
+
+      <!-- Gráfica + Top gastos -->
+      <div class="er-mid">
+        <div class="card" style="margin:0">
+          <div class="card-ttl" style="margin-bottom:.9rem">Egresos por categoría</div>
+          <canvas id="erChart" height="240"></canvas>
+        </div>
+        <div class="card" style="margin:0">
+          <div class="card-ttl" style="margin-bottom:.9rem">Top 5 gastos</div>
+          <div id="erTopGastos">—</div>
+        </div>
+      </div>
+
+      <!-- NOVA IA insights -->
+      <div class="card er-nova">
+        <div class="er-nova-ttl">🤖 NOVA IA te dice</div>
+        <div id="erInsights">—</div>
+      </div>
+
+      <!-- Transacciones colapsables -->
+      <div class="card" style="margin-bottom:0">
+        <button class="er-tx-toggle" onclick="toggleErTxs()">
+          <span id="erTxToggleLbl">Ver y editar transacciones</span>
+          <span id="erTxToggleIco">▼</span>
+        </button>
+        <div id="estadosTxWrap" style="display:none">
+          <div class="tx-rev-grid tx-rev-hdr" style="margin-top:.5rem">
+            <span>Fecha</span><span>Descripción</span><span>Monto</span><span>Categoría</span><span>Tipo</span><span></span>
+          </div>
+          <div id="estadosTxList"></div>
+        </div>
+      </div>
+
+      <div style="height:1rem"></div>
     </div>
 
   </div>
@@ -3011,14 +3063,54 @@ async function procesarEstado() {
   }
 }
 
+let _erChartInstance = null;
+
 function renderEstadosTxs() {
   const visible = _estadoTxs.filter(t => !t._remove);
   const totalIn  = visible.filter(t => t.type === 'ingreso').reduce((s,t) => s + t.amount, 0);
   const totalOut = visible.filter(t => t.type === 'egreso').reduce((s,t) => s + t.amount, 0);
-  document.getElementById('estadosResumen').textContent =
-    `${_estadoMeta.bank || 'Banco desconocido'} · ${visible.length} transacciones · `+
-    `Entró ${fmt(totalIn)} · Salió ${fmt(totalOut)}`;
+  const neto = totalIn - totalOut;
+  const ahorro = totalIn > 0 ? ((neto / totalIn) * 100) : 0;
 
+  // Header
+  document.getElementById('erBanco').textContent = '📊 ' + (_estadoMeta.bank || 'Estado de Resultados');
+  if (_estadoMeta.period_start && _estadoMeta.period_end) {
+    const fmt2 = d => new Date(d + 'T12:00:00').toLocaleDateString('es-MX', {day:'numeric',month:'short',year:'numeric'});
+    document.getElementById('erPeriodo').textContent = fmt2(_estadoMeta.period_start) + ' — ' + fmt2(_estadoMeta.period_end) + ' · ' + visible.length + ' transacciones';
+  }
+
+  // Métricas
+  document.getElementById('erIngresos').textContent = fmt(totalIn);
+  document.getElementById('erEgresos').textContent = fmt(totalOut);
+  const netoEl = document.getElementById('erNeto');
+  netoEl.textContent = fmt(Math.abs(neto));
+  netoEl.className = 'er-card-val ' + (neto >= 0 ? 'pos' : 'neg');
+  const ahorroEl = document.getElementById('erAhorro');
+  ahorroEl.textContent = ahorro.toFixed(1) + '%';
+  ahorroEl.className = 'er-card-val ' + (ahorro >= 20 ? 'pos' : ahorro >= 0 ? '' : 'neg');
+
+  // Botón guardar
+  document.getElementById('btnGuardar').textContent = '💾 Guardar ' + visible.length + ' transacciones';
+
+  // Gráfica por categoría
+  renderERChart(visible);
+
+  // Top 5 gastos
+  const egresos = visible.filter(t => t.type === 'egreso');
+  const top5 = [...egresos].sort((a,b) => b.amount - a.amount).slice(0, 5);
+  document.getElementById('erTopGastos').innerHTML = top5.length ? top5.map(t => `
+    <div class="er-top-item">
+      <div>
+        <div class="er-top-cat">${t.description.slice(0,32)}</div>
+        <div style="font-size:.68rem;color:var(--muted)">${t.category}</div>
+      </div>
+      <div class="er-top-val">${fmt(t.amount)}</div>
+    </div>`).join('') : '<div style="color:var(--muted);font-size:.8rem">Sin egresos</div>';
+
+  // NOVA insights
+  document.getElementById('erInsights').innerHTML = generateNovaInsights(visible, totalIn, totalOut, neto, ahorro);
+
+  // Lista de transacciones
   const CATS = ['Nómina','Renta','Comida','Transporte','Servicios','Entretenimiento','Transferencia','SAT/Impuestos','Salud','Educación','Otros'];
   document.getElementById('estadosTxList').innerHTML = visible.map(tx => `
     <div class="tx-rev-grid" id="txrow-${tx._id}">
@@ -3034,6 +3126,79 @@ function renderEstadosTxs() {
       </select>
       <button class="rev-del" onclick="removeEstadoTx(${tx._id})" title="Eliminar">✕</button>
     </div>`).join('');
+}
+
+function renderERChart(txs) {
+  const egresos = txs.filter(t => t.type === 'egreso');
+  const byCat = {};
+  egresos.forEach(t => { byCat[t.category] = (byCat[t.category] || 0) + t.amount; });
+  const sorted = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
+  const labels = sorted.map(e => e[0]);
+  const data   = sorted.map(e => e[1]);
+  const colors = ['#00d4aa','#7b61ff','#ff6b6b','#ffd166','#06d6a0','#118ab2','#ef476f','#ffd166','#06d6a0','#a8dadc','#457b9d'];
+
+  if (_erChartInstance) { _erChartInstance.destroy(); _erChartInstance = null; }
+  const ctx = document.getElementById('erChart').getContext('2d');
+  _erChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: colors.slice(0, labels.length), borderRadius: 6, borderSkipped: false }] },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) } } },
+      scales: {
+        x: { ticks: { color: '#8a9bb5', font: { size: 10 }, callback: v => '$' + (v>=1000?(v/1000).toFixed(0)+'k':v) }, grid: { color: 'rgba(255,255,255,.04)' } },
+        y: { ticks: { color: '#c9d6e8', font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function generateNovaInsights(txs, totalIn, totalOut, neto, ahorro) {
+  const insights = [];
+  const egresos = txs.filter(t => t.type === 'egreso');
+  const ingresos = txs.filter(t => t.type === 'ingreso');
+
+  // Insight 1: categoría dominante
+  const byCat = {};
+  egresos.forEach(t => { byCat[t.category] = (byCat[t.category] || 0) + t.amount; });
+  const topCat = Object.entries(byCat).sort((a,b) => b[1]-a[1])[0];
+  if (topCat) {
+    const pct = totalOut > 0 ? ((topCat[1]/totalOut)*100).toFixed(0) : 0;
+    insights.push({ ico: '📌', txt: `Tu gasto más alto es <b>${topCat[0]}</b> con ${fmt(topCat[1])} (${pct}% de tus egresos totales).` });
+  }
+
+  // Insight 2: salud financiera
+  if (ahorro >= 30) {
+    insights.push({ ico: '🟢', txt: `Tu tasa de ahorro es <b>${ahorro.toFixed(1)}%</b> — excelente. Estás generando más de lo que gastas.` });
+  } else if (ahorro >= 10) {
+    insights.push({ ico: '🟡', txt: `Tu tasa de ahorro es <b>${ahorro.toFixed(1)}%</b>. Hay oportunidad de optimizar gastos para llegar al 30%.` });
+  } else if (neto < 0) {
+    insights.push({ ico: '🔴', txt: `Tus egresos superaron tus ingresos por <b>${fmt(Math.abs(neto))}</b>. Revisa en qué categorías puedes reducir.` });
+  } else {
+    insights.push({ ico: '🟡', txt: `Tu flujo neto es <b>${fmt(neto)}</b>. Intenta aumentar tu tasa de ahorro reduciendo gastos variables.` });
+  }
+
+  // Insight 3: fuentes de ingreso
+  if (ingresos.length === 0) {
+    insights.push({ ico: '💡', txt: `No se detectaron ingresos en este periodo. ¿Es un estado de egresos o falta información?` });
+  } else if (ingresos.length === 1) {
+    insights.push({ ico: '💡', txt: `Tienes <b>1 fuente de ingreso</b> este periodo de ${fmt(totalIn)}. Diversificar reduce tu riesgo financiero.` });
+  } else {
+    insights.push({ ico: '💡', txt: `Detecté <b>${ingresos.length} entradas de dinero</b> por un total de ${fmt(totalIn)}. Revisa cuáles son recurrentes.` });
+  }
+
+  return insights.map(i => `<div class="er-insight"><span class="er-insight-ico">${i.ico}</span><span>${i.txt}</span></div>`).join('');
+}
+
+function toggleErTxs() {
+  const wrap = document.getElementById('estadosTxWrap');
+  const ico  = document.getElementById('erTxToggleIco');
+  const lbl  = document.getElementById('erTxToggleLbl');
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  ico.textContent  = open ? '▲' : '▼';
+  lbl.textContent  = open ? 'Ocultar transacciones' : 'Ver y editar transacciones';
 }
 
 function removeEstadoTx(id) {
