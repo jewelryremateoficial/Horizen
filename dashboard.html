@@ -2970,6 +2970,7 @@ function renderCalChart(lastDay) {
 
 const EDGE_PROCESS = 'https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/process-statement';
 let _estadoFile = null, _estadoTxs = [], _estadoMeta = {};
+const _CATS = ['Nómina','Renta','Comida','Transporte','Servicios','Entretenimiento','Transferencia','SAT/Impuestos','Salud','Educación','Publicidad','Otros'];
 
 function uploadDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('dragover'); }
 function uploadDragLeave(e) { document.getElementById('uploadZone').classList.remove('dragover'); }
@@ -3048,7 +3049,18 @@ async function procesarEstado() {
     if (!res.ok || data.error) throw new Error(data.error || 'Error procesando el archivo');
 
     _estadoMeta = { bank: data.bank, period_start: data.period_start, period_end: data.period_end, currency: data.currency };
-    _estadoTxs = (data.transactions || []).map((tx, i) => ({ ...tx, _id: i, _remove: false }));
+
+    // Aplicar reglas de categorías guardadas por el usuario
+    let txList = data.transactions || [];
+    const { data: rules } = await db.from('category_rules').select('keyword,category').eq('user_id', _user.id);
+    if (rules && rules.length > 0) {
+      txList = txList.map(tx => {
+        const descUp = (tx.description || '').toUpperCase();
+        const match = rules.find(r => descUp.includes(r.keyword.toUpperCase()));
+        return match ? { ...tx, category: match.category } : tx;
+      });
+    }
+    _estadoTxs = txList.map((tx, i) => ({ ...tx, _id: i, _remove: false }));
 
     document.getElementById('estadosStep2').style.display = 'none';
     document.getElementById('estadosStep3').style.display = 'block';
@@ -3104,9 +3116,24 @@ function renderEstadosTxs() {
   document.getElementById('erTopGastos').innerHTML = sortedCats.length ? sortedCats.map(([cat, catTxs], i) => {
     const total = catTxs.reduce((s,t)=>s+t.amount,0);
     const inner = catTxs.sort((a,b)=>b.amount-a.amount).map(t =>
-      `<div style="display:flex;justify-content:space-between;padding:.22rem .6rem;font-size:.72rem;border-bottom:1px solid rgba(255,255,255,.04)">
-        <span style="color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</span>
-        <span style="color:var(--text);font-weight:700;flex-shrink:0;margin-left:.5rem">${fmt(t.amount)}</span>
+      `<div style="border-bottom:1px solid rgba(255,255,255,.04)">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.22rem .6rem;font-size:.72rem">
+          <span style="color:var(--muted);max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</span>
+          <div style="display:flex;gap:.4rem;align-items:center;flex-shrink:0;margin-left:.5rem">
+            <span style="color:var(--text);font-weight:700">${fmt(t.amount)}</span>
+            <button onclick="showCatEdit(${t._id})" style="background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);cursor:pointer;font-size:.6rem;padding:.12rem .3rem" title="Cambiar categoría">✏️</button>
+          </div>
+        </div>
+        <div id="catedit${t._id}" style="display:none;padding:.4rem .6rem .5rem;background:rgba(0,0,0,.25);margin:.1rem .4rem .3rem;border-radius:6px">
+          <div style="font-size:.67rem;color:var(--muted);margin-bottom:.3rem">Mover a categoría y enseñarle a NOVA:</div>
+          <div style="display:flex;gap:.4rem;align-items:center">
+            <select id="catsel${t._id}" class="rev-inp" style="flex:1">
+              ${_CATS.map(c => `<option ${c===t.category?'selected':''}>${c}</option>`).join('')}
+            </select>
+            <button onclick="saveCategRule(${t._id})" class="tb-btn tb-primary" style="font-size:.7rem;padding:.28rem .55rem;white-space:nowrap">✓ Guardar</button>
+            <button onclick="document.getElementById('catedit${t._id}').style.display='none'" class="tb-btn tb-ghost" style="font-size:.7rem;padding:.28rem .45rem">✕</button>
+          </div>
+        </div>
       </div>`).join('');
     return `<div style="border-bottom:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:.42rem 0;cursor:pointer" onclick="var d=document.getElementById('cd${i}');d.style.display=d.style.display==='none'?'block':'none'">
@@ -3121,14 +3148,13 @@ function renderEstadosTxs() {
   document.getElementById('erInsights').innerHTML = generateNovaInsights(visible, totalIn, totalOut, neto, ahorro);
 
   // Lista de transacciones
-  const CATS = ['Nómina','Renta','Comida','Transporte','Servicios','Entretenimiento','Transferencia','SAT/Impuestos','Salud','Educación','Otros'];
   document.getElementById('estadosTxList').innerHTML = visible.map(tx => `
     <div class="tx-rev-grid" id="txrow-${tx._id}">
       <input class="rev-inp" type="date" value="${tx.date}" onchange="_estadoTxs.find(t=>t._id===${tx._id}).date=this.value">
       <input class="rev-inp" type="text" value="${tx.description}" onchange="_estadoTxs.find(t=>t._id===${tx._id}).description=this.value">
       <input class="rev-inp" type="number" value="${tx.amount}" min="0" step="0.01" onchange="_estadoTxs.find(t=>t._id===${tx._id}).amount=parseFloat(this.value)||0">
       <select class="rev-inp" onchange="_estadoTxs.find(t=>t._id===${tx._id}).category=this.value">
-        ${CATS.map(c => `<option ${c===tx.category?'selected':''}>${c}</option>`).join('')}
+        ${_CATS.map(c => `<option ${c===tx.category?'selected':''}>${c}</option>`).join('')}
       </select>
       <select class="rev-inp" onchange="_estadoTxs.find(t=>t._id===${tx._id}).type=this.value">
         <option ${tx.type==='ingreso'?'selected':''} value="ingreso">💰 Ingreso</option>
@@ -3212,6 +3238,44 @@ function toggleErTxs() {
   wrap.style.display = open ? 'block' : 'none';
   ico.textContent  = open ? '▲' : '▼';
   lbl.textContent  = open ? 'Ocultar transacciones' : 'Ver y editar transacciones';
+}
+
+function extractKeyword(desc) {
+  const words = (desc || '').trim().split(/\s+/);
+  const first = words[0] || '';
+  if (first.length >= 4) return first.toUpperCase();
+  if (words.length > 1) return (first + ' ' + words[1]).toUpperCase().trim();
+  return desc.slice(0, 15).toUpperCase().trim();
+}
+
+function showCatEdit(id) {
+  const el = document.getElementById('catedit' + id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function saveCategRule(id) {
+  const tx = _estadoTxs.find(t => t._id === id);
+  if (!tx) return;
+  const newCat = document.getElementById('catsel' + id).value;
+  const keyword = extractKeyword(tx.description);
+
+  // Actualizar en memoria
+  tx.category = newCat;
+
+  // Guardar regla en Supabase (upsert por user_id + keyword)
+  const { error } = await db.from('category_rules').upsert(
+    { user_id: _user.id, keyword, category: newCat },
+    { onConflict: 'user_id,keyword' }
+  );
+
+  if (error) {
+    toast('Error guardando regla: ' + error.message, 'error');
+  } else {
+    toast(`✓ NOVA aprendió: "${keyword}" → ${newCat}`, 'success');
+    document.getElementById('catedit' + id).style.display = 'none';
+    renderEstadosTxs();
+  }
 }
 
 function removeEstadoTx(id) {
