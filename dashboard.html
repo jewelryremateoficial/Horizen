@@ -887,7 +887,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <canvas id="erChart" height="240"></canvas>
         </div>
         <div class="card" style="margin:0">
-          <div class="card-ttl" style="margin-bottom:.9rem">Top 5 gastos</div>
+          <div class="card-ttl" style="margin-bottom:.9rem">Desglose por categoría <span style="font-size:.68rem;color:var(--muted);font-weight:400">(clic para ver detalle)</span></div>
           <div id="erTopGastos">—</div>
         </div>
       </div>
@@ -3095,17 +3095,27 @@ function renderEstadosTxs() {
   // Gráfica por categoría
   renderERChart(visible);
 
-  // Top 5 gastos
+  // Desglose por categoría (expandible)
   const egresos = visible.filter(t => t.type === 'egreso');
-  const top5 = [...egresos].sort((a,b) => b.amount - a.amount).slice(0, 5);
-  document.getElementById('erTopGastos').innerHTML = top5.length ? top5.map(t => `
-    <div class="er-top-item">
-      <div>
-        <div class="er-top-cat">${t.description.slice(0,32)}</div>
-        <div style="font-size:.68rem;color:var(--muted)">${t.category}</div>
+  const byCatFull = {};
+  egresos.forEach(t => { if (!byCatFull[t.category]) byCatFull[t.category] = []; byCatFull[t.category].push(t); });
+  const sortedCats = Object.entries(byCatFull).sort((a,b) =>
+    b[1].reduce((s,t)=>s+t.amount,0) - a[1].reduce((s,t)=>s+t.amount,0));
+  document.getElementById('erTopGastos').innerHTML = sortedCats.length ? sortedCats.map(([cat, catTxs], i) => {
+    const total = catTxs.reduce((s,t)=>s+t.amount,0);
+    const inner = catTxs.sort((a,b)=>b.amount-a.amount).map(t =>
+      `<div style="display:flex;justify-content:space-between;padding:.22rem .6rem;font-size:.72rem;border-bottom:1px solid rgba(255,255,255,.04)">
+        <span style="color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</span>
+        <span style="color:var(--text);font-weight:700;flex-shrink:0;margin-left:.5rem">${fmt(t.amount)}</span>
+      </div>`).join('');
+    return `<div style="border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.42rem 0;cursor:pointer" onclick="var d=document.getElementById('cd${i}');d.style.display=d.style.display==='none'?'block':'none'">
+        <div style="font-size:.78rem;font-weight:700">${cat} <span style="font-size:.68rem;color:var(--muted);font-weight:400">(${catTxs.length})</span></div>
+        <div style="font-size:.78rem;font-weight:800;color:var(--err)">${fmt(total)} ▾</div>
       </div>
-      <div class="er-top-val">${fmt(t.amount)}</div>
-    </div>`).join('') : '<div style="color:var(--muted);font-size:.8rem">Sin egresos</div>';
+      <div id="cd${i}" style="display:none;background:var(--bg3);border-radius:8px;margin-bottom:.4rem">${inner}</div>
+    </div>`;
+  }).join('') : '<div style="color:var(--muted);font-size:.8rem">Sin egresos</div>';
 
   // NOVA insights
   document.getElementById('erInsights').innerHTML = generateNovaInsights(visible, totalIn, totalOut, neto, ahorro);
@@ -3133,9 +3143,10 @@ function renderERChart(txs) {
   const byCat = {};
   egresos.forEach(t => { byCat[t.category] = (byCat[t.category] || 0) + t.amount; });
   const sorted = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
-  const labels = sorted.map(e => e[0]);
+  const fmtShort = v => v >= 1000 ? '$' + (v/1000).toFixed(1) + 'k' : '$' + v.toFixed(0);
+  const labels = sorted.map(e => e[0] + '  ' + fmtShort(e[1]));
   const data   = sorted.map(e => e[1]);
-  const colors = ['#00d4aa','#7b61ff','#ff6b6b','#ffd166','#06d6a0','#118ab2','#ef476f','#ffd166','#06d6a0','#a8dadc','#457b9d'];
+  const colors = ['#00d4aa','#7b61ff','#ff6b6b','#ffd166','#06d6a0','#118ab2','#ef476f','#e76f51','#a8dadc','#457b9d','#2a9d8f'];
 
   if (_erChartInstance) { _erChartInstance.destroy(); _erChartInstance = null; }
   const ctx = document.getElementById('erChart').getContext('2d');
@@ -3159,13 +3170,15 @@ function generateNovaInsights(txs, totalIn, totalOut, neto, ahorro) {
   const egresos = txs.filter(t => t.type === 'egreso');
   const ingresos = txs.filter(t => t.type === 'ingreso');
 
-  // Insight 1: categoría dominante
+  // Insight 1: categoría dominante con desglose específico
   const byCat = {};
   egresos.forEach(t => { byCat[t.category] = (byCat[t.category] || 0) + t.amount; });
   const topCat = Object.entries(byCat).sort((a,b) => b[1]-a[1])[0];
   if (topCat) {
     const pct = totalOut > 0 ? ((topCat[1]/totalOut)*100).toFixed(0) : 0;
-    insights.push({ ico: '📌', txt: `Tu gasto más alto es <b>${topCat[0]}</b> con ${fmt(topCat[1])} (${pct}% de tus egresos totales).` });
+    const catTxs = egresos.filter(t => t.category === topCat[0]).sort((a,b) => b.amount - a.amount).slice(0, 3);
+    const detalle = catTxs.map(t => `<b>${t.description}</b> (${fmt(t.amount)})`).join(', ');
+    insights.push({ ico: '📌', txt: `Tu categoría de mayor gasto es <b>${topCat[0]}</b>: ${fmt(topCat[1])} (${pct}% de tus egresos). Los más altos: ${detalle}.` });
   }
 
   // Insight 2: salud financiera
