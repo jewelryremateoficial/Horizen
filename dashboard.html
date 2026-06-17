@@ -342,6 +342,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .er-top-cat{font-size:.78rem;font-weight:600}
 .er-top-val{font-size:.82rem;font-weight:800;color:var(--err)}
 .er-tx-toggle{width:100%;text-align:left;background:none;border:none;color:var(--text);cursor:pointer;padding:.5rem 0;font-size:.82rem;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.cat-group-strip{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem}
+.cat-group-chip{display:inline-flex;align-items:center;gap:.35rem;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:.3rem .7rem;font-size:.72rem;font-weight:600;white-space:nowrap}
+.custom-cat-item{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.8rem}
+.custom-cat-item:last-child{border-bottom:none}
+.cat-badge{display:inline-block;background:var(--bg3);border-radius:6px;padding:.15rem .45rem;font-size:.67rem;color:var(--muted);margin-left:.4rem}
 .estado-steps{display:flex;gap:.5rem;margin-bottom:1.5rem;align-items:center}
 .step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0}
 .step-dot.done{background:var(--ok);color:#fff}
@@ -867,10 +872,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <div style="font-size:.75rem;color:var(--muted);margin-top:.25rem" id="erPeriodo">—</div>
         </div>
         <div style="display:flex;gap:.6rem">
+          <button class="tb-btn tb-ghost" onclick="openCatModal()">⚙️ Categorías</button>
           <button class="tb-btn tb-ghost" onclick="resetEstados()">← Subir otro</button>
           <button class="tb-btn tb-primary" id="btnGuardar" onclick="confirmarEstado()">💾 Guardar</button>
         </div>
       </div>
+
+      <!-- Strip de grupos -->
+      <div class="cat-group-strip" id="erGroupStrip"></div>
 
       <!-- 4 métricas -->
       <div class="er-metrics">
@@ -1269,6 +1278,37 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   </div>
 </div>
 
+<div class="overlay" id="catModal">
+  <div class="mod" style="max-width:520px">
+    <div class="mod-hdr">
+      <div class="mod-ttl">⚙️ Mis Categorías</div>
+      <button class="mod-close" onclick="closeModal('catModal')">✕</button>
+    </div>
+    <div class="mod-body" style="max-height:70vh;overflow-y:auto">
+      <div style="background:var(--bg3);border-radius:10px;padding:.9rem;margin-bottom:1.1rem">
+        <div style="font-size:.75rem;font-weight:700;margin-bottom:.6rem">➕ Nueva categoría personalizada</div>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+          <input id="newCatName" class="mod-inp" placeholder="Ej: Gasolina, Publicidad digital..." style="flex:1;min-width:140px">
+          <select id="newCatGroup" class="mod-inp" style="width:130px">
+            <option>Negocios</option><option>Comida</option><option>Hogar</option>
+            <option>Personal</option><option>Finanzas</option><option>Otros</option>
+          </select>
+          <button class="tb-btn tb-primary" onclick="addCustomCat()">+ Crear</button>
+        </div>
+      </div>
+      <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem">Mis categorías</div>
+      <div id="customCatList"><div style="color:var(--muted);font-size:.8rem">Aún no tienes categorías personalizadas.</div></div>
+      <div style="margin-top:1.1rem;padding-top:1rem;border-top:1px solid var(--border)">
+        <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.6rem">Categorías predefinidas por grupo</div>
+        <div id="predefinedCatList"></div>
+      </div>
+    </div>
+    <div class="mod-footer">
+      <button class="btn-cancel" onclick="closeModal('catModal')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script src="/assets/app.js"></script>
 <script src="/assets/auth.js"></script>
 <script>
@@ -1320,7 +1360,7 @@ let _accounts = [], _debts = [], _txFilter = 'all';
     `${m.getFullYear()}-${String(m.getMonth()+1).padStart(2,'0')}`;
 
   // Load data
-  await Promise.all([loadAccounts(), loadDebts()]);
+  await Promise.all([loadAccounts(), loadDebts(), loadCustomCats()]);
   await loadMetrics();
   loadRecentTx();
 
@@ -2969,8 +3009,31 @@ function renderCalChart(lastDay) {
 // ══════════════════════════════════════════════════════════════
 
 const EDGE_PROCESS = 'https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/process-statement';
-let _estadoFile = null, _estadoTxs = [], _estadoMeta = {};
-const _CATS = ['Nómina','Renta','Comida','Transporte','Servicios','Entretenimiento','Transferencia','SAT/Impuestos','Salud','Educación','Publicidad','Otros'];
+let _estadoFile = null, _estadoTxs = [], _estadoMeta = {}, _customCats = [];
+
+const _PREDEFINED_CATS = ['Nómina','Publicidad','Software','Papelería','Renta','Contabilidad','Servicios','Comida','Café','Supermercado','Farmacia','Salud','Entretenimiento','Ropa','Transporte','SAT/Impuestos','Transferencia','Inversiones','Educación','Otros'];
+
+const _CAT_GROUPS = {
+  'Nómina':'Negocios','Publicidad':'Negocios','Software':'Negocios','Papelería':'Negocios',
+  'Renta':'Negocios','Contabilidad':'Negocios','Servicios':'Negocios',
+  'Comida':'Comida','Café':'Comida',
+  'Supermercado':'Hogar','Farmacia':'Hogar',
+  'Salud':'Personal','Entretenimiento':'Personal','Ropa':'Personal','Transporte':'Personal','Educación':'Personal',
+  'SAT/Impuestos':'Finanzas','Transferencia':'Finanzas','Inversiones':'Finanzas',
+  'Otros':'Otros'
+};
+
+const _CAT_GROUP_ICONS = { 'Negocios':'🏢','Comida':'🍽','Hogar':'🛒','Personal':'👤','Finanzas':'💰','Otros':'⬜' };
+
+function getAllCats() {
+  const custom = _customCats.map(c => c.name);
+  return [..._PREDEFINED_CATS, ...custom.filter(c => !_PREDEFINED_CATS.includes(c))];
+}
+function getCatGroup(name) {
+  const c = _customCats.find(c => c.name === name);
+  if (c) return c.group_name;
+  return _CAT_GROUPS[name] || 'Otros';
+}
 
 function uploadDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('dragover'); }
 function uploadDragLeave(e) { document.getElementById('uploadZone').classList.remove('dragover'); }
@@ -3104,6 +3167,14 @@ function renderEstadosTxs() {
   // Botón guardar
   document.getElementById('btnGuardar').textContent = '💾 Guardar ' + visible.length + ' transacciones';
 
+  // Strip de grupos
+  const groupTotals = {};
+  egresos.forEach(t => { const g = getCatGroup(t.category); groupTotals[g] = (groupTotals[g]||0) + t.amount; });
+  document.getElementById('erGroupStrip').innerHTML = Object.entries(groupTotals)
+    .sort((a,b) => b[1]-a[1])
+    .map(([g,amt]) => `<div class="cat-group-chip">${_CAT_GROUP_ICONS[g]||'⬜'} ${g} <b style="color:var(--err);margin-left:.2rem">${fmt(amt)}</b></div>`)
+    .join('');
+
   // Gráfica por categoría
   renderERChart(visible);
 
@@ -3128,7 +3199,7 @@ function renderEstadosTxs() {
           <div style="font-size:.67rem;color:var(--muted);margin-bottom:.3rem">Mover a categoría y enseñarle a NOVA:</div>
           <div style="display:flex;gap:.4rem;align-items:center">
             <select id="catsel${t._id}" class="rev-inp" style="flex:1">
-              ${_CATS.map(c => `<option ${c===t.category?'selected':''}>${c}</option>`).join('')}
+              ${getAllCats().map(c => `<option ${c===t.category?'selected':''}>${c}</option>`).join('')}
             </select>
             <button onclick="saveCategRule(${t._id})" class="tb-btn tb-primary" style="font-size:.7rem;padding:.28rem .55rem;white-space:nowrap">✓ Guardar</button>
             <button onclick="document.getElementById('catedit${t._id}').style.display='none'" class="tb-btn tb-ghost" style="font-size:.7rem;padding:.28rem .45rem">✕</button>
@@ -3154,7 +3225,7 @@ function renderEstadosTxs() {
       <input class="rev-inp" type="text" value="${tx.description}" onchange="_estadoTxs.find(t=>t._id===${tx._id}).description=this.value">
       <input class="rev-inp" type="number" value="${tx.amount}" min="0" step="0.01" onchange="_estadoTxs.find(t=>t._id===${tx._id}).amount=parseFloat(this.value)||0">
       <select class="rev-inp" onchange="_estadoTxs.find(t=>t._id===${tx._id}).category=this.value">
-        ${_CATS.map(c => `<option ${c===tx.category?'selected':''}>${c}</option>`).join('')}
+        ${getAllCats().map(c => `<option ${c===tx.category?'selected':''}>${c}</option>`).join('')}
       </select>
       <select class="rev-inp" onchange="_estadoTxs.find(t=>t._id===${tx._id}).type=this.value">
         <option ${tx.type==='ingreso'?'selected':''} value="ingreso">💰 Ingreso</option>
@@ -3252,6 +3323,66 @@ function showCatEdit(id) {
   const el = document.getElementById('catedit' + id);
   if (!el) return;
   el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function loadCustomCats() {
+  if (!_user) return;
+  const { data } = await db.from('custom_categories').select('name,group_name').eq('user_id', _user.id).order('created_at');
+  _customCats = data || [];
+}
+
+function openCatModal() {
+  renderCatModal();
+  openModal('catModal');
+}
+
+function renderCatModal() {
+  // Mis categorías personalizadas
+  const listEl = document.getElementById('customCatList');
+  listEl.innerHTML = _customCats.length ? _customCats.map(c => `
+    <div class="custom-cat-item">
+      <div><b>${c.name}</b><span class="cat-badge">${_CAT_GROUP_ICONS[c.group_name]||'⬜'} ${c.group_name}</span></div>
+      <button onclick="deleteCustomCat('${c.name}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:.2rem .4rem" title="Eliminar">✕</button>
+    </div>`).join('')
+  : '<div style="color:var(--muted);font-size:.8rem;padding:.5rem 0">Aún no tienes categorías personalizadas.</div>';
+
+  // Predefinidas agrupadas
+  const grouped = {};
+  _PREDEFINED_CATS.forEach(cat => {
+    const g = _CAT_GROUPS[cat] || 'Otros';
+    if (!grouped[g]) grouped[g] = [];
+    grouped[g].push(cat);
+  });
+  document.getElementById('predefinedCatList').innerHTML = Object.entries(grouped).map(([g, cats]) =>
+    `<div style="margin-bottom:.6rem">
+      <div style="font-size:.7rem;font-weight:700;margin-bottom:.3rem">${_CAT_GROUP_ICONS[g]||'⬜'} ${g}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:.3rem">${cats.map(c =>
+        `<span style="background:var(--bg3);border-radius:6px;padding:.2rem .5rem;font-size:.7rem">${c}</span>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+async function addCustomCat() {
+  const name = document.getElementById('newCatName').value.trim();
+  const group = document.getElementById('newCatGroup').value;
+  if (!name) { toast('Escribe un nombre para la categoría', 'error'); return; }
+  if (getAllCats().includes(name)) { toast('Esa categoría ya existe', 'error'); return; }
+
+  const { error } = await db.from('custom_categories').insert({ user_id: _user.id, name, group_name: group });
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+
+  document.getElementById('newCatName').value = '';
+  await loadCustomCats();
+  renderCatModal();
+  toast(`✓ Categoría "${name}" creada en ${group}`, 'success');
+}
+
+async function deleteCustomCat(name) {
+  const { error } = await db.from('custom_categories').delete().eq('user_id', _user.id).eq('name', name);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  await loadCustomCats();
+  renderCatModal();
+  toast(`Categoría "${name}" eliminada`, 'success');
 }
 
 async function saveCategRule(id) {
