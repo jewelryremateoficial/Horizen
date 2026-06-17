@@ -3167,6 +3167,9 @@ function renderEstadosTxs() {
   // Botón guardar
   document.getElementById('btnGuardar').textContent = '💾 Guardar ' + visible.length + ' transacciones';
 
+  // Egresos (se usa en strip, chart y desglose)
+  const egresos = visible.filter(t => t.type === 'egreso');
+
   // Strip de grupos
   const groupTotals = {};
   egresos.forEach(t => { const g = getCatGroup(t.category); groupTotals[g] = (groupTotals[g]||0) + t.amount; });
@@ -3179,7 +3182,6 @@ function renderEstadosTxs() {
   renderERChart(visible);
 
   // Desglose por categoría (expandible)
-  const egresos = visible.filter(t => t.type === 'egreso');
   const byCatFull = {};
   egresos.forEach(t => { if (!byCatFull[t.category]) byCatFull[t.category] = []; byCatFull[t.category].push(t); });
   const sortedCats = Object.entries(byCatFull).sort((a,b) =>
