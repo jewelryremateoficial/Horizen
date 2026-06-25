@@ -102,7 +102,11 @@ async function redirectAfterAuth(user) {
       }
 
       if (isAdminDash && !isAdminUser(user)) {
-        // Usuario normal intentó entrar al admin → al dashboard normal
+        // JWT no tiene is_admin → verificar en BD antes de redirigir
+        try {
+          const profile = await getProfile(user.id);
+          if (profile?.is_admin) return; // BD confirma admin: quedarse
+        } catch(_) {}
         window.location.replace('/dashboard.html');
         return;
       }
