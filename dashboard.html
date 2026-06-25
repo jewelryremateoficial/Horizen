@@ -1338,6 +1338,15 @@ let _accounts = [], _debts = [], _txFilter = 'all';
 
   try { _profile = await getProfile(_user.id); } catch(e) {}
 
+  // Trial enforcement — redirigir si el trial venció y no tiene plan activo
+  const _now = new Date();
+  const _trialEnds = _profile?.trial_ends_at ? new Date(_profile.trial_ends_at) : null;
+  const _isActive  = _profile?.subscription_status === 'active';
+  if (!_isActive && _trialEnds && _now > _trialEnds) {
+    window.location.href = '/pricing.html?expired=1';
+    return;
+  }
+
   const name    = _profile?.full_name || _user.email?.split('@')[0] || 'Usuario';
   const company = _profile?.company_name || '';
   const plan    = _profile?.plan || 'free';
