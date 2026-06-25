@@ -871,7 +871,7 @@ function renderCustTable() {
     <tr>
       <td>
         <div style="font-weight:600">${u.company_name || u.full_name || '—'}</div>
-        <div style="color:var(--muted);font-size:.75rem">${u.rfc || u.id?.slice(0,16)+'…'}</div>
+        <div style="color:var(--muted);font-size:.75rem">${u.email || u.rfc || u.id?.slice(0,16)+'…'}</div>
       </td>
       <td>${planBadge(u.plan || 'free')}</td>
       <td>${statusBadge(u.subscription_status || 'trial')}</td>
@@ -909,6 +909,7 @@ function searchCustomers(q) {
     (!status || u.subscription_status === status) &&
     (!q || (u.company_name||'').toLowerCase().includes(q.toLowerCase()) ||
            (u.full_name||'').toLowerCase().includes(q.toLowerCase()) ||
+           (u.email||'').toLowerCase().includes(q.toLowerCase()) ||
            (u.rfc||'').toLowerCase().includes(q.toLowerCase()) ||
            (u.id||'').toLowerCase().includes(q.toLowerCase()))
   );
@@ -1312,17 +1313,20 @@ function openCustomer(id) {
   document.getElementById('modalTitle').textContent = u.company_name || u.full_name || 'Cliente';
   document.getElementById('modalBody').innerHTML = `
     <div class="info-row"><span class="label">ID</span><span class="value" style="font-family:monospace;font-size:.75rem">${u.id}</span></div>
+    <div class="info-row"><span class="label">Email</span><span class="value">${u.email || '—'}</span></div>
     <div class="info-row"><span class="label">Empresa</span><span class="value">${u.company_name || '—'}</span></div>
     <div class="info-row"><span class="label">RFC</span><span class="value">${u.rfc || '—'}</span></div>
     <div class="info-row"><span class="label">Plan</span><span class="value">${planBadge(u.plan || 'free')}</span></div>
     <div class="info-row"><span class="label">Estado</span><span class="value">${statusBadge(u.subscription_status || 'trial')}</span></div>
+    <div class="info-row"><span class="label">Trial vence</span><span class="value">${u.trial_ends_at ? fmtDate(u.trial_ends_at) : '—'}</span></div>
     <div class="info-row"><span class="label">MRR</span><span class="value" style="color:var(--p);font-weight:800">${fmt(PLANS[u.plan]?.price || 0)}</span></div>
     <div class="info-row"><span class="label">Suscripción PayPal</span><span class="value" style="font-family:monospace;font-size:.75rem">${u.paypal_subscription_id || '—'}</span></div>
     <div class="info-row"><span class="label">Registrado</span><span class="value">${fmtDate(u.created_at)}</span></div>
   `;
   document.getElementById('modalFooter').innerHTML = `
     <button class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
-    <button class="btn btn-secondary" onclick="sendPasswordReset('${u.id}')">🔑 Reset password</button>
+    <button class="btn btn-secondary" onclick="extendTrial('${u.id}')">+7 días trial</button>
+    <button class="btn btn-secondary" onclick="sendPasswordReset('${u.id}')">🔑 Reset</button>
     <button class="btn btn-primary" onclick="openEditPlan('${u.id}')">Cambiar plan</button>
   `;
   document.getElementById('customerModal').classList.remove('hidden');
@@ -1424,10 +1428,24 @@ async function createCustomer() {
   toast('Cliente creado: ' + email, 'ok');
 }
 
+async function extendTrial(id) {
+  const u = allCustomers.find(c => c.id === id);
+  if (!u) return;
+  const current = u.trial_ends_at ? new Date(u.trial_ends_at) : new Date();
+  const newDate = new Date(Math.max(current.getTime(), Date.now()) + 7 * 24 * 60 * 60 * 1000);
+  const { error } = await db.from('profiles').update({
+    trial_ends_at: newDate.toISOString(),
+    subscription_status: 'trial'
+  }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'err'); return; }
+  await loadAllData();
+  closeModal();
+  toast(`Trial extendido 7 días para ${u.company_name || u.full_name || 'cliente'}`, 'ok');
+}
+
 async function sendPasswordReset(id) {
   const u = allCustomers.find(c => c.id === id);
   if (!u) return;
-  // Can't get email from profile directly, show toast
   toast('Usa Supabase Dashboard → Authentication para enviar el reset por email', 'info');
 }
 

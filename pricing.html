@@ -294,6 +294,13 @@ let annualMode = false;
   const name = profile?.full_name || currentUser.email || '';
   document.getElementById('userEmail').textContent = name;
   document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
+  // Banner si el trial venció
+  if (new URLSearchParams(window.location.search).get('expired') === '1') {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);border-radius:12px;padding:1rem 1.5rem;margin:1.5rem auto;max-width:900px;display:flex;align-items:center;gap:.75rem;font-size:.9rem;color:#f87171;';
+    banner.innerHTML = '<span style="font-size:1.2rem">⏰</span><div><strong>Tu período de prueba ha terminado.</strong> Elige un plan para seguir usando Horizen.</div>';
+    document.querySelector('.hero')?.after(banner);
+  }
   loadPayPalButtons();
 })();
 

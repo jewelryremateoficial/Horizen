@@ -54,13 +54,15 @@ async function requireAdmin() {
   const session = await requireAuth('/login.html');
   if (!session) return null;
   const user = session.user;
-  // Check Auth metadata first (bypasses RLS, always reliable)
-  const isAdmin = user?.app_metadata?.is_admin === true ||
-                  user?.user_metadata?.is_admin === true;
-  if (!isAdmin) { window.location.href = '/dashboard.html'; return null; }
-  // Load profile for display (non-blocking if RLS has issues)
+  // Check JWT app_metadata first (no RLS, always reliable)
+  const isAdminMeta = user?.app_metadata?.is_admin === true ||
+                      user?.user_metadata?.is_admin === true;
   let profile = {};
   try { profile = (await getProfile(user.id)) || {}; } catch(e) {}
+  // Fallback: check profiles.is_admin column from DB
+  if (!isAdminMeta && !profile.is_admin) {
+    window.location.href = '/dashboard.html'; return null;
+  }
   return { session, profile };
 }
 
