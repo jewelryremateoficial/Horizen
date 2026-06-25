@@ -387,8 +387,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
     <div class="nav-lbl">Inteligencia</div>
     <button class="ni" onclick="showPage('finplan')"><span class="ico">🧠</span>Plan Financiero</button>
-    <button class="ni" onclick="showPage('nova')"><span class="ico">🤖</span>NOVA IA — CFO</button>
-    <button class="ni" onclick="showPage('integrations')"><span class="ico">🔗</span>Integraciones</button>
 
     <div class="nav-lbl">Cuenta</div>
     <button class="ni" onclick="showPage('settings')"><span class="ico">⚙️</span>Configuración</button>
@@ -962,89 +960,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
   </div>
 
-  <!-- ══ PAGE: NOVA IA ════════════════════════════════════════ -->
-  <div class="page" id="page-nova">
-    <div><div class="section-ttl">🤖 NOVA IA</div><div class="section-sub">Tu CFO Virtual con acceso a los datos de Belvo + SAT</div></div>
-    <div class="nova-card">
-      <div class="nova-glow"></div>
-      <div style="font-size:2rem;margin-bottom:.65rem">🤖</div>
-      <div style="font-size:1.15rem;font-weight:900;margin-bottom:.4rem">Conoce a <span style="background:linear-gradient(90deg,var(--p),var(--sec));-webkit-background-clip:text;-webkit-text-fill-color:transparent">NOVA</span></div>
-      <div style="font-size:.86rem;color:var(--muted);max-width:380px;margin:0 auto .1rem">Tu CFO virtual que analiza tus datos reales de Belvo, detecta fugas de dinero y te avisa antes de una fecha de corte o multa del SAT.</div>
-      <div class="nova-feats">
-        <div class="nova-feat">📊 <strong>Consultas naturales</strong> — "¿Cómo van mis ventas?"</div>
-        <div class="nova-feat">📅 <strong>Alerta de corte TDC</strong> — 5 días antes automático</div>
-        <div class="nova-feat">🧾 <strong>Foto ticket → CFDI</strong> — captura fiscal por WhatsApp</div>
-        <div class="nova-feat">🏦 <strong>Sync Belvo diario</strong> — saldos reales siempre frescos</div>
-      </div>
-      <div style="font-size:.77rem;color:var(--warn);font-weight:700;margin-bottom:1rem;padding:.45rem .9rem;background:rgba(245,158,11,.1);border-radius:8px;display:inline-block">🚀 Q3 2025 — Únete a la lista de espera</div>
-      <div style="display:flex;gap:.65rem;max-width:340px;margin:0 auto">
-        <input class="nova-input" type="email" id="novaEmail" placeholder="tu@empresa.com">
-        <button class="btn-nova" onclick="joinNova()">Quiero acceso →</button>
-      </div>
-    </div>
-  </div>
-
   <!-- ══ PAGE: Integrations ════════════════════════════════════ -->
-  <div class="page" id="page-integrations">
-    <div><div class="section-ttl">🔗 Integraciones</div><div class="section-sub">Open Finance (Belvo) + SAT + importación manual</div></div>
-
-    <div class="card">
-      <div class="card-ttl" style="margin-bottom:.9rem">Open Banking México</div>
-      <div class="sync-list">
-        <div class="sync-item">
-          <div class="sync-ico">🟢</div>
-          <div class="sync-info">
-            <div class="sync-name">Belvo Open Finance</div>
-            <div class="sync-sub">BBVA, Nu, Santander, HSBC, Banamex, Banorte y +12 bancos · Entrega institution_name, balance_available, credit_data</div>
-          </div>
-          <span class="sync-status avail">Disponible</span>
-          <button class="sync-btn" onclick="connectBelvo()">Conectar</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-ttl" style="margin-bottom:.9rem">SAT — Servicio de Administración Tributaria</div>
-      <div class="sync-list">
-        <div class="sync-item">
-          <div class="sync-ico">🧾</div>
-          <div class="sync-info">
-            <div class="sync-name">Descarga masiva CFDI</div>
-            <div class="sync-sub">Importa facturas emitidas y recibidas — llena sat_uuid, rfc_emisor, rfc_receptor automáticamente</div>
-          </div>
-          <span class="sync-status avail">Disponible</span>
-          <button class="sync-btn" onclick="connectSAT()">Conectar RFC</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-ttl" style="margin-bottom:.9rem">Importación Manual</div>
-      <div class="sync-list">
-        <div class="sync-item">
-          <div class="sync-ico">📄</div>
-          <div class="sync-info">
-            <div class="sync-name">PDF Estado de Cuenta</div>
-            <div class="sync-sub">OCR extrae transacciones — fuente = pdf_ocr</div>
-          </div>
-          <span class="sync-status avail">Disponible</span>
-          <button class="sync-btn" onclick="toast('OCR próximamente','info')">Subir PDF</button>
-        </div>
-        <div class="sync-item">
-          <div class="sync-ico">📊</div>
-          <div class="sync-info"><div class="sync-name">CSV / Excel</div><div class="sync-sub">Exporta de tu banco e importa directo</div></div>
-          <span class="sync-status avail">Disponible</span>
-          <button class="sync-btn" onclick="toast('Importar CSV próximamente','info')">Importar</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-ttl" style="margin-bottom:.9rem">📋 Historial de sincronizaciones</div>
-      <div id="syncHist"><div class="empty"><div class="eico">🔄</div><div class="etxt">Sin sincronizaciones aún</div></div></div>
-    </div>
-  </div>
-
   <!-- ══ PAGE: Alerts ═════════════════════════════════════════ -->
   <div class="page" id="page-alerts">
     <div><div class="section-ttl">🔔 Alertas</div><div class="section-sub">Fechas de corte, vencimientos SAT, runway crítico</div></div>
@@ -1398,8 +1314,6 @@ function showPage(id) {
     gastos:       ['📅 Gastos Fijos',     '— Compromisos mensuales y desglose'],
     debts:        ['💳 Deudas',           '— credit_data de Belvo'],
     taxes:        ['🧾 SAT / Fiscal',     '— IVA e ISR automáticos'],
-    nova:         ['🤖 NOVA IA',          '— CFO Virtual'],
-    integrations: ['🔗 Integraciones',    '— Open Banking & SAT'],
     alerts:       ['🔔 Alertas',          ''],
     settings:     ['⚙️ Configuración',    ''],
     calendario:   ['📆 Calendario',       '— Flujo diario de ingresos y egresos'],
@@ -1418,7 +1332,6 @@ function showPage(id) {
   if (id === 'debts')        renderDebts();
   if (id === 'taxes')        loadTaxes();
   if (id === 'alerts')       loadAlerts();
-  if (id === 'integrations') loadSyncHist();
 }
 
 // ── Metrics ───────────────────────────────────────────────────
@@ -1874,20 +1787,6 @@ async function dismissAlert(id) {
   loadAlerts();
 }
 
-async function loadSyncHist() {
-  const { data } = await db.from('sync_logs').select('*')
-    .eq('user_id', _user.id).order('created_at', { ascending: false }).limit(10);
-  const el = document.getElementById('syncHist');
-  if (!data?.length) return;
-  const statusColors = { completed:'var(--ok)', failed:'var(--err)', pending:'var(--warn)', processing:'var(--p)', partial:'var(--warn)' };
-  el.innerHTML = `<table class="tx-tbl" style="margin-top:.5rem"><thead><tr><th>Fuente</th><th>Estado</th><th>Registros</th><th>Fecha</th></tr></thead><tbody>` +
-    data.map(s => `<tr>
-      <td>${s.source}</td>
-      <td style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:${statusColors[s.status]||'var(--muted)'}">${s.status}</td>
-      <td>${s.records_imported}/${s.records_total}</td>
-      <td style="color:var(--muted);font-size:.78rem">${fmtRelative(s.created_at)}</td>
-    </tr>`).join('') + '</tbody></table>';
-}
 
 // ── Save Transaction ──────────────────────────────────────────
 async function saveTx() {
@@ -2166,13 +2065,6 @@ async function saveBelvoLink(link_id, institution_name) {
   await loadAccounts();
   renderAccounts();
   loadMetrics();
-}
-function connectSAT()   { toast('Conexión SAT vía RFC — próximamente', 'info'); }
-function joinNova() {
-  const email = document.getElementById('novaEmail').value.trim();
-  if (!email.includes('@')) { toast('Ingresa un correo válido', 'error'); return; }
-  toast('¡Listo! Te avisamos cuando NOVA esté disponible 🚀', 'success');
-  document.getElementById('novaEmail').value = '';
 }
 function syncNow() {
   toast('Sincronizando...', 'info');
