@@ -7,8 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Belvo Connect Widget SDK — URL correcta (la anterior daba 404) -->
-<script src="https://cdn.belvo.io/belvo-widget-1-stable.js"></script>
+
 <style>
 :root{
   --p:#00d4aa;--p2:#00a884;--sec:#6366f1;
@@ -480,12 +479,6 @@ function renderOverview() {
       <div class="fin-hdr" style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
         <div class="fin-tag">Mi Empresa</div>
         <div class="fin-ttl" style="flex:1">Salud financiera en tiempo real · Belvo + SAT</div>
-        <button
-          id="belvoCta"
-          onclick="openBelvoWidget()"
-          class="btn btn-primary"
-          style="font-size:.76rem;padding:.4rem .9rem;gap:.35rem;flex-shrink:0"
-        >🏦 Conectar cuenta</button>
       </div>
       <div class="fin-grid">
 
@@ -1521,134 +1514,6 @@ function copyText(txt) {
 // ══ BELVO CONNECT WIDGET ════════════════════════════════════════
 // Documentación: https://developers.belvo.com/docs/connect-widget
 // Guía técnica:  Manus — "Guía de Integración: Belvo Connect Widget"
-// ────────────────────────────────────────────────────────────────
-// CREDENCIALES SANDBOX — consíguelas GRATIS en app.belvo.com
-// Token generado por la Edge Function belvo-auth en Supabase
-// API real: belvoSDK.createWidget(access_token, config).build()
-// ────────────────────────────────────────────────────────────────
-
-async function openBelvoWidget() {
-  const btn = document.getElementById('belvoCta');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando token...'; }
-
-  // ── 1. Verificar que el SDK cargó ────────────────────────────
-  if (typeof belvoSDK === 'undefined') {
-    toast('SDK de Belvo no cargó. Recarga la página e intenta de nuevo.', 'err');
-    if (btn) { btn.disabled = false; btn.textContent = '🏦 Conectar cuenta'; }
-    return;
-  }
-
-  let access_token;
-  try {
-    // ── 2. Pedir access_token al backend ──────────────────────
-    const res = await fetch('https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/belvo-auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const payload = await res.json();
-    if (!res.ok) throw new Error(JSON.stringify(payload));
-    if (!payload.access_token) throw new Error('Token inválido: ' + JSON.stringify(payload));
-    access_token = payload.access_token;
-  } catch (err) {
-    toast('Error obteniendo token: ' + err.message, 'err');
-    if (btn) { btn.disabled = false; btn.textContent = '🏦 Conectar cuenta'; }
-    return;
-  }
-
-  if (btn) { btn.textContent = '🏦 Abriendo widget...'; }
-
-  // ── 3. Abrir Belvo Widget ─────────────────────────────────────
-  // API: belvoSDK.createWidget(access_token, config).build()
-  // callback(link, institution) = banco conectado con éxito
-  // onExit(data)                = usuario cerró el widget
-  try {
-    belvoSDK.createWidget(access_token, {
-      locale:            'es',
-      country_codes:     ['MX'],
-      institution_types: ['retail', 'business'],
-      access_mode:       'recurrent',
-
-      callback: async (link, institution) => {
-        console.log('[Belvo] ✓ Link creado:', link, institution);
-        toast(`✓ ${institution} conectado. Sincronizando...`, 'info');
-        if (btn) { btn.disabled = false; btn.textContent = '🏦 Conectar cuenta'; }
-        await saveBelvoLink(link, institution);
-      },
-
-      onExit: (data) => {
-        console.log('[Belvo] Widget cerrado', data);
-        if (btn) { btn.disabled = false; btn.textContent = '🏦 Conectar cuenta'; }
-      },
-
-      onEvent: (data) => {
-        console.log('[Belvo] Evento:', data);
-      },
-
-    }).build();
-
-  } catch (widgetErr) {
-    toast('No se pudo abrir el widget: ' + widgetErr.message, 'err');
-    if (btn) { btn.disabled = false; btn.textContent = '🏦 Conectar cuenta'; }
-  }
-}
-
-// ── Guardar link_id en Supabase (tabla accounts) ───────────────
-// Según guía Manus: guardar link_id + institution + user_id
-// En nuestro schema: accounts.belvo_account_id almacena el link
-// belvo-sync.php actualiza los saldos reales después de este paso
-async function saveBelvoLink(link_id, institution_name) {
-  const userId = adminSession?.user?.id;
-  if (!userId) { toast('Sin sesión activa', 'err'); return; }
-
-  // ── a) Guardar link_id en tabla accounts (referencia inicial) ─
-  const { error: accErr } = await db.from('accounts').upsert(
-    {
-      user_id:           userId,
-      name:              institution_name,
-      type:              'CHECKING',          // tipo provisional hasta que sync actualice
-      institution_name:  institution_name,
-      belvo_account_id:  link_id,             // link_id como referencia Belvo
-      balance_available: 0,
-      balance_current:   0,
-      is_active:         true,
-      last_synced_at:    new Date().toISOString(),
-    },
-    { onConflict: 'belvo_account_id' }        // no duplicar si ya existe
-  );
-
-  if (accErr) {
-    console.error('[Supabase] Error guardando cuenta:', accErr);
-    toast('Error al guardar cuenta: ' + accErr.message, 'err');
-    return;
-  }
-
-  // ── b) Disparar sync completo (cuentas + transacciones + deudas) ─
-  try {
-    const syncRes = await fetch('/belvo-sync.php', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ link_id, institution_name, user_id: userId }),
-    });
-    const syncData = await syncRes.json();
-
-    if (syncData.success) {
-      toast(
-        `✓ ${institution_name}: ${syncData.accounts} cuentas · ${syncData.transactions} transacciones importadas`,
-        'ok'
-      );
-    } else {
-      toast(`Cuenta guardada. El sync se completará en segundo plano.`, 'info');
-    }
-  } catch (syncErr) {
-    // El link_id ya está guardado; el sync puede reintentarse
-    toast(`Cuenta guardada (${institution_name}). Sync pendiente.`, 'info');
-  }
-
-  // ── c) Refrescar los KPIs financieros del overview ────────────
-  const btn = document.getElementById('belvoCta');
-  if (btn) { btn.disabled = false; btn.textContent = '🔄 Reconectar'; }
-  await loadFinancialHealth();
-}
 
 // ════════════════════════════════════════════════════════════════
 
