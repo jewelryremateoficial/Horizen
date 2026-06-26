@@ -1530,11 +1530,11 @@ function toast(msg, type = 'ok') {
   setTimeout(() => el.remove(), 3500);
 }
 
-const styleTag = document.createElement('style');
-styleTag.textContent = `
+const adminStyleTag = document.createElement('style');
+adminStyleTag.textContent = `
   @keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
 `;
-document.head.appendChild(styleTag);
+document.head.appendChild(adminStyleTag);
 </script>
 <!-- Belvo Connect Widget necesita este div para montarse -->
 <div id="belvo"></div>
