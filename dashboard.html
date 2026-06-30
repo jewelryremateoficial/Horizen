@@ -3332,24 +3332,10 @@ async function saveCategRule(id) {
   const tx = _estadoTxs.find(t => t._id === id);
   if (!tx) return;
   const newCat = document.getElementById('catsel' + id).value;
-  const keyword = extractKeyword(tx.description);
-
-  // Actualizar en memoria
-  tx.category = newCat;
-
-  // Guardar regla en Supabase (upsert por user_id + keyword)
-  const { error } = await db.from('category_rules').upsert(
-    { user_id: _user.id, keyword, category: newCat },
-    { onConflict: 'user_id,keyword' }
-  );
-
-  if (error) {
-    toast('Error guardando regla: ' + error.message, 'error');
-  } else {
-    toast(`✓ NOVA aprendió: "${keyword}" → ${newCat}`, 'success');
-    document.getElementById('catedit' + id).style.display = 'none';
-    renderEstadosTxs();
-  }
+  // Reutiliza la lógica que aplica a TODOS los del mismo comercio y recuerda la regla
+  await setCatLearn(id, newCat);
+  const cd = document.getElementById('catedit' + id);
+  if (cd) cd.style.display = 'none';
 }
 
 function removeEstadoTx(id) {
@@ -3371,7 +3357,7 @@ async function confirmarEstado() {
     }
   }
 
-  const btn = document.querySelector('#page-estados .tb-primary');
+  const btn = document.getElementById('btnGuardar') || document.querySelector('#page-estados .tb-primary');
   btn.disabled = true; btn.textContent = 'Guardando...';
 
   try {
@@ -3390,17 +3376,24 @@ async function confirmarEstado() {
 
     if (stmtErr) throw stmtErr;
 
-    // Insertar transacciones
-    const payload = toSave.map(tx => ({
-      user_id: _user.id,
-      description: tx.description,
-      amount: tx.type === 'egreso' ? -Math.abs(tx.amount) : Math.abs(tx.amount),
-      type: tx.type,
-      category: tx.category,
-      date: tx.date,
-      source: 'pdf_ocr',
-      statement_id: stmt.id,
-    }));
+    // Insertar transacciones (normalizando tipo/monto/fecha para no violar restricciones)
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const payload = toSave.map(tx => {
+      let t = (tx.type || '').toString().toLowerCase();
+      if (t !== 'ingreso' && t !== 'transferencia') t = 'egreso';
+      const amt = Math.abs(parseFloat(tx.amount) || 0);
+      const d = (tx.date && /^\d{4}-\d{2}-\d{2}/.test(String(tx.date))) ? String(tx.date).slice(0, 10) : todayISO;
+      return {
+        user_id: _user.id,
+        description: (tx.description || 'Sin descripción').toString().slice(0, 300),
+        amount: t === 'egreso' ? -amt : amt,
+        type: t,
+        category: tx.category || 'Otros',
+        date: d,
+        source: 'pdf_ocr',
+        statement_id: stmt.id,
+      };
+    });
 
     const { error: txErr } = await db.from('transactions').insert(payload);
     if (txErr) {
@@ -3415,9 +3408,10 @@ async function confirmarEstado() {
     loadSavedStatements();
 
   } catch(err) {
-    toast('Error al guardar: ' + err.message, 'error');
+    console.error('confirmarEstado error:', err);
+    toast('No se pudo guardar: ' + (err.message || err.details || err.code || 'error desconocido'), 'error');
   } finally {
-    btn.disabled = false; btn.textContent = '💾 Guardar todas';
+    btn.disabled = false; btn.textContent = '💾 Guardar';
   }
 }
 
