@@ -82,20 +82,20 @@ Nunca entregar solo el código sin los pasos completos.
 - **Base de datos:** Supabase (PostgreSQL + Auth + Realtime + Edge Functions)
 - **Hosting:** Hostinger (archivos estáticos + PHP)
 - **Auth:** Supabase + Google OAuth (PKCE flow)
-- **Open Banking:** Belvo (sandbox → producción)
+- **Open Banking:** ~~Belvo~~ — **YA NO EN USO** (oculto de la UI). Los datos ahora entran por carga manual y por subida de estado de cuenta. No reintroducir Belvo en la interfaz salvo petición explícita.
 - **Pagos:** PayPal Subscriptions
 - **Backend serverless:** Supabase Edge Functions (Deno)
 
 ## Tablas existentes en Supabase
 - `profiles` — usuarios y suscripciones
-- `accounts` — cuentas bancarias (Belvo)
-- `transactions` — movimientos (Belvo + SAT + manual)
-- `debts` — deudas y tarjetas (Belvo)
+- `accounts` — cuentas bancarias (captura manual; Belvo ya no en uso)
+- `transactions` — movimientos (SAT + manual + estado de cuenta; Belvo ya no en uso)
+- `debts` — deudas y tarjetas (captura manual)
 - `income_sources` — fuentes de ingreso (manual)
 - `fixed_expenses` — gastos fijos (manual)
 - `tax_reserves` — reservas fiscales
 - `alerts` — alertas financieras
-- `sync_logs` — historial de syncs Belvo
+- `sync_logs` — historial de syncs (Belvo, ya no en uso)
 - `payments` — pagos PayPal
 
 ## URLs importantes

@@ -4,33 +4,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Términos de Servicio — Horizen</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/horizen.css">
 <style>
-:root{--p:#00d4aa;--bg:#060b18;--bg2:#0d1526;--border:rgba(255,255,255,0.08);--text:#f0f4f8;--muted:rgba(240,244,248,0.55)}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
-.nav{padding:1.25rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.logo{font-size:1.2rem;font-weight:900;letter-spacing:-.5px;text-decoration:none;color:var(--text)}
-.logo span{color:var(--p)}
-.nav a{color:var(--muted);text-decoration:none;font-size:.9rem}
-.nav a:hover{color:var(--text)}
+body{line-height:1.75}
+.legal-nav{height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);z-index:50}
 .container{max-width:760px;margin:0 auto;padding:3rem 1.5rem 5rem}
-h1{font-size:2rem;font-weight:900;letter-spacing:-1px;margin-bottom:.5rem}
-.meta{color:var(--muted);font-size:.85rem;margin-bottom:3rem}
-h2{font-size:1.1rem;font-weight:700;color:var(--p);margin:2.5rem 0 .75rem;letter-spacing:.2px}
-p{color:rgba(240,244,248,0.8);margin-bottom:1rem;font-size:.95rem}
-ul{color:rgba(240,244,248,0.8);padding-left:1.5rem;margin-bottom:1rem;font-size:.95rem}
-ul li{margin-bottom:.4rem}
-a{color:var(--p)}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-top:3rem}
-.card p{margin:0;font-size:.9rem}
+.legal-content h1{font-size:2.2rem;margin-bottom:.5rem}
+.meta{color:var(--muted);font-size:.88rem;margin-bottom:3rem}
+.legal-content h2{font-size:1.15rem;font-weight:700;color:var(--indigo-700);margin:2.5rem 0 .75rem}
+.legal-content p{color:var(--slate);margin-bottom:1rem;font-size:.96rem}
+.legal-content ul{color:var(--slate);padding-left:1.5rem;margin-bottom:1rem;font-size:.96rem}
+.legal-content ul li{margin-bottom:.4rem}
+.legal-content a{color:var(--indigo);font-weight:500}
+.legal-content a:hover{text-decoration:underline}
+.card{background:var(--bg-soft);border:1px solid var(--line);border-radius:16px;padding:1.75rem 2rem;margin-top:3rem}
+.card p{margin:0;font-size:.92rem;color:var(--slate)}
 </style>
 </head>
 <body>
-<nav class="nav">
-  <a href="/" class="logo">Horizen<span>.</span></a>
-  <a href="/signup.html">Crear cuenta</a>
+<nav class="legal-nav">
+  <a href="/" class="brand">
+    <img class="brand-mark" src="/assets/horizen-h.svg" alt="Horizen">
+    <span class="brand-name">Horiz<span class="en">en</span></span>
+  </a>
+  <a href="/signup.html" class="btn btn-primary">Crear cuenta</a>
 </nav>
+
+<div class="legal-content">
 
 <div class="container">
   <h1>Términos de Servicio</h1>
@@ -90,6 +92,7 @@ a{color:var(--p)}
   <div class="card">
     <p>¿Tienes preguntas sobre estos términos? Escríbenos a <a href="mailto:hola@horizen.com.mx">hola@horizen.com.mx</a></p>
   </div>
+</div>
 </div>
 </body>
 </html>

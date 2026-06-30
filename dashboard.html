@@ -412,7 +412,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
     <div style="display:flex;align-items:center;gap:.6rem">
       <button class="tb-btn tb-ghost" onclick="openModal('txModal')">+ Transacción</button>
-      <button class="tb-btn tb-primary" onclick="syncNow()">↺ Sync</button>
+      <button class="tb-btn tb-primary" onclick="syncNow()" style="display:none">↺ Sync</button>
       <button class="notif" onclick="showPage('alerts')">
         🔔<div class="notif-dot" id="notifDot" style="display:none"></div>
       </button>
@@ -501,14 +501,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
   <!-- ══ PAGE: Transactions ══════════════════════════════════ -->
   <div class="page" id="page-transactions">
-    <div><div class="section-ttl">📊 Transacciones</div><div class="section-sub">Movimientos reales (Belvo) + fiscales (SAT)</div></div>
+    <div><div class="section-ttl">📊 Transacciones</div><div class="section-sub">Movimientos y comprobantes fiscales (SAT)</div></div>
     <div style="display:flex;gap:.65rem;flex-wrap:wrap;align-items:center">
       <div class="tabs" id="txFilterTabs">
         <button class="tab active" onclick="filterTx('all',this)">Todas</button>
         <button class="tab" onclick="filterTx('ingreso',this)">Ingresos</button>
         <button class="tab" onclick="filterTx('egreso',this)">Egresos</button>
         <button class="tab" onclick="filterTx('fiscal',this)">Solo Fiscal</button>
-        <button class="tab" onclick="filterTx('belvo',this)">Solo Belvo</button>
+        <button class="tab" onclick="filterTx('belvo',this)" style="display:none">Solo Belvo</button>
       </div>
       <input type="month" id="txMonth" onchange="loadTx()"
         style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.38rem .7rem;border-radius:8px;font-size:.8rem;font-family:'Inter',sans-serif;outline:none">
@@ -530,13 +530,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   <!-- ══ PAGE: Accounts ══════════════════════════════════════ -->
   <div class="page" id="page-accounts">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.75rem">
-      <div><div class="section-ttl">🏦 Cuentas</div><div class="section-sub">Saldos en tiempo real vía Belvo Open Banking</div></div>
+      <div><div class="section-ttl">🏦 Cuentas</div><div class="section-sub">Tus cuentas y saldos</div></div>
       <div style="display:flex;gap:.6rem;flex-wrap:wrap">
-        <!-- Botón principal: conecta banco automático vía Belvo -->
+        <!-- Botón principal Belvo (oculto — Belvo ya no se usa) -->
         <button
           id="belvoCtaUser"
           onclick="openBelvoWidget()"
-          style="display:inline-flex;align-items:center;gap:.5rem;
+          style="display:none;align-items:center;gap:.5rem;
                  background:linear-gradient(135deg,#6366f1,#00d4aa);
                  color:#fff;border:none;border-radius:10px;
                  padding:.62rem 1.15rem;font-size:.86rem;font-weight:700;
@@ -558,10 +558,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div><div style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.35rem">Activos Disponibles</div><div style="font-size:1.8rem;font-weight:900;letter-spacing:-1px;color:var(--p)" id="totalAvail">—</div></div>
       <div><div style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.35rem">Deuda Total (TDC+Loans)</div><div style="font-size:1.8rem;font-weight:900;letter-spacing:-1px;color:var(--err)" id="totalDebt">—</div></div>
       <div><div style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.35rem">Patrimonio Neto</div><div style="font-size:1.8rem;font-weight:900;letter-spacing:-1px" id="netWorth">—</div></div>
-      <div style="margin-left:auto">
+      <div style="margin-left:auto;display:none">
         <button
           onclick="openBelvoWidget()"
-          style="display:inline-flex;align-items:center;gap:.45rem;
+          style="display:none;align-items:center;gap:.45rem;
                  background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.35);
                  color:#818cf8;border-radius:9px;padding:.45rem .9rem;
                  font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s"
@@ -927,7 +927,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   <!-- ══ PAGE: Debts ══════════════════════════════════════════ -->
   <div class="page" id="page-debts">
     <div style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div><div class="section-ttl">💳 Deudas</div><div class="section-sub">TDC con fecha de corte + préstamos — datos de Belvo credit_data</div></div>
+      <div><div class="section-ttl">💳 Deudas</div><div class="section-sub">Tarjetas con fecha de corte y préstamos</div></div>
       <button class="tb-btn tb-primary" onclick="openModal('debtModal')">+ Nueva deuda</button>
     </div>
     <div class="debt-list" id="debtList">
@@ -1005,10 +1005,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
     <div class="fg"><label class="flbl">Descripción</label><input class="finp" id="txDesc" placeholder="Ej. Pago nómina enero"></div>
     <div class="frow">
-      <div class="fg"><label class="flbl">Categoría Belvo</label>
+      <div class="fg"><label class="flbl">Categoría</label>
         <select class="fsel" id="txCat">
           <option value="">Sin categoría</option>
-          <optgroup label="Belvo (automático)">
+          <optgroup label="Categorías">
             <option>Income</option><option>Shopping</option><option>Food & Groceries</option>
             <option>Bills & Utilities</option><option>Transportation</option>
             <option>Entertainment</option><option>Transfer</option><option>Tax</option>
@@ -1053,7 +1053,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="modal-ttl">🏦 Nueva Cuenta</div>
     <div class="fg"><label class="flbl">Nombre de la cuenta</label><input class="finp" id="accName" placeholder="Ej. BBVA Nómina Principal"></div>
     <div class="frow">
-      <div class="fg"><label class="flbl">Tipo (Belvo)</label>
+      <div class="fg"><label class="flbl">Tipo de cuenta</label>
         <select class="fsel" id="accType">
           <option value="CHECKING">🏦 CHECKING — Cheques / Débito</option>
           <option value="SAVINGS">💰 SAVINGS — Ahorro</option>
@@ -1307,12 +1307,12 @@ function showPage(id) {
   });
   const titles = {
     overview:     ['⚡ One-Minute Check', '— Tu salud financiera al instante'],
-    transactions: ['📊 Transacciones',    '— Belvo + SAT unificados'],
+    transactions: ['📊 Transacciones',    '— Movimientos y SAT unificados'],
     accounts:     ['🏦 Cuentas',          '— balance_available en tiempo real'],
     ingresos:     ['💰 Ingresos',          '— Fuentes de ingreso y total mensual'],
     finplan:      ['🧠 Plan Financiero',  '— Diagnóstico y decisiones recomendadas'],
     gastos:       ['📅 Gastos Fijos',     '— Compromisos mensuales y desglose'],
-    debts:        ['💳 Deudas',           '— credit_data de Belvo'],
+    debts:        ['💳 Deudas',           '— Tarjetas y préstamos'],
     taxes:        ['🧾 SAT / Fiscal',     '— IVA e ISR automáticos'],
     alerts:       ['🔔 Alertas',          ''],
     settings:     ['⚙️ Configuración',    ''],
@@ -1514,7 +1514,7 @@ function renderAccPreview() {
 function renderAccounts() {
   const grid = document.getElementById('accGrid');
   if (!_accounts.length) {
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1;padding:3rem"><div class="eico">🏦</div><div class="etxt">Agrega tus cuentas o conecta Belvo para ver tus saldos en tiempo real</div><button class="ecta" onclick="openModal('accModal')">+ Primera cuenta</button></div>`;
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1;padding:3rem"><div class="eico">🏦</div><div class="etxt">Agrega tus cuentas para ver tus saldos</div><button class="ecta" onclick="openModal('accModal')">+ Primera cuenta</button></div>`;
     updateNetWorth();
     return;
   }
