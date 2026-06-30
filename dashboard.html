@@ -531,6 +531,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     #page-reportes .dl-btn.primary{background:var(--p);color:#fff;border-color:var(--p)}
     #page-reportes .dl-btn:disabled{opacity:.5;cursor:default}
     #page-reportes .rep-empty{padding:2rem;text-align:center;color:var(--muted)}
+    #page-reportes .rep-saved{display:flex;align-items:center;gap:.5rem;background:var(--okbg,#e9f9f1);border:1px solid rgba(14,159,110,.25);color:#0a7a55;font-weight:600;font-size:.9rem;padding:.85rem 1.1rem;border-radius:12px;margin-bottom:1.1rem}
+    #page-reportes .rep-saved b{color:#075e41}
     </style>
     <div><div class="section-ttl">📈 Reportes</div><div class="section-sub">Por mes y por banco · descarga para tu contador (PDF / Excel)</div></div>
     <div class="rep-controls">
@@ -3465,9 +3467,13 @@ async function confirmarEstado() {
     }
 
     toast(`✓ ${toSave.length} transacciones guardadas en "${stmtName}"`, 'success');
+    // Bloque 3: caer en el resumen del estado recién guardado (no en una lista vacía)
+    const _jumpMonth = (_estadoMeta.period_end || _estadoMeta.period_start || '').slice(0, 7);
+    _repJustSaved = { count: toSave.length, name: stmtName, bank: _estadoMeta.bank || '', month: _jumpMonth };
     await Promise.all([loadMetrics(), loadRecentTx()]);
     resetEstados();
     loadSavedStatements();
+    showPage('reportes');
 
   } catch(err) {
     console.error('confirmarEstado error:', err);
@@ -3558,6 +3564,7 @@ function openEditTxCal(txId) {
 
 // ══ REPORTES (por mes y banco · PDF/Excel) ═══════════════════
 let _repTx = [], _repStmtBank = {}, _repCurrent = null;
+let _repJustSaved = null, _repBanner = null;
 const _REP_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const _repMoney = n => '$' + Math.round(n).toLocaleString('es-MX');
 
@@ -3577,7 +3584,9 @@ async function loadReportes() {
     document.getElementById('repBank').innerHTML =
       '<option value="__all__">Todos los bancos</option>' +
       banks.map(b => `<option value="${_escHtml(b)}">${_escHtml(b)}</option>`).join('');
+    _repBanner = _repJustSaved || null;
     repBuildPeriods();
+    if (_repJustSaved) { _repApplyJump(); }
   } catch (e) {
     body.innerHTML = `<div class="rep-empty">No se pudieron cargar los datos: ${_escHtml(e.message || 'error')}</div>`;
   }
@@ -3587,6 +3596,18 @@ function _repMonths() {
   const set = new Set();
   _repTx.forEach(t => { if (t.date) set.add(String(t.date).slice(0, 7)); });
   return [...set].sort().reverse();
+}
+
+function _repApplyJump() {
+  const j = _repJustSaved; if (!j) return;
+  const bankSel = document.getElementById('repBank');
+  if (j.bank && [...bankSel.options].some(o => o.value === j.bank)) bankSel.value = j.bank;
+  document.getElementById('repType').value = 'month';
+  repBuildPeriods();
+  const perSel = document.getElementById('repPeriod');
+  if (j.month && [...perSel.options].some(o => o.value === j.month)) perSel.value = j.month;
+  repRender();
+  _repJustSaved = null; // ya aplicado; el banner permanece hasta cambiar de sección
 }
 
 function repBuildPeriods() {
@@ -3651,9 +3672,10 @@ function repRender() {
   const hasData = rows.length > 0;
   document.getElementById('repBtnPDF').disabled = !hasData;
   document.getElementById('repBtnXLS').disabled = !hasData;
-  if (!hasData) { body.innerHTML = '<div class="rep-empty">No hay movimientos para este periodo/banco. Sube un estado de cuenta o cambia el filtro.</div>'; return; }
+  const banner = _repBanner ? `<div class="rep-saved">✓ Guardaste <b>${_repBanner.count}</b> movimiento${_repBanner.count === 1 ? '' : 's'}${_repBanner.bank ? ' de ' + _escHtml(_repBanner.bank) : ''}. Este es el resumen de tu periodo — revísalo o descárgalo para tu contador.</div>` : '';
+  if (!hasData) { body.innerHTML = banner + '<div class="rep-empty">No hay movimientos para este periodo/banco. Sube un estado de cuenta o cambia el filtro.</div>'; return; }
   const maxCat = r.cats.length ? r.cats[0].amt : 1;
-  body.innerHTML = `
+  body.innerHTML = banner + `
     <div class="rep-kpis">
       <div class="rep-kpi"><div class="k">Entró</div><div class="v pos">${_repMoney(r.inc)}</div></div>
       <div class="rep-kpi"><div class="k">Salió</div><div class="v neg">${_repMoney(r.exp)}</div></div>
