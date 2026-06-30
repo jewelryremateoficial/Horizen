@@ -372,6 +372,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="nav-lbl">Principal</div>
     <button class="ni active" onclick="showPage('overview')"><span class="ico">⚡</span>One-Minute Check</button>
     <button class="ni" onclick="showPage('transactions')"><span class="ico">📊</span>Transacciones</button>
+    <button class="ni" onclick="showPage('reportes')"><span class="ico">📈</span>Reportes</button>
     <button class="ni" onclick="showPage('accounts')"><span class="ico">🏦</span>Cuentas</button>
 
     <div class="nav-lbl">Finanzas</div>
@@ -499,6 +500,65 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
 
   </div><!-- /overview -->
+
+  <!-- ══ PAGE: Reportes ══════════════════════════════════════ -->
+  <div class="page" id="page-reportes">
+    <style>
+    #page-reportes .rep-controls{display:flex;gap:.7rem;flex-wrap:wrap;align-items:flex-end;margin:1rem 0 1.25rem}
+    #page-reportes .rep-field{display:flex;flex-direction:column;gap:.35rem}
+    #page-reportes .rep-field label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    #page-reportes select{font-family:inherit;font-size:.9rem;padding:.6rem .8rem;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text);min-width:170px;cursor:pointer}
+    #page-reportes .rep-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.25rem}
+    #page-reportes .rep-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.2rem;box-shadow:0 1px 2px rgba(10,37,64,.04)}
+    #page-reportes .rep-kpi .k{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    #page-reportes .rep-kpi .v{font-size:1.7rem;font-weight:800;letter-spacing:-.03em;margin-top:.35rem}
+    #page-reportes .rep-kpi .v.pos{color:var(--ok)} #page-reportes .rep-kpi .v.neg{color:var(--err)}
+    #page-reportes .rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin-bottom:1.1rem}
+    @media(max-width:760px){#page-reportes .rep-kpis{grid-template-columns:1fr 1fr}#page-reportes .rep-grid{grid-template-columns:1fr}#page-reportes .rep-controls .rep-dl{margin-left:0!important}}
+    #page-reportes .rep-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.25rem;margin-bottom:1.1rem}
+    #page-reportes .rep-card h3{font-size:.95rem;margin-bottom:.9rem}
+    #page-reportes .catrow{display:flex;align-items:center;gap:.6rem;margin-bottom:.7rem}
+    #page-reportes .catrow .nm{font-size:.85rem;min-width:130px;color:var(--text)}
+    #page-reportes .catrow .bar{flex:1;height:8px;background:var(--bg4);border-radius:99px;overflow:hidden}
+    #page-reportes .catrow .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--p),var(--sec))}
+    #page-reportes .catrow .amt{font-size:.82rem;font-weight:700;min-width:95px;text-align:right;font-variant-numeric:tabular-nums}
+    #page-reportes table{width:100%;border-collapse:collapse;font-size:.85rem}
+    #page-reportes th,#page-reportes td{text-align:left;padding:.55rem .5rem;border-bottom:1px solid var(--border)}
+    #page-reportes th{font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    #page-reportes td.num,#page-reportes th.num{text-align:right;font-variant-numeric:tabular-nums}
+    #page-reportes .dl-btns{display:flex;gap:.6rem;flex-wrap:wrap}
+    #page-reportes .dl-btn{font-family:inherit;font-weight:600;font-size:.88rem;padding:.62rem 1.05rem;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer}
+    #page-reportes .dl-btn.primary{background:var(--p);color:#fff;border-color:var(--p)}
+    #page-reportes .dl-btn:disabled{opacity:.5;cursor:default}
+    #page-reportes .rep-empty{padding:2rem;text-align:center;color:var(--muted)}
+    </style>
+    <div><div class="section-ttl">📈 Reportes</div><div class="section-sub">Por mes y por banco · descarga para tu contador (PDF / Excel)</div></div>
+    <div class="rep-controls">
+      <div class="rep-field">
+        <label>Tipo de reporte</label>
+        <select id="repType" onchange="repBuildPeriods()">
+          <option value="month">Mensual</option>
+          <option value="quarter">Trimestral</option>
+        </select>
+      </div>
+      <div class="rep-field">
+        <label id="repPeriodLbl">Mes</label>
+        <select id="repPeriod" onchange="repRender()"></select>
+      </div>
+      <div class="rep-field">
+        <label>Banco</label>
+        <select id="repBank" onchange="repRender()"><option value="__all__">Todos los bancos</option></select>
+      </div>
+      <div class="rep-field rep-dl" style="margin-left:auto">
+        <label>Descargar</label>
+        <div class="dl-btns">
+          <button class="dl-btn primary" id="repBtnPDF" onclick="repDownloadPDF()">📄 PDF</button>
+          <button class="dl-btn" id="repBtnXLS" onclick="repDownloadExcel()">📊 Excel</button>
+        </div>
+      </div>
+    </div>
+    <div id="repBody"><div class="rep-empty">Cargando tus datos…</div></div>
+  </div>
 
   <!-- ══ PAGE: Transactions ══════════════════════════════════ -->
   <div class="page" id="page-transactions">
@@ -1333,7 +1393,8 @@ function showPage(id) {
     alerts:       ['🔔 Alertas',          ''],
     settings:     ['⚙️ Configuración',    ''],
     calendario:   ['📆 Calendario',       '— Flujo diario de ingresos y egresos'],
-    estados:      ['📄 Subir Estado',     '— IA extrae y categoriza tus transacciones']
+    estados:      ['📄 Subir Estado',     '— IA extrae y categoriza tus transacciones'],
+    reportes:     ['📈 Reportes',         '— Por mes y banco · descarga para tu contador']
   };
   const t = titles[id] || [id, ''];
   document.getElementById('topbarTitle').innerHTML =
@@ -1349,6 +1410,7 @@ function showPage(id) {
   if (id === 'taxes')        loadTaxes();
   if (id === 'alerts')       loadAlerts();
   if (id === 'estados')      loadSavedStatements();
+  if (id === 'reportes')     loadReportes();
 }
 
 // ── Metrics ───────────────────────────────────────────────────
@@ -3492,6 +3554,190 @@ function openEditTxCal(txId) {
   document.getElementById('txFiscal').checked = tx.is_fiscal || false;
   toggleFiscal();
   openModal('txModal');
+}
+
+// ══ REPORTES (por mes y banco · PDF/Excel) ═══════════════════
+let _repTx = [], _repStmtBank = {}, _repCurrent = null;
+const _REP_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const _repMoney = n => '$' + Math.round(n).toLocaleString('es-MX');
+
+async function loadReportes() {
+  const body = document.getElementById('repBody');
+  body.innerHTML = '<div class="rep-empty">Cargando tus datos…</div>';
+  try {
+    const [txRes, stRes] = await Promise.all([
+      db.from('transactions').select('date,type,amount,category,description,statement_id').eq('user_id', _user.id).order('date', { ascending: false }),
+      db.from('statements').select('id,bank_name').eq('user_id', _user.id)
+    ]);
+    if (txRes.error) throw txRes.error;
+    _repTx = txRes.data || [];
+    _repStmtBank = {};
+    (stRes.data || []).forEach(s => { _repStmtBank[s.id] = s.bank_name || 'Sin banco'; });
+    const banks = [...new Set((stRes.data || []).map(s => s.bank_name || 'Sin banco'))];
+    document.getElementById('repBank').innerHTML =
+      '<option value="__all__">Todos los bancos</option>' +
+      banks.map(b => `<option value="${_escHtml(b)}">${_escHtml(b)}</option>`).join('');
+    repBuildPeriods();
+  } catch (e) {
+    body.innerHTML = `<div class="rep-empty">No se pudieron cargar los datos: ${_escHtml(e.message || 'error')}</div>`;
+  }
+}
+
+function _repMonths() {
+  const set = new Set();
+  _repTx.forEach(t => { if (t.date) set.add(String(t.date).slice(0, 7)); });
+  return [...set].sort().reverse();
+}
+
+function repBuildPeriods() {
+  const type = document.getElementById('repType').value;
+  const lbl = document.getElementById('repPeriodLbl');
+  const sel = document.getElementById('repPeriod');
+  const months = _repMonths();
+  if (type === 'month') {
+    lbl.textContent = 'Mes';
+    sel.innerHTML = months.length
+      ? months.map(m => { const [y, mm] = m.split('-'); return `<option value="${m}">${_REP_MESES[parseInt(mm) - 1]} ${y}</option>`; }).join('')
+      : '<option value="">(sin datos)</option>';
+  } else {
+    lbl.textContent = 'Trimestre';
+    const qset = new Set();
+    months.forEach(m => { const [y, mm] = m.split('-'); const q = Math.floor((parseInt(mm) - 1) / 3) + 1; qset.add(y + '-Q' + q); });
+    const qs = [...qset].sort().reverse();
+    const qn = { 1: 'Ene–Mar', 2: 'Abr–Jun', 3: 'Jul–Sep', 4: 'Oct–Dic' };
+    sel.innerHTML = qs.length
+      ? qs.map(q => { const [y, qq] = q.split('-Q'); return `<option value="${q}">${qn[qq]} ${y} (T${qq})</option>`; }).join('')
+      : '<option value="">(sin datos)</option>';
+  }
+  repRender();
+}
+
+function _repFilter() {
+  const type = document.getElementById('repType').value;
+  const period = document.getElementById('repPeriod').value;
+  const bank = document.getElementById('repBank').value;
+  if (!period) return [];
+  let months = [];
+  if (type === 'month') months = [period];
+  else { const [y, q] = period.split('-Q'); const start = (parseInt(q) - 1) * 3; months = [0, 1, 2].map(i => y + '-' + String(start + i + 1).padStart(2, '0')); }
+  return _repTx.filter(t => {
+    const m = String(t.date || '').slice(0, 7);
+    if (!months.includes(m)) return false;
+    if (bank !== '__all__') { const b = t.statement_id ? (_repStmtBank[t.statement_id] || 'Sin banco') : 'Sin banco'; if (b !== bank) return false; }
+    return true;
+  });
+}
+
+function _repCompute(rows) {
+  let inc = 0, exp = 0, tr = 0; const cat = {};
+  rows.forEach(r => {
+    const a = Math.abs(parseFloat(r.amount) || 0);
+    if (r.type === 'ingreso') inc += a;
+    else if (r.type === 'transferencia') tr += a;
+    else { exp += a; const c = r.category || 'Otros'; cat[c] = (cat[c] || 0) + a; }
+  });
+  const cats = Object.entries(cat).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ cat: k, amt: v }));
+  return { inc, exp, tr, util: inc - exp, margin: inc ? (inc - exp) / inc * 100 : 0, cats, count: rows.length };
+}
+
+function repRender() {
+  const body = document.getElementById('repBody');
+  const rows = _repFilter();
+  const r = _repCompute(rows);
+  const label = document.getElementById('repPeriod').selectedOptions[0]?.textContent || '';
+  const bankSel = document.getElementById('repBank');
+  const bank = bankSel.value === '__all__' ? 'Todos los bancos' : bankSel.value;
+  _repCurrent = { rows, r, label, bank };
+  const hasData = rows.length > 0;
+  document.getElementById('repBtnPDF').disabled = !hasData;
+  document.getElementById('repBtnXLS').disabled = !hasData;
+  if (!hasData) { body.innerHTML = '<div class="rep-empty">No hay movimientos para este periodo/banco. Sube un estado de cuenta o cambia el filtro.</div>'; return; }
+  const maxCat = r.cats.length ? r.cats[0].amt : 1;
+  body.innerHTML = `
+    <div class="rep-kpis">
+      <div class="rep-kpi"><div class="k">Entró</div><div class="v pos">${_repMoney(r.inc)}</div></div>
+      <div class="rep-kpi"><div class="k">Salió</div><div class="v neg">${_repMoney(r.exp)}</div></div>
+      <div class="rep-kpi"><div class="k">Utilidad</div><div class="v ${r.util >= 0 ? 'pos' : 'neg'}">${_repMoney(r.util)}</div></div>
+      <div class="rep-kpi"><div class="k">Margen</div><div class="v">${Math.round(r.margin)}%</div></div>
+    </div>
+    <div class="rep-grid">
+      <div class="rep-card">
+        <h3>Gasto por categoría</h3>
+        ${r.cats.length ? r.cats.map(c => `<div class="catrow"><div class="nm">${_escHtml(c.cat)}</div><div class="bar"><i style="width:${Math.max(4, c.amt / maxCat * 100)}%"></i></div><div class="amt">${_repMoney(c.amt)}</div></div>`).join('') : '<div class="rep-empty">Sin gastos</div>'}
+      </div>
+      <div class="rep-card">
+        <h3>Resumen del periodo</h3>
+        <table>
+          <tr><td>Movimientos</td><td class="num">${r.count}</td></tr>
+          <tr><td>Ingresos</td><td class="num">${_repMoney(r.inc)}</td></tr>
+          <tr><td>Egresos</td><td class="num">${_repMoney(r.exp)}</td></tr>
+          <tr><td>Transferencias</td><td class="num">${_repMoney(r.tr)}</td></tr>
+          <tr><td><b>Utilidad</b></td><td class="num"><b>${_repMoney(r.util)}</b></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="rep-card">
+      <h3>Movimientos (${r.count})</h3>
+      <table>
+        <thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Tipo</th><th class="num">Monto</th></tr></thead>
+        <tbody>
+          ${rows.slice(0, 300).map(t => `<tr><td>${_escHtml(t.date || '')}</td><td>${_escHtml((t.description || '').slice(0, 60))}</td><td>${_escHtml(t.category || 'Otros')}</td><td>${_escHtml(t.type || '')}</td><td class="num">${_repMoney(parseFloat(t.amount) || 0)}</td></tr>`).join('')}
+        </tbody>
+      </table>
+      ${rows.length > 300 ? `<div class="rep-empty">Mostrando 300 de ${rows.length}. La descarga incluye todos.</div>` : ''}
+    </div>`;
+}
+
+function _repLoadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = () => rej(new Error('No se pudo cargar la librería'));
+    document.head.appendChild(s);
+  });
+}
+function _repFileName(ext) {
+  const { label, bank } = _repCurrent;
+  return `Horizen_${label}_${bank}`.replace(/[^\wáéíóúÁÉÍÓÚñÑ-]+/g, '_') + '.' + ext;
+}
+
+async function repDownloadExcel() {
+  if (!_repCurrent || !_repCurrent.rows.length) { toast('No hay datos para exportar', 'error'); return; }
+  const btn = document.getElementById('repBtnXLS'); btn.disabled = true; const old = btn.textContent; btn.textContent = 'Generando…';
+  try {
+    if (typeof XLSX === 'undefined') await _repLoadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+    const { r, rows, label, bank } = _repCurrent;
+    const resumen = [['REPORTE HORIZEN'], ['Periodo', label], ['Banco', bank], ['Generado', new Date().toLocaleDateString('es-MX')], [],
+      ['Entró', Math.round(r.inc)], ['Salió', Math.round(r.exp)], ['Utilidad', Math.round(r.util)], ['Margen %', Math.round(r.margin)], ['Transferencias', Math.round(r.tr)], ['Movimientos', r.count], [],
+      ['GASTO POR CATEGORÍA', 'Monto'], ...r.cats.map(c => [c.cat, Math.round(c.amt)])];
+    const movs = [['Fecha', 'Descripción', 'Categoría', 'Tipo', 'Monto'], ...rows.map(t => [t.date, (t.description || ''), (t.category || 'Otros'), t.type, parseFloat(t.amount) || 0])];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'Resumen');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(movs), 'Movimientos');
+    XLSX.writeFile(wb, _repFileName('xlsx'));
+  } catch (e) { toast('Error al generar Excel: ' + (e.message || e), 'error'); }
+  finally { btn.disabled = false; btn.textContent = old; }
+}
+
+async function repDownloadPDF() {
+  if (!_repCurrent || !_repCurrent.rows.length) { toast('No hay datos para exportar', 'error'); return; }
+  const btn = document.getElementById('repBtnPDF'); btn.disabled = true; const old = btn.textContent; btn.textContent = 'Generando…';
+  try {
+    if (!window.jspdf) await _repLoadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
+    if (!window.jspdf || !window.jspdf.jsPDF.API.autoTable) await _repLoadScript('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js');
+    const { jsPDF } = window.jspdf;
+    const { r, rows, label, bank } = _repCurrent;
+    const doc = new jsPDF();
+    doc.setFillColor(99, 91, 255); doc.rect(0, 0, 210, 26, 'F');
+    doc.setTextColor(255); doc.setFontSize(18); doc.setFont(undefined, 'bold'); doc.text('Horizen', 14, 16);
+    doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.text('Reporte financiero', 196, 16, { align: 'right' });
+    doc.setTextColor(10, 37, 64); doc.setFontSize(13); doc.setFont(undefined, 'bold'); doc.text(`${label}  ·  ${bank}`, 14, 38);
+    doc.autoTable({ startY: 44, theme: 'plain', styles: { fontSize: 11 }, body: [
+      ['Entró', _repMoney(r.inc)], ['Salió', _repMoney(r.exp)], ['Utilidad', _repMoney(r.util)], ['Margen', Math.round(r.margin) + '%'], ['Movimientos', String(r.count)] ] });
+    if (r.cats.length) doc.autoTable({ startY: doc.lastAutoTable.finalY + 6, head: [['Gasto por categoría', 'Monto']], body: r.cats.map(c => [c.cat, _repMoney(c.amt)]), headStyles: { fillColor: [99, 91, 255] } });
+    doc.autoTable({ startY: doc.lastAutoTable.finalY + 6, head: [['Fecha', 'Descripción', 'Categoría', 'Tipo', 'Monto']], body: rows.map(t => [t.date, (t.description || '').slice(0, 40), t.category || 'Otros', t.type, _repMoney(parseFloat(t.amount) || 0)]), headStyles: { fillColor: [99, 91, 255] }, styles: { fontSize: 8 } });
+    doc.save(_repFileName('pdf'));
+  } catch (e) { toast('Error al generar PDF: ' + (e.message || e), 'error'); }
+  finally { btn.disabled = false; btn.textContent = old; }
 }
 </script>
 <!-- Belvo Connect Widget necesita este div para montarse -->
