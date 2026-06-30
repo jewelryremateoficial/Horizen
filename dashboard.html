@@ -2990,7 +2990,7 @@ async function procesarEstado() {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + token,
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwY2J6bmZrcHN3dHhpZmZnc2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1Mzk5MTksImV4cCI6MjA1OTExNTkxOX0.hm_qlmOi6OKPN3nCWNr0xH0bqLqHfxkPYYyJj2YJVNY',
+        'apikey': SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({ storagePath, fileType: _estadoFile.type })
     });
