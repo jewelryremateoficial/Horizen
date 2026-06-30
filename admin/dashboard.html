@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin — FinancialOS</title>
+<title>Admin — Horizen</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -28,12 +28,12 @@ button{font-family:'Inter',sans-serif}
 .sidebar-logo{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.6rem}
 .sidebar-logo .name{font-size:1rem;font-weight:900;letter-spacing:-.4px}
 .sidebar-logo .name span{color:var(--p)}
-.sidebar-logo .badge{background:rgba(244,63,94,.15);color:#f87171;font-size:.6rem;font-weight:800;padding:.15rem .45rem;border-radius:4px;letter-spacing:.4px;text-transform:uppercase}
+.sidebar-logo .badge{background:rgba(244,63,94,.15);color:#e2435f;font-size:.6rem;font-weight:800;padding:.15rem .45rem;border-radius:4px;letter-spacing:.4px;text-transform:uppercase}
 .sidebar-section{padding:.5rem .75rem;margin-top:.25rem}
 .sidebar-label{font-size:.65rem;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;padding:.5rem .5rem .3rem}
 .nav-item{display:flex;align-items:center;gap:.65rem;padding:.6rem .75rem;border-radius:8px;color:var(--muted);font-size:.82rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
 .nav-item:hover{background:rgba(10,37,64,.05);color:var(--text)}
-.nav-item.active{background:rgba(0,212,170,.08);color:var(--p);font-weight:600}
+.nav-item.active{background:rgba(99,91,255,.08);color:var(--p);font-weight:600}
 .nav-item .icon{width:16px;height:16px;flex-shrink:0}
 .nav-item .badge-count{margin-left:auto;background:var(--danger);color:#fff;font-size:.6rem;font-weight:700;padding:.1rem .4rem;border-radius:50px;min-width:18px;text-align:center}
 .sidebar-footer{margin-top:auto;padding:1rem .75rem;border-top:1px solid var(--border)}
@@ -51,7 +51,7 @@ button{font-family:'Inter',sans-serif}
 .breadcrumb .current{color:var(--text);font-weight:600}
 .topbar-right{display:flex;align-items:center;gap:.75rem}
 .search-box{display:flex;align-items:center;gap:.5rem;background:rgba(10,37,64,.04);border:1px solid var(--border);border-radius:8px;padding:.4rem .75rem;width:220px;transition:all .2s}
-.search-box:focus-within{border-color:var(--p);background:rgba(0,212,170,.04)}
+.search-box:focus-within{border-color:var(--p);background:rgba(99,91,255,.04)}
 .search-box input{background:none;border:none;color:var(--text);font-size:.82rem;outline:none;width:100%;font-family:'Inter',sans-serif}
 .search-box input::placeholder{color:var(--muted2)}
 .icon-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:rgba(10,37,64,.04);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;position:relative}
@@ -70,7 +70,7 @@ button{font-family:'Inter',sans-serif}
 .btn-primary:hover{background:var(--p2)}
 .btn-secondary{background:rgba(10,37,64,.06);border:1px solid var(--border);color:var(--text)}
 .btn-secondary:hover{background:rgba(10,37,64,.1)}
-.btn-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171}
+.btn-danger{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#e2435f}
 .btn-danger:hover{background:rgba(239,68,68,.2)}
 
 /* KPI CARDS */
@@ -86,20 +86,20 @@ button{font-family:'Inter',sans-serif}
 .kpi-card.info::before{background:var(--info)}
 
 /* ── FINANCIAL HEALTH KPIs (gigantes) ────────────────── */
-.fin-wrap{background:linear-gradient(135deg,rgba(0,212,170,.06) 0%,rgba(99,102,241,.04) 100%);
-  border:1px solid rgba(0,212,170,.18);border-radius:16px;padding:1.5rem 1.5rem 1.25rem;
+.fin-wrap{background:linear-gradient(135deg,rgba(99,91,255,.06) 0%,rgba(99,102,241,.04) 100%);
+  border:1px solid rgba(99,91,255,.18);border-radius:16px;padding:1.5rem 1.5rem 1.25rem;
   margin-bottom:1.5rem;position:relative;overflow:hidden}
 .fin-wrap::before{content:'';position:absolute;width:320px;height:320px;
-  background:radial-gradient(circle,rgba(0,212,170,.07) 0%,transparent 70%);
+  background:radial-gradient(circle,rgba(99,91,255,.07) 0%,transparent 70%);
   top:-80px;right:-80px;pointer-events:none}
 .fin-hdr{display:flex;align-items:center;gap:.65rem;margin-bottom:1.25rem}
-.fin-tag{background:rgba(0,212,170,.14);border:1px solid rgba(0,212,170,.28);color:var(--p);
+.fin-tag{background:rgba(99,91,255,.14);border:1px solid rgba(99,91,255,.28);color:var(--p);
   font-size:.65rem;font-weight:800;padding:.22rem .65rem;border-radius:50px;letter-spacing:.5px;text-transform:uppercase}
 .fin-ttl{font-size:.85rem;font-weight:700;color:var(--muted2)}
 .fin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem}
-.fin-kpi{background:rgba(13,21,38,.9);border:1px solid var(--border);border-radius:13px;
+.fin-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:13px;
   padding:1.25rem 1.35rem;transition:border-color .3s}
-.fin-kpi.k-green{border-color:rgba(0,212,170,.3)}
+.fin-kpi.k-green{border-color:rgba(99,91,255,.3)}
 .fin-kpi.k-yellow{border-color:rgba(245,158,11,.3)}
 .fin-kpi.k-red{border-color:rgba(244,63,94,.35)}
 .fin-lbl{font-size:.65rem;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.55px;margin-bottom:.5rem}
@@ -151,20 +151,20 @@ td{padding:.75rem 1.25rem;font-size:.82rem;border-bottom:1px solid rgba(10,37,64
 tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(10,37,64,.02)}
 .pill{display:inline-flex;align-items:center;padding:.2rem .6rem;border-radius:50px;font-size:.68rem;font-weight:700;letter-spacing:.3px}
-.pill-green{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
-.pill-blue{background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.2)}
-.pill-amber{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.2)}
-.pill-red{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+.pill-green{background:rgba(34,197,94,.12);color:#0e9f6e;border:1px solid rgba(34,197,94,.2)}
+.pill-blue{background:rgba(99,102,241,.12);color:#4b45c6;border:1px solid rgba(99,102,241,.2)}
+.pill-amber{background:rgba(245,158,11,.12);color:#d97706;border:1px solid rgba(245,158,11,.2)}
+.pill-red{background:rgba(239,68,68,.12);color:#e2435f;border:1px solid rgba(239,68,68,.2)}
 .pill-gray{background:rgba(10,37,64,.06);color:var(--muted);border:1px solid var(--border)}
 .row-actions{display:flex;gap:.35rem}
 .row-btn{background:rgba(10,37,64,.05);border:1px solid var(--border);border-radius:5px;padding:.25rem .6rem;font-size:.72rem;cursor:pointer;color:var(--muted);font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap}
 .row-btn:hover{background:rgba(10,37,64,.1);color:var(--text)}
-.row-btn.danger{color:#f87171;border-color:rgba(239,68,68,.2)}
+.row-btn.danger{color:#e2435f;border-color:rgba(239,68,68,.2)}
 .row-btn.danger:hover{background:rgba(239,68,68,.1)}
 .table-footer{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;border-top:1px solid var(--border);font-size:.75rem;color:var(--muted)}
 .pagination{display:flex;gap:.3rem}
 .page-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--muted);font-size:.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-family:'Inter',sans-serif}
-.page-btn.active{background:rgba(0,212,170,.1);border-color:rgba(0,212,170,.2);color:var(--p)}
+.page-btn.active{background:rgba(99,91,255,.1);border-color:rgba(99,91,255,.2);color:var(--p)}
 .page-btn:hover:not(.active){background:rgba(10,37,64,.05);color:var(--text)}
 
 /* CHART */
@@ -187,10 +187,10 @@ tr:hover td{background:rgba(10,37,64,.02)}
 .feed-item:last-child{border-bottom:none}
 .feed-item:hover{background:rgba(10,37,64,.02)}
 .feed-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;margin-top:1px}
-.fi-green{background:rgba(34,197,94,.1);color:#4ade80}
-.fi-blue{background:rgba(99,102,241,.1);color:#818cf8}
-.fi-amber{background:rgba(245,158,11,.1);color:#fbbf24}
-.fi-red{background:rgba(239,68,68,.1);color:#f87171}
+.fi-green{background:rgba(34,197,94,.1);color:#0e9f6e}
+.fi-blue{background:rgba(99,102,241,.1);color:#4b45c6}
+.fi-amber{background:rgba(245,158,11,.1);color:#d97706}
+.fi-red{background:rgba(239,68,68,.1);color:#e2435f}
 .feed-body{flex:1;min-width:0}
 .feed-title{font-size:.8rem;font-weight:600;line-height:1.3}
 .feed-sub{font-size:.72rem;color:var(--muted);margin-top:.1rem}
@@ -213,7 +213,7 @@ tr:hover td{background:rgba(10,37,64,.02)}
 .form-group{margin-bottom:1.1rem}
 .form-label{display:block;font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.3px}
 .form-input,.form-select{width:100%;background:rgba(10,37,64,.04);border:1px solid var(--border);border-radius:8px;padding:.6rem .85rem;color:var(--text);font-size:.88rem;font-family:'Inter',sans-serif;outline:none;transition:all .2s}
-.form-input:focus,.form-select:focus{border-color:var(--p);background:rgba(0,212,170,.04)}
+.form-input:focus,.form-select:focus{border-color:var(--p);background:rgba(99,91,255,.04)}
 .form-select option{background:var(--bg2)}
 .info-row{display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid rgba(10,37,64,.04);font-size:.82rem}
 .info-row:last-child{border-bottom:none}
@@ -242,7 +242,7 @@ tr:hover td{background:rgba(10,37,64,.02)}
 .toggle input:checked + .toggle-track::after{transform:translateX(17px)}
 .danger-zone{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.15)}
 .danger-zone .settings-section-header{border-color:rgba(239,68,68,.15)}
-.danger-zone .settings-section-title{color:#f87171}
+.danger-zone .settings-section-title{color:#e2435f}
 
 /* TOAST */
 .toast-wrap{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:.5rem;z-index:9999}
@@ -260,7 +260,7 @@ tr:hover td{background:rgba(10,37,64,.02)}
 /* PERIOD SELECTOR */
 .period-selector{display:flex;gap:.35rem;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.25rem}
 .period-btn{padding:.3rem .75rem;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;border:none;background:none;color:var(--muted);font-family:'Inter',sans-serif;transition:all .2s}
-.period-btn.active{background:rgba(0,212,170,.1);color:var(--p);border:1px solid rgba(0,212,170,.2)}
+.period-btn.active{background:rgba(99,91,255,.1);color:var(--p);border:1px solid rgba(99,91,255,.2)}
 
 /* ALERT BANNER */
 .alert-banner{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:.85rem 1.25rem;display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem;font-size:.82rem}
@@ -281,7 +281,7 @@ tr:hover td{background:rgba(10,37,64,.02)}
 <aside class="sidebar">
   <div class="sidebar-logo">
     <div>
-      <div class="name">Financial<span>OS</span></div>
+      <div class="name">Horiz<span>en</span></div>
     </div>
     <div class="badge">ADMIN</div>
   </div>
@@ -335,7 +335,7 @@ tr:hover td{background:rgba(10,37,64,.02)}
   <div class="topbar">
     <div class="topbar-left">
       <div class="breadcrumb">
-        <span>FinancialOS</span>
+        <span>Horizen</span>
         <span style="color:var(--border)">›</span>
         <span class="current" id="pageTitle">Overview</span>
       </div>
@@ -754,7 +754,7 @@ function renderMRRChart() {
   mrrChart = new Chart(ctx, {
     type:'line',
     data:{ labels:months, datasets:[{ label:'MRR', data, borderColor:'#635bff',
-      backgroundColor:(c) => { const g = c.chart.ctx.createLinearGradient(0,0,0,200); g.addColorStop(0,'rgba(0,212,170,0.25)'); g.addColorStop(1,'rgba(0,212,170,0)'); return g; },
+      backgroundColor:(c) => { const g = c.chart.ctx.createLinearGradient(0,0,0,200); g.addColorStop(0,'rgba(99,91,255,0.25)'); g.addColorStop(1,'rgba(99,91,255,0)'); return g; },
       fill:true, tension:0.4, borderWidth:2.5, pointRadius:0, pointHoverRadius:5, pointHoverBackgroundColor:'#635bff' }]},
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#161b22', borderColor:'rgba(10,37,64,0.1)', borderWidth:1, titleColor:'#94a3b8', bodyColor:'#e2e8f0', padding:12,
@@ -1109,7 +1109,7 @@ function renderRevenue() {
   new Chart(document.getElementById('revChart'), {
     type:'line',
     data:{ labels:months, datasets:[{ label:'MRR', data:mrrData, borderColor:'#635bff',
-      backgroundColor:(c) => { const g=c.chart.ctx.createLinearGradient(0,0,0,200); g.addColorStop(0,'rgba(0,212,170,0.2)'); g.addColorStop(1,'rgba(0,212,170,0)'); return g; },
+      backgroundColor:(c) => { const g=c.chart.ctx.createLinearGradient(0,0,0,200); g.addColorStop(0,'rgba(99,91,255,0.2)'); g.addColorStop(1,'rgba(99,91,255,0)'); return g; },
       fill:true, tension:0.4, borderWidth:2.5, pointRadius:0 }]},
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#161b22', borderColor:'rgba(10,37,64,0.1)', borderWidth:1, titleColor:'#94a3b8', bodyColor:'#e2e8f0', padding:10 }},
@@ -1124,7 +1124,7 @@ function renderRevenue() {
   new Chart(document.getElementById('planChart'), {
     type:'doughnut',
     data:{ labels:['Básico','Pro','Empresa'],
-      datasets:[{ data:planData, backgroundColor:['rgba(99,102,241,0.8)','rgba(0,212,170,0.8)','rgba(245,158,11,0.8)'], borderColor:'#161b22', borderWidth:3, hoverOffset:4 }]},
+      datasets:[{ data:planData, backgroundColor:['rgba(99,102,241,0.8)','rgba(99,91,255,0.8)','rgba(245,158,11,0.8)'], borderColor:'#ffffff', borderWidth:3, hoverOffset:4 }]},
     options:{ responsive:true, maintainAspectRatio:false, cutout:'65%',
       plugins:{ legend:{ position:'bottom', labels:{ color:'#94a3b8', font:{size:11}, padding:12 }},
         tooltip:{ backgroundColor:'#161b22', borderColor:'rgba(10,37,64,0.1)', borderWidth:1, titleColor:'#94a3b8', bodyColor:'#e2e8f0', padding:10,
@@ -1193,7 +1193,7 @@ function renderSettings() {
   document.getElementById('pageContent').innerHTML = `
     <div class="page-header">
       <div><div class="page-title">Configuración</div>
-      <div class="page-subtitle">Ajustes de la plataforma FinancialOS</div></div>
+      <div class="page-subtitle">Ajustes de la plataforma Horizen</div></div>
     </div>
 
     <div class="settings-section">
@@ -1204,7 +1204,7 @@ function renderSettings() {
       <div class="settings-row">
         <div class="settings-row-info">
           <div class="label">Email</div>
-          <div class="sub">Correo de acceso a FinancialOS</div>
+          <div class="sub">Correo de acceso a Horizen</div>
         </div>
         <span class="settings-val">${adminSession?.user?.email || '—'}</span>
       </div>
