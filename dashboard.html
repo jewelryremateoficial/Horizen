@@ -2897,15 +2897,16 @@ function renderCalChart(lastDay) {
 const EDGE_PROCESS = 'https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/process-statement';
 let _estadoFile = null, _estadoTxs = [], _estadoMeta = {}, _customCats = [];
 
-const _PREDEFINED_CATS = ['Nómina','Publicidad','Software','Papelería','Renta','Contabilidad','Servicios','Comida','Café','Supermercado','Farmacia','Salud','Entretenimiento','Ropa','Transporte','SAT/Impuestos','Transferencia','Inversiones','Educación','Otros'];
+const _PREDEFINED_CATS = ['Ventas','Proveedores','Mercancía','Nómina','Publicidad','Software','Papelería','Renta','Contabilidad','Servicios','Envíos','Honorarios','Comisiones','Comida','Café','Supermercado','Farmacia','Salud','Entretenimiento','Ropa','Transporte','SAT/Impuestos','Transferencia','Inversiones','Educación','Otros'];
 
 const _CAT_GROUPS = {
+  'Ventas':'Negocios','Proveedores':'Negocios','Mercancía':'Negocios',
   'Nómina':'Negocios','Publicidad':'Negocios','Software':'Negocios','Papelería':'Negocios',
-  'Renta':'Negocios','Contabilidad':'Negocios','Servicios':'Negocios',
+  'Renta':'Negocios','Contabilidad':'Negocios','Servicios':'Negocios','Envíos':'Negocios','Honorarios':'Negocios',
   'Comida':'Comida','Café':'Comida',
   'Supermercado':'Hogar','Farmacia':'Hogar',
   'Salud':'Personal','Entretenimiento':'Personal','Ropa':'Personal','Transporte':'Personal','Educación':'Personal',
-  'SAT/Impuestos':'Finanzas','Transferencia':'Finanzas','Inversiones':'Finanzas',
+  'SAT/Impuestos':'Finanzas','Transferencia':'Finanzas','Inversiones':'Finanzas','Comisiones':'Finanzas',
   'Otros':'Otros'
 };
 
@@ -3146,7 +3147,7 @@ function renderEstadosTxs() {
       <input class="rev-inp" type="date" value="${tx.date}" onchange="_estadoTxs.find(t=>t._id===${tx._id}).date=this.value">
       <input class="rev-inp" type="text" value="${tx.description}" onchange="_estadoTxs.find(t=>t._id===${tx._id}).description=this.value">
       <input class="rev-inp" type="number" value="${tx.amount}" min="0" step="0.01" onchange="_estadoTxs.find(t=>t._id===${tx._id}).amount=parseFloat(this.value)||0">
-      <select class="rev-inp" onchange="_estadoTxs.find(t=>t._id===${tx._id}).category=this.value">
+      <select class="rev-inp" onchange="setCatLearn(${tx._id}, this.value)">
         ${getAllCats().map(c => `<option ${c===tx.category?'selected':''}>${c}</option>`).join('')}
       </select>
       <select class="rev-inp" onchange="_estadoTxs.find(t=>t._id===${tx._id}).type=this.value">
@@ -3305,6 +3306,26 @@ async function deleteCustomCat(name) {
   await loadCustomCats();
   renderCatModal();
   toast(`Categoría "${name}" eliminada`, 'success');
+}
+
+// Cambiar categoría en la revisión: aplica a TODOS los del mismo comercio y lo recuerda
+async function setCatLearn(id, value) {
+  const tx = _estadoTxs.find(t => t._id === id);
+  if (!tx) return;
+  const kw = extractKeyword(tx.description);
+  let applied = 0;
+  _estadoTxs.forEach(t => {
+    if (!t._remove && extractKeyword(t.description) === kw) { t.category = value; applied++; }
+  });
+  if (_user) {
+    db.from('category_rules')
+      .upsert({ user_id: _user.id, keyword: kw, category: value }, { onConflict: 'user_id,keyword' })
+      .then(({ error }) => { if (error) console.warn('No se pudo guardar la regla:', error.message); });
+  }
+  renderEstadosTxs();
+  toast(applied > 1
+    ? `✓ Apliqué "${value}" a ${applied} movimientos de ${kw} y lo recordaré`
+    : `✓ "${kw}" → ${value}. Lo recordaré para el próximo estado`, 'success');
 }
 
 async function saveCategRule(id) {
