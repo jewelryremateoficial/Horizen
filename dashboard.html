@@ -1358,8 +1358,8 @@ let _accounts = [], _debts = [], _txFilter = 'all';
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('txDate').value   = today;
   document.getElementById('dNextPay').value = today;
-  const m = new Date(); document.getElementById('txMonth').value =
-    `${m.getFullYear()}-${String(m.getMonth()+1).padStart(2,'0')}`;
+  // Por defecto NO filtrar por el mes actual (suele estar vacío). Mostrar todos los movimientos.
+  document.getElementById('txMonth').value = '';
 
   // Load data
   await Promise.all([loadAccounts(), loadDebts(), loadCustomCats()]);
@@ -1622,7 +1622,8 @@ async function loadTx() {
   let q = db.from('transactions').select('*,accounts(name,institution_name)')
     .eq('user_id', _user.id);
   if (_txStmtFilter)           q = q.eq('statement_id', _txStmtFilter);
-  if (month) q = q.gte('date', month + '-01').lte('date', month + '-31');
+  // Si estás viendo un estado de cuenta, ignora el filtro de mes (muestra TODO el estado)
+  if (month && !_txStmtFilter) q = q.gte('date', month + '-01').lte('date', month + '-31');
   if (_txFilter === 'ingreso') q = q.eq('type','ingreso');
   if (_txFilter === 'egreso')  q = q.eq('type','egreso');
   if (_txFilter === 'fiscal')  q = q.eq('is_fiscal', true);
@@ -3491,6 +3492,7 @@ const _escHtml = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'
 let _txStmtFilter = null, _txStmtName = '', _openingStmt = false;
 function openStatement(id, name) {
   _txStmtFilter = id; _txStmtName = name || 'Estado de cuenta'; _openingStmt = true;
+  const mEl = document.getElementById('txMonth'); if (mEl) mEl.value = ''; // ver TODO el estado, sin filtro de mes
   showPage('transactions');
 }
 function clearStmtFilter() { _txStmtFilter = null; _txStmtName = ''; loadTx(); }
