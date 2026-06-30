@@ -12,10 +12,10 @@
 <style>
 /* ── Design Tokens ────────────────────────────────────────── */
 :root{
-  --p:#00d4aa;--p2:#00a884;--sec:#6366f1;
-  --ok:#10b981;--warn:#f59e0b;--err:#f43f5e;
-  --bg:#060b18;--bg2:#0d1526;--bg3:#111827;--bg4:#1a2235;
-  --border:rgba(255,255,255,.08);--text:#f0f4f8;--muted:rgba(240,244,248,.5);
+  --p:#635bff;--p2:#4b45c6;--sec:#8b7cff;
+  --ok:#0e9f6e;--warn:#d97706;--err:#e2435f;
+  --bg:#f6f9fc;--bg2:#ffffff;--bg3:#f3f5f9;--bg4:#eef1f6;
+  --border:rgba(10,37,64,.10);--text:#0a2540;--muted:#697386;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
@@ -35,7 +35,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .ni{display:flex;align-items:center;gap:.55rem;padding:.58rem .75rem;border-radius:8px;
   cursor:pointer;font-size:.84rem;font-weight:500;color:var(--muted);border:none;background:none;
   width:100%;text-align:left;transition:all .15s}
-.ni:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.ni:hover{background:rgba(10,37,64,.05);color:var(--text)}
 .ni.active{background:rgba(0,212,170,.1);color:var(--p);font-weight:600}
 .ni .ico{width:16px;text-align:center;font-size:.9rem;flex-shrink:0}
 .ni .badge{margin-left:auto;background:var(--err);color:#fff;font-size:.6rem;font-weight:800;
@@ -43,9 +43,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 .sidebar-footer{padding:.75rem .5rem;border-top:1px solid var(--border)}
 .user-row{display:flex;align-items:center;gap:.65rem;padding:.55rem .75rem;border-radius:8px;cursor:pointer;transition:background .15s}
-.user-row:hover{background:rgba(255,255,255,.05)}
+.user-row:hover{background:rgba(10,37,64,.05)}
 .av{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--p),var(--sec));
-  display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;color:#060b18;flex-shrink:0}
+  display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;color:#fff;flex-shrink:0}
 .user-info .uname{font-size:.82rem;font-weight:600}
 .user-info .uplan{font-size:.68rem;color:var(--p);font-weight:700}
 
@@ -56,7 +56,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .topbar-title{font-size:.95rem;font-weight:700;flex:1}
 .topbar-sub{font-size:.78rem;color:var(--muted);font-weight:400}
 .tb-btn{padding:.38rem .8rem;border-radius:8px;font-size:.75rem;font-weight:600;border:none;cursor:pointer;transition:all .15s}
-.tb-primary{background:var(--p);color:#060b18}
+.tb-primary{background:var(--p);color:#fff}
 .tb-primary:hover{background:var(--p2);transform:translateY(-1px)}
 .tb-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
 .tb-ghost:hover{border-color:var(--p);color:var(--p)}
@@ -90,7 +90,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .kpi-val.c-yellow{color:var(--warn)}
 .kpi-val.c-red{color:var(--err)}
 .kpi-sub{font-size:.75rem;color:var(--muted);line-height:1.5}
-.runway-bar{margin-top:.85rem;height:5px;background:rgba(255,255,255,.06);border-radius:50px;overflow:hidden}
+.runway-bar{margin-top:.85rem;height:5px;background:rgba(10,37,64,.06);border-radius:50px;overflow:hidden}
 .runway-fill{height:100%;border-radius:50px;transition:width .9s ease}
 .runway-txt{font-size:.68rem;color:var(--muted);margin-top:.3rem}
 
@@ -130,8 +130,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .tx-tbl{width:100%;border-collapse:collapse}
 .tx-tbl th{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;
   letter-spacing:.4px;padding:.55rem .9rem;text-align:left;border-bottom:1px solid var(--border)}
-.tx-tbl td{padding:.7rem .9rem;border-bottom:1px solid rgba(255,255,255,.04);font-size:.83rem;vertical-align:middle}
-.tx-tbl tr:hover td{background:rgba(255,255,255,.02)}
+.tx-tbl td{padding:.7rem .9rem;border-bottom:1px solid rgba(10,37,64,.04);font-size:.83rem;vertical-align:middle}
+.tx-tbl tr:hover td{background:rgba(10,37,64,.02)}
 .tx-tbl tr:last-child td{border-bottom:none}
 .amt-in{color:var(--ok);font-weight:700}
 .amt-out{color:var(--err);font-weight:700}
@@ -143,7 +143,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .src-sat_cfdi{background:rgba(16,185,129,.1);color:#10b981}
 .src-pdf_ocr{background:rgba(245,158,11,.1);color:var(--warn)}
 .src-whatsapp{background:rgba(37,211,102,.1);color:#25d366}
-.cat-pill{font-size:.7rem;color:var(--muted);background:rgba(255,255,255,.05);
+.cat-pill{font-size:.7rem;color:var(--muted);background:rgba(10,37,64,.05);
   padding:.13rem .42rem;border-radius:4px;white-space:nowrap}
 
 /* ── DEBTS ─────────────────────────────────────────────────── */
@@ -163,7 +163,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .debt-bal{font-size:.97rem;font-weight:800;color:var(--err)}
 .debt-min{font-size:.7rem;color:var(--muted);margin-top:.1rem}
 .debt-prog{width:70px;margin:0 .65rem}
-.debt-prog-bar{height:4px;background:rgba(255,255,255,.07);border-radius:50px}
+.debt-prog-bar{height:4px;background:rgba(10,37,64,.07);border-radius:50px}
 .debt-prog-fill{height:100%;border-radius:50px;background:var(--err)}
 
 /* ── TAX RESERVES ───────────────────────────────────────────── */
@@ -188,10 +188,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   background:radial-gradient(circle,rgba(99,102,241,.14) 0%,transparent 70%);
   top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
 .nova-feats{display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center;margin:1.25rem 0}
-.nova-feat{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;
+.nova-feat{background:rgba(10,37,64,.04);border:1px solid var(--border);border-radius:9px;
   padding:.55rem .9rem;font-size:.76rem;color:var(--muted);display:flex;align-items:center;gap:.35rem}
 .nova-feat strong{color:var(--text)}
-.nova-input{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;
+.nova-input{flex:1;background:rgba(10,37,64,.05);border:1px solid var(--border);border-radius:9px;
   padding:.58rem .9rem;color:var(--text);font-size:.85rem;font-family:'Inter',sans-serif;outline:none}
 .nova-input:focus{border-color:var(--p)}
 .nova-input::placeholder{color:var(--muted)}
@@ -211,7 +211,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .sync-status{font-size:.67rem;font-weight:700;padding:.13rem .48rem;border-radius:50px;flex-shrink:0}
 .sync-status.live{background:rgba(16,185,129,.12);color:var(--ok)}
 .sync-status.avail{background:rgba(99,102,241,.1);color:#818cf8}
-.sync-status.soon{background:rgba(255,255,255,.05);color:var(--muted)}
+.sync-status.soon{background:rgba(10,37,64,.05);color:var(--muted)}
 .sync-btn{padding:.38rem .8rem;border-radius:8px;font-size:.73rem;font-weight:700;
   border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s}
 .sync-btn:hover:not(:disabled){border-color:var(--p);color:var(--p)}
@@ -228,7 +228,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .fg{margin-bottom:1rem}
 .flbl{font-size:.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;
   letter-spacing:.3px;margin-bottom:.38rem;display:block}
-.finp,.fsel{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);
+.finp,.fsel{width:100%;background:rgba(10,37,64,.04);border:1px solid var(--border);
   color:var(--text);padding:.7rem .9rem;border-radius:9px;font-size:.88rem;
   font-family:'Inter',sans-serif;outline:none;transition:border-color .18s}
 .finp:focus,.fsel:focus{border-color:var(--p)}
@@ -242,7 +242,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .btn-cancel{background:transparent;border:1px solid var(--border);color:var(--muted);
   padding:.58rem 1.15rem;border-radius:9px;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .18s}
 .btn-cancel:hover{border-color:var(--text);color:var(--text)}
-.btn-save{background:var(--p);color:#060b18;border:none;padding:.58rem 1.35rem;
+.btn-save{background:var(--p);color:#fff;border:none;padding:.58rem 1.35rem;
   border-radius:9px;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .18s}
 .btn-save:hover{background:var(--p2);transform:translateY(-1px)}
 .btn-save:disabled{opacity:.5;cursor:not-allowed;transform:none}
@@ -251,13 +251,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .empty{text-align:center;padding:2.5rem 1rem;color:var(--muted)}
 .empty .eico{font-size:2.2rem;margin-bottom:.75rem}
 .empty .etxt{font-size:.88rem;margin-bottom:.85rem}
-.ecta{display:inline-flex;align-items:center;gap:.45rem;background:var(--p);color:#060b18;
+.ecta{display:inline-flex;align-items:center;gap:.45rem;background:var(--p);color:#fff;
   border:none;padding:.58rem 1.1rem;border-radius:9px;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .18s}
 .ecta:hover{background:var(--p2);transform:translateY(-1px)}
-.sk{background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.04) 75%);
+.sk{background:linear-gradient(90deg,rgba(10,37,64,.04) 25%,rgba(10,37,64,.07) 50%,rgba(10,37,64,.04) 75%);
   background-size:400% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
 @keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
-.tabs{display:flex;gap:.2rem;background:rgba(255,255,255,.04);border-radius:9px;padding:.2rem}
+.tabs{display:flex;gap:.2rem;background:rgba(10,37,64,.04);border-radius:9px;padding:.2rem}
 .tab{padding:.4rem .78rem;border-radius:7px;font-size:.78rem;font-weight:600;color:var(--muted);
   cursor:pointer;border:none;background:none;transition:all .15s}
 .tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,.3)}
@@ -350,7 +350,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .estado-steps{display:flex;gap:.5rem;margin-bottom:1.5rem;align-items:center}
 .step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0}
 .step-dot.done{background:var(--ok);color:#fff}
-.step-dot.active{background:var(--p);color:#060b18}
+.step-dot.active{background:var(--p);color:#fff}
 .step-dot.pending{background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
 .step-line{flex:1;height:2px;background:var(--border)}
 .step-line.done{background:var(--ok)}
@@ -537,7 +537,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           id="belvoCtaUser"
           onclick="openBelvoWidget()"
           style="display:none;align-items:center;gap:.5rem;
-                 background:linear-gradient(135deg,#6366f1,#00d4aa);
+                 background:linear-gradient(135deg,#635bff,#8b7cff);
                  color:#fff;border:none;border-radius:10px;
                  padding:.62rem 1.15rem;font-size:.86rem;font-weight:700;
                  cursor:pointer;transition:opacity .2s;white-space:nowrap"
@@ -868,6 +868,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div>
           <div class="section-ttl" style="margin:0;font-size:1.15rem" id="erBanco">📊 Estado de Resultados</div>
           <div style="font-size:.75rem;color:var(--muted);margin-top:.25rem" id="erPeriodo">—</div>
+          <div style="margin-top:.6rem;display:flex;align-items:center;gap:.5rem">
+            <span style="font-size:.72rem;color:var(--muted)">Nombre:</span>
+            <input id="stmtName" type="text" placeholder="Estado de cuenta 1"
+              style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Inter',sans-serif;font-size:.82rem;padding:.4rem .65rem;border-radius:8px;outline:none;width:240px">
+          </div>
         </div>
         <div style="display:flex;gap:.6rem">
           <button class="tb-btn tb-ghost" onclick="openCatModal()">⚙️ Categorías</button>
@@ -1375,7 +1380,7 @@ function renderMetrics(m) {
   document.getElementById('marChips').innerHTML =
     `<span class="chip" style="background:${m.margen_neto >= 0 ? 'rgba(16,185,129,.12)' : 'rgba(244,63,94,.1)'};color:${m.margen_neto >= 0 ? 'var(--ok)' : 'var(--err)'};border-color:transparent">
       ${m.margen_neto >= 0 ? '▲' : '▼'} ${Math.abs(m.margen_neto).toFixed(1)}% últimos 30d</span>` +
-    `<span class="chip" style="background:rgba(255,255,255,.05);color:var(--muted);border-color:transparent">
+    `<span class="chip" style="background:rgba(10,37,64,.05);color:var(--muted);border-color:transparent">
       Burn: ${fmt(m.burn_rate)}/mes</span>`;
   document.getElementById('kpiMarCard').className = `kpi ${m.margen_neto >= 15 ? 'green' : m.margen_neto >= 0 ? 'yellow' : 'red'}`;
 
@@ -1414,7 +1419,7 @@ function renderMetrics(m) {
           <span style="color:var(--ok);font-weight:700">↑ Ingresos</span>
           <span style="font-weight:700">${fmt(m.income_30d)}</span>
         </div>
-        <div style="height:5px;background:rgba(255,255,255,.06);border-radius:50px">
+        <div style="height:5px;background:rgba(10,37,64,.06);border-radius:50px">
           <div style="width:100%;height:100%;background:var(--ok);border-radius:50px"></div>
         </div>
       </div>
@@ -1423,7 +1428,7 @@ function renderMetrics(m) {
           <span style="color:var(--err);font-weight:700">↓ Egresos</span>
           <span style="font-weight:700">${fmt(m.expense_30d)}</span>
         </div>
-        <div style="height:5px;background:rgba(255,255,255,.06);border-radius:50px">
+        <div style="height:5px;background:rgba(10,37,64,.06);border-radius:50px">
           <div style="width:${pct}%;height:100%;background:var(--err);border-radius:50px;transition:width .8s"></div>
         </div>
       </div>
@@ -1755,7 +1760,7 @@ async function loadTaxes() {
         <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.3rem">
           <span>Cobertura fiscal</span><span style="font-weight:700;color:var(--p)">${pct}%</span>
         </div>
-        <div style="height:7px;background:rgba(255,255,255,.06);border-radius:50px;overflow:hidden">
+        <div style="height:7px;background:rgba(10,37,64,.06);border-radius:50px;overflow:hidden">
           <div style="width:${pct}%;height:100%;background:var(--p);border-radius:50px;transition:width .8s"></div>
         </div>
       </div>
@@ -2896,10 +2901,10 @@ function renderCalChart(lastDay) {
         tooltip: { callbacks: { label: c => `${c.dataset.label}: ${fmt(c.raw)}` } }
       },
       scales: {
-        x: { ticks: { color: '#f0f4f880', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,.04)' } },
+        x: { ticks: { color: '#f0f4f880', font: { size: 9 } }, grid: { color: 'rgba(10,37,64,.04)' } },
         y: { ticks: { color: '#f0f4f880', font: { size: 9 },
               callback: v => v >= 1000 ? '$' + (v/1000).toFixed(0)+'k' : '$'+v },
-             grid: { color: 'rgba(255,255,255,.04)' } }
+             grid: { color: 'rgba(10,37,64,.04)' } }
       }
     }
   });
@@ -3031,6 +3036,18 @@ async function procesarEstado() {
     setEstadoStep(3);
     renderEstadosTxs();
 
+    // Nombre por defecto: "Estado de cuenta N" (N = siguiente número del usuario)
+    try {
+      const { count } = await db.from('statements')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', _user.id);
+      const el = document.getElementById('stmtName');
+      if (el) el.value = `Estado de cuenta ${(count || 0) + 1}`;
+    } catch (e) {
+      const el = document.getElementById('stmtName');
+      if (el && !el.value) el.value = 'Estado de cuenta 1';
+    }
+
   } catch(err) {
     toast('Error: ' + err.message, 'error');
     document.getElementById('estadosStep2').style.display = 'none';
@@ -3090,7 +3107,7 @@ function renderEstadosTxs() {
   document.getElementById('erTopGastos').innerHTML = sortedCats.length ? sortedCats.map(([cat, catTxs], i) => {
     const total = catTxs.reduce((s,t)=>s+t.amount,0);
     const inner = catTxs.sort((a,b)=>b.amount-a.amount).map(t =>
-      `<div style="border-bottom:1px solid rgba(255,255,255,.04)">
+      `<div style="border-bottom:1px solid rgba(10,37,64,.04)">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:.22rem .6rem;font-size:.72rem">
           <span style="color:var(--muted);max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</span>
           <div style="display:flex;gap:.4rem;align-items:center;flex-shrink:0;margin-left:.5rem">
@@ -3146,7 +3163,7 @@ function renderERChart(txs) {
   const fmtShort = v => v >= 1000 ? '$' + (v/1000).toFixed(1) + 'k' : '$' + v.toFixed(0);
   const labels = sorted.map(e => e[0] + '  ' + fmtShort(e[1]));
   const data   = sorted.map(e => e[1]);
-  const colors = ['#00d4aa','#7b61ff','#ff6b6b','#ffd166','#06d6a0','#118ab2','#ef476f','#e76f51','#a8dadc','#457b9d','#2a9d8f'];
+  const colors = ['#635bff','#8b7cff','#00b8d4','#ff80b5','#0e9f6e','#118ab2','#ef476f','#e76f51','#7b61ff','#457b9d','#2a9d8f'];
 
   if (_erChartInstance) { _erChartInstance.destroy(); _erChartInstance = null; }
   const ctx = document.getElementById('erChart').getContext('2d');
@@ -3158,7 +3175,7 @@ function renderERChart(txs) {
       responsive: true,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) } } },
       scales: {
-        x: { ticks: { color: '#8a9bb5', font: { size: 10 }, callback: v => '$' + (v>=1000?(v/1000).toFixed(0)+'k':v) }, grid: { color: 'rgba(255,255,255,.04)' } },
+        x: { ticks: { color: '#8a9bb5', font: { size: 10 }, callback: v => '$' + (v>=1000?(v/1000).toFixed(0)+'k':v) }, grid: { color: 'rgba(10,37,64,.04)' } },
         y: { ticks: { color: '#c9d6e8', font: { size: 11 } }, grid: { display: false } }
       }
     }
@@ -3326,8 +3343,11 @@ async function confirmarEstado() {
 
   try {
     // Crear registro en statements
+    const stmtName = (document.getElementById('stmtName')?.value || '').trim()
+      || _estadoMeta.bank || 'Estado de cuenta';
     const { data: stmt, error: stmtErr } = await db.from('statements').insert({
       user_id: _user.id,
+      name: stmtName,
       file_name: _estadoFile?.name,
       bank_name: _estadoMeta.bank,
       period_start: _estadoMeta.period_start || null,
