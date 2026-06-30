@@ -427,60 +427,59 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <!-- Alert banners críticos -->
     <div id="alertBanners"></div>
 
-    <!-- ══ INICIO (resumen financiero) ══ -->
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:1.25rem;gap:1rem;flex-wrap:wrap">
+    <!-- ══ INICIO premium (datos del periodo) ══ -->
+    <style>
+    #page-overview .ini-pill{font-family:inherit;font-size:.84rem;font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:999px;padding:.5rem .85rem;cursor:pointer}
+    #page-overview .ini-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:1.15rem;margin-bottom:1.15rem}
+    #page-overview .ini-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:1.5rem 1.6rem;box-shadow:0 1px 2px rgba(10,37,64,.05),0 12px 28px -14px rgba(10,37,64,.10)}
+    #page-overview .ini-cap{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+    #page-overview .ini-big{font-size:3rem;font-weight:800;letter-spacing:-.04em;line-height:1;margin:.45rem 0 .5rem}
+    #page-overview .ini-trend{display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;font-weight:700;padding:.26rem .62rem;border-radius:999px}
+    #page-overview .ini-trend.up{color:#0a7a55;background:#e9f9f1}
+    #page-overview .ini-trend.down{color:#c0314a;background:#fdecef}
+    #page-overview .ini-trend.flat{color:var(--muted);background:#f1f3f8}
+    #page-overview .ini-flow{display:flex;gap:1.9rem;margin-top:1.25rem;padding-top:1.2rem;border-top:1px solid var(--line);flex-wrap:wrap}
+    #page-overview .ini-flow .k{font-size:.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+    #page-overview .ini-flow .v{font-size:1.2rem;font-weight:800;margin-top:.2rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+    #page-overview .ini-flow .v.in{color:#0e9f6e} #page-overview .ini-flow .v.out{color:#e2435f}
+    #page-overview .ini-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1.15rem;margin-bottom:1.15rem}
+    #page-overview .ini-kpi .v{font-size:1.45rem;font-weight:800;letter-spacing:-.03em;margin-top:.4rem;font-variant-numeric:tabular-nums}
+    #page-overview .ini-kpi .v.sm{font-size:1.1rem}
+    #page-overview .ini-kpi .s{font-size:.74rem;color:var(--muted);margin-top:.28rem}
+    #page-overview .ini-bars{display:flex;align-items:flex-end;justify-content:center;gap:1.6rem;height:120px;margin-top:.4rem}
+    #page-overview .ini-bars .col{display:flex;flex-direction:column;align-items:center;gap:.45rem;height:100%;justify-content:flex-end}
+    #page-overview .ini-bars .bar{width:54px;border-radius:9px 9px 5px 5px}
+    #page-overview .ini-bars .in{background:linear-gradient(180deg,var(--sec),var(--p))}
+    #page-overview .ini-bars .out{background:linear-gradient(180deg,#ffb4c0,#e2435f)}
+    #page-overview .ini-bars .bl{font-size:.72rem;color:var(--muted);font-weight:600;text-align:center}
+    #page-overview .ini-row{display:flex;align-items:center;gap:.8rem;margin-bottom:.82rem}
+    #page-overview .ini-row:last-child{margin-bottom:0}
+    #page-overview .ini-row .nm{font-size:.86rem;font-weight:600;min-width:120px}
+    #page-overview .ini-row .track{flex:1;height:9px;background:#eef1f6;border-radius:99px;overflow:hidden}
+    #page-overview .ini-row .track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--p),var(--sec))}
+    #page-overview .ini-row .amt{font-size:.83rem;font-weight:700;min-width:92px;text-align:right;font-variant-numeric:tabular-nums}
+    #page-overview .ini-row .pct{font-size:.72rem;color:var(--muted);min-width:34px;text-align:right}
+    #page-overview .ini-nova{display:flex;gap:.9rem;align-items:flex-start;background:linear-gradient(120deg,#f6f5ff,#eef0ff);border:1px solid #e2e0ff;border-radius:16px;padding:1.15rem 1.4rem;margin-bottom:1.15rem}
+    #page-overview .ini-nova .ic{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--p),var(--sec));color:#fff;display:grid;place-items:center;flex-shrink:0}
+    #page-overview .ini-nova .tag{font-size:.68rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--p2)}
+    #page-overview .ini-nova p{font-size:.9rem;color:var(--slate);line-height:1.5;margin-top:.2rem}
+    #page-overview .ini-nova b{color:var(--ink)}
+    #page-overview .ini-empty{background:#fff;border:1px solid var(--line);border-radius:18px;padding:3rem 2rem;text-align:center;color:var(--muted)}
+    @media(max-width:860px){#page-overview .ini-grid,#page-overview .ini-kpis{grid-template-columns:1fr 1fr}}
+    </style>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:1.4rem;gap:1rem;flex-wrap:wrap">
       <div>
-        <div style="font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem">Resumen · últimos 30 días</div>
-        <div style="font-size:1.35rem;font-weight:700;letter-spacing:-.02em">Tu resumen financiero</div>
+        <div id="iniHi" style="font-size:1.5rem;font-weight:800;letter-spacing:-.025em">Hola 👋</div>
+        <div style="font-size:.84rem;color:var(--muted);margin-top:.25rem">Esto es lo que pasó en tu negocio</div>
       </div>
-      <div id="semChip" style="display:inline-flex;align-items:center;gap:.45rem;font-size:.78rem;font-weight:600;color:var(--p2);background:#f1f0ff;border:1px solid rgba(99,91,255,.18);padding:.4rem .85rem;border-radius:999px">
-        <span style="width:7px;height:7px;border-radius:50%;background:var(--p)"></span><span id="semChipTxt">Calculando…</span>
-      </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1.55fr 1fr;gap:1.1rem;margin-bottom:1.1rem" id="ovTop">
-      <div class="card" style="margin:0">
-        <div class="kpi-lbl" style="text-transform:uppercase;letter-spacing:.04em">Utilidad · últimos 30 días</div>
-        <div id="heroUtil" style="font-size:2.6rem;font-weight:800;letter-spacing:-.035em;line-height:1.05;margin:.4rem 0 .15rem">—</div>
-        <div id="heroUtilCap" style="font-size:.8rem;color:var(--muted)">—</div>
-        <div style="height:6px;border-radius:99px;background:#eef1f6;margin-top:1rem;overflow:hidden"><div id="heroMargenBar" style="height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,var(--p),var(--sec))"></div></div>
-        <div id="heroMargenCap" style="font-size:.72rem;color:var(--muted);margin-top:.45rem">Margen —</div>
-        <div style="display:flex;gap:1.6rem;margin-top:1.1rem;padding-top:1.1rem;border-top:1px solid var(--border);flex-wrap:wrap">
-          <div><div style="font-size:.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Entró</div><div id="heroEntro" style="font-size:1.05rem;font-weight:700;margin-top:.2rem">—</div></div>
-          <div><div style="font-size:.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Salió</div><div id="heroSalio" style="font-size:1.05rem;font-weight:700;margin-top:.2rem">—</div></div>
-          <div><div style="font-size:.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Burn / mes</div><div id="heroBurn" style="font-size:1.05rem;font-weight:700;margin-top:.2rem">—</div></div>
-        </div>
-      </div>
-      <div class="card" style="margin:0">
-        <div class="kpi-lbl" style="text-transform:uppercase;letter-spacing:.04em">Ingresos vs egresos</div>
-        <div style="display:flex;align-items:flex-end;justify-content:center;gap:1.4rem;height:130px;margin-top:1rem">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem;height:100%;justify-content:flex-end">
-            <div id="barIn" style="width:46px;height:10%;border-radius:7px 7px 0 0;background:linear-gradient(180deg,var(--sec),var(--p))"></div>
-            <span style="font-size:.68rem;color:var(--muted)">Entró</span>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem;height:100%;justify-content:flex-end">
-            <div id="barOut" style="width:46px;height:10%;border-radius:7px 7px 0 0;background:linear-gradient(180deg,#c7ccff,#8b8ff0)"></div>
-            <span style="font-size:.68rem;color:var(--muted)">Salió</span>
-          </div>
-        </div>
+      <div style="display:flex;align-items:center;gap:.55rem;flex-wrap:wrap">
+        <select id="iniMonth" class="ini-pill" onchange="renderInicioBody()"></select>
+        <select id="iniBank" class="ini-pill" onchange="renderInicioBody()"><option value="__all__">Todos los bancos</option></select>
+        <button class="tb-btn tb-primary" onclick="showPage('estados')">＋ Subir estado</button>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem;margin-bottom:1.1rem" id="ovStats">
-      <div class="card" style="margin:0"><div class="kpi-lbl">Caja libre</div><div id="statCaja" style="font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin-top:.3rem">—</div><div id="statRunway" style="font-size:.72rem;color:var(--muted);margin-top:.3rem">—</div></div>
-      <div class="card" style="margin:0"><div class="kpi-lbl">Margen neto</div><div id="statMargen" style="font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin-top:.3rem">—</div><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">últimos 30 días</div></div>
-      <div class="card" style="margin:0"><div class="kpi-lbl">Reserva SAT sugerida</div><div id="statSAT" style="font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin-top:.3rem">—</div><div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">estimado del periodo</div></div>
-    </div>
-
-    <div class="card" style="margin:0 0 1.1rem;border-left:3px solid var(--p)">
-      <div style="font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--p)">✦ Nova</div>
-      <div id="novaLine" style="font-size:.9rem;color:var(--text);margin-top:.25rem;line-height:1.55">Sube tu estado de cuenta para ver tu resumen.</div>
-    </div>
-
-    <div style="display:flex;gap:.7rem;flex-wrap:wrap;margin-bottom:1.25rem">
-      <button class="tb-btn tb-primary" onclick="showPage('estados')">Subir estado de cuenta</button>
-      <button class="tb-btn tb-ghost" onclick="showPage('transactions')">Ver transacciones</button>
-    </div>
+    <div id="inicioRoot"><div class="ini-empty">Cargando tu resumen…</div></div>
 
     <!-- Últimas transacciones -->
     <div class="card">
@@ -1366,9 +1365,10 @@ let _accounts = [], _debts = [], _txFilter = 'all';
   await Promise.all([loadAccounts(), loadDebts(), loadCustomCats()]);
   await loadMetrics();
   loadRecentTx();
+  renderInicio();
 
   // Realtime
-  subscribeToTable('transactions', () => { loadMetrics(); loadRecentTx(); });
+  subscribeToTable('transactions', () => { loadMetrics(); loadRecentTx(); renderInicio(); });
   subscribeToTable('accounts',     () => loadAccounts());
   subscribeToTable('debts',        () => loadDebts());
   subscribeToTable('alerts',       () => loadAlerts());
@@ -1413,6 +1413,7 @@ function showPage(id) {
   if (id === 'alerts')       loadAlerts();
   if (id === 'estados')      loadSavedStatements();
   if (id === 'reportes')     loadReportes();
+  if (id === 'overview')     renderInicio();
 }
 
 // ── Metrics ───────────────────────────────────────────────────
@@ -3760,6 +3761,116 @@ async function repDownloadPDF() {
     doc.save(_repFileName('pdf'));
   } catch (e) { toast('Error al generar PDF: ' + (e.message || e), 'error'); }
   finally { btn.disabled = false; btn.textContent = old; }
+}
+
+// ══ INICIO premium (datos del periodo seleccionado) ══════════
+let _iniTx = [], _iniStmtBank = {};
+async function renderInicio() {
+  const root = document.getElementById('inicioRoot'); if (!root) return;
+  const nm = ((typeof _profile !== 'undefined' && _profile && _profile.full_name) || '').trim().split(' ')[0];
+  const hi = document.getElementById('iniHi'); if (hi) hi.textContent = nm ? `Hola, ${nm} 👋` : 'Hola 👋';
+  root.innerHTML = '<div class="ini-empty">Cargando tu resumen…</div>';
+  try {
+    const [txRes, stRes] = await Promise.all([
+      db.from('transactions').select('date,type,amount,category,statement_id').eq('user_id', _user.id).order('date', { ascending: false }),
+      db.from('statements').select('id,bank_name').eq('user_id', _user.id)
+    ]);
+    if (txRes.error) throw txRes.error;
+    _iniTx = txRes.data || [];
+    _iniStmtBank = {}; (stRes.data || []).forEach(s => _iniStmtBank[s.id] = s.bank_name || 'Sin banco');
+    const banks = [...new Set((stRes.data || []).map(s => s.bank_name || 'Sin banco'))];
+    document.getElementById('iniBank').innerHTML = '<option value="__all__">Todos los bancos</option>' + banks.map(b => `<option value="${_escHtml(b)}">${_escHtml(b)}</option>`).join('');
+    const months = [...new Set(_iniTx.map(t => String(t.date || '').slice(0, 7)).filter(Boolean))].sort().reverse();
+    document.getElementById('iniMonth').innerHTML = months.length ? months.map(m => { const [y, mm] = m.split('-'); return `<option value="${m}">${_REP_MESES[parseInt(mm) - 1]} ${y}</option>`; }).join('') : '<option value="">(sin datos)</option>';
+    renderInicioBody();
+  } catch (e) {
+    root.innerHTML = `<div class="ini-empty">No se pudo cargar tu resumen: ${_escHtml(e.message || 'error')}</div>`;
+  }
+}
+
+function _iniSpark(trend) {
+  if (trend.length < 2) return '';
+  const w = 560, h = 64, pad = 8;
+  const vals = trend.map(t => t.util);
+  const mn = Math.min(...vals), mx = Math.max(...vals); const span = (mx - mn) || 1;
+  const pts = trend.map((t, i) => { const x = pad + (w - 2 * pad) * (i / (trend.length - 1)); const y = h - pad - (h - 2 * pad) * ((t.util - mn) / span); return [x, y]; });
+  const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(0) + ',' + p[1].toFixed(0)).join(' ');
+  const area = line + ` L${pts[pts.length - 1][0].toFixed(0)},${h} L${pts[0][0].toFixed(0)},${h} Z`;
+  const last = pts[pts.length - 1];
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="margin-top:1.05rem;display:block">
+    <defs><linearGradient id="iniG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#635bff" stop-opacity=".18"/><stop offset="1" stop-color="#635bff" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#iniG)"/>
+    <path d="${line}" fill="none" stroke="#635bff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${last[0].toFixed(0)}" cy="${last[1].toFixed(0)}" r="5" fill="#fff" stroke="#635bff" stroke-width="3"/>
+  </svg>`;
+}
+
+function renderInicioBody() {
+  const root = document.getElementById('inicioRoot'); if (!root) return;
+  const month = document.getElementById('iniMonth').value;
+  const bank = document.getElementById('iniBank').value;
+  const inBank = t => { if (bank === '__all__') return true; const b = t.statement_id ? (_iniStmtBank[t.statement_id] || 'Sin banco') : 'Sin banco'; return b === bank; };
+  if (!month) {
+    root.innerHTML = `<div class="ini-empty"><div style="font-size:2.2rem;margin-bottom:.5rem">📄</div><div style="font-weight:700;color:var(--ink);font-size:1.08rem">Sube tu primer estado de cuenta</div><div style="margin-top:.45rem;max-width:420px;margin-left:auto;margin-right:auto">En cuanto subas un PDF, aquí verás cuánto ganaste, a dónde se fue tu dinero y tu resumen completo.</div><button class="tb-btn tb-primary" style="margin-top:1.3rem" onclick="showPage('estados')">＋ Subir estado de cuenta</button></div>`;
+    return;
+  }
+  const rows = _iniTx.filter(t => String(t.date || '').slice(0, 7) === month && inBank(t));
+  const r = _repCompute(rows);
+  const byM = {}; _iniTx.filter(inBank).forEach(t => { const m = String(t.date || '').slice(0, 7); if (!m) return; (byM[m] = byM[m] || []).push(t); });
+  const trend = Object.keys(byM).sort().map(m => ({ m, util: _repCompute(byM[m]).util }));
+  const idx = trend.findIndex(x => x.m === month);
+  const prev = idx > 0 ? trend[idx - 1].util : null;
+  const delta = prev !== null ? r.util - prev : null;
+  const [yy, mm] = month.split('-'); const mesNom = `${_REP_MESES[parseInt(mm) - 1]} ${yy}`;
+  const otros = r.cats.find(c => c.cat === 'Otros'); const otrosPct = r.exp ? Math.round((otros ? otros.amt : 0) / r.exp * 100) : 0;
+  const maxCat = r.cats.length ? r.cats[0].amt : 1;
+  const mayor = r.cats.find(c => c.cat !== 'Otros') || r.cats[0] || null;
+  const trendChip = delta === null ? `<span class="ini-trend flat">— primer mes con datos</span>`
+    : delta >= 0 ? `<span class="ini-trend up">▲ ${_repMoney(delta)} vs mes anterior</span>`
+      : `<span class="ini-trend down">▼ ${_repMoney(Math.abs(delta))} vs mes anterior</span>`;
+  let nova;
+  if (otrosPct >= 30) nova = `<b>Ojo:</b> el <b>${otrosPct}% de tus egresos</b> (${_repMoney(otros ? otros.amt : 0)}) están sin clasificar como "Otros". Si los etiquetas, tu reporte para el contador y tu reserva de SAT serán mucho más precisos.`;
+  else if (r.util >= 0) nova = `Buen mes: <b>ganaste ${_repMoney(r.util)}</b> con un margen del ${Math.round(r.margin)}%.${mayor ? ` Tu mayor gasto fue ${_escHtml(mayor.cat)} (${_repMoney(mayor.amt)}).` : ''}`;
+  else nova = `Este mes <b>perdiste ${_repMoney(Math.abs(r.util))}</b>.${mayor ? ` Tu mayor gasto fue ${_escHtml(mayor.cat)} (${_repMoney(mayor.amt)}) — un buen punto para recortar.` : ''}`;
+  const inH = r.inc >= r.exp ? 100 : Math.round(r.inc / (r.exp || 1) * 100);
+  const outH = r.exp >= r.inc ? 100 : Math.round(r.exp / (r.inc || 1) * 100);
+  root.innerHTML = `
+    <div class="ini-grid">
+      <div class="ini-card">
+        <div class="ini-cap">Utilidad de ${_escHtml(mesNom.toLowerCase())}</div>
+        <div class="ini-big" style="color:${r.util >= 0 ? '#0e9f6e' : '#e2435f'}">${_repMoney(r.util)}</div>
+        ${trendChip}
+        ${_iniSpark(trend)}
+        <div class="ini-flow">
+          <div><div class="k">Entró</div><div class="v in">${_repMoney(r.inc)}</div></div>
+          <div><div class="k">Salió</div><div class="v out">${_repMoney(r.exp)}</div></div>
+          <div><div class="k">Movimientos</div><div class="v">${r.count}</div></div>
+        </div>
+      </div>
+      <div class="ini-card">
+        <div class="ini-cap">Entró vs salió</div>
+        <div class="ini-bars">
+          <div class="col"><div class="bar in" style="height:${inH}%"></div><div class="bl">Entró<br><b>${_repMoney(r.inc)}</b></div></div>
+          <div class="col"><div class="bar out" style="height:${outH}%"></div><div class="bl">Salió<br><b>${_repMoney(r.exp)}</b></div></div>
+        </div>
+        <div style="margin-top:1rem;font-size:.85rem;color:var(--slate);line-height:1.5">${r.util >= 0 ? `Tu negocio <b style="color:#0e9f6e">ganó dinero</b>: te quedó <b>${_repMoney(r.util)}</b> después de gastos.` : `Este mes <b style="color:#e2435f">gastaste más</b> de lo que entró.`}</div>
+      </div>
+    </div>
+    <div class="ini-kpis">
+      <div class="ini-card ini-kpi"><div class="ini-cap">Movimientos</div><div class="v">${r.count}</div><div class="s">en ${_escHtml(mesNom)}</div></div>
+      <div class="ini-card ini-kpi"><div class="ini-cap">Mayor gasto</div><div class="v sm">${mayor ? _escHtml(mayor.cat) : '—'}</div><div class="s">${mayor ? _repMoney(mayor.amt) : ''}</div></div>
+      <div class="ini-card ini-kpi"><div class="ini-cap">Margen</div><div class="v">${Math.round(r.margin)}%</div><div class="s">${r.util >= 0 ? 'ganancia' : 'pérdida'}</div></div>
+      <div class="ini-card ini-kpi"><div class="ini-cap">Por clasificar</div><div class="v" style="color:${otrosPct >= 30 ? '#e2435f' : 'inherit'}">${otrosPct}%</div><div class="s">en "Otros"</div></div>
+    </div>
+    <div class="ini-nova"><div class="ic">✦</div><div><div class="tag">NOVA · tu copiloto</div><p>${nova}</p></div></div>
+    <div class="ini-card" style="margin-bottom:1.15rem">
+      <div class="ini-cap" style="margin-bottom:1.1rem">A dónde se fue tu dinero · ${_escHtml(mesNom)}</div>
+      ${r.cats.length ? r.cats.slice(0, 6).map(c => `<div class="ini-row"><div class="nm">${_escHtml(c.cat)}</div><div class="track"><i style="width:${Math.max(4, c.amt / maxCat * 100)}%"></i></div><div class="amt">${_repMoney(c.amt)}</div><div class="pct">${r.exp ? Math.round(c.amt / r.exp * 100) : 0}%</div></div>`).join('') : '<div style="color:var(--muted);font-size:.88rem">Sin gastos registrados este mes</div>'}
+    </div>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+      <button class="tb-btn tb-primary" onclick="showPage('reportes')">📈 Ver reporte completo</button>
+      <button class="tb-btn tb-ghost" onclick="showPage('transactions')">Ver movimientos</button>
+    </div>`;
 }
 </script>
 <!-- Belvo Connect Widget necesita este div para montarse -->
