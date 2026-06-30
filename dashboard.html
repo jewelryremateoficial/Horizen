@@ -888,6 +888,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         </div>
       </div>
 
+      <!-- Conciliación / autochequeo antes de guardar -->
+      <div id="erReconcile" style="margin-bottom:1.25rem"></div>
+
       <!-- Strip de grupos -->
       <div class="cat-group-strip" id="erGroupStrip"></div>
 
@@ -3102,6 +3105,28 @@ function renderEstadosTxs() {
   // Botón guardar
   document.getElementById('btnGuardar').textContent = '💾 Guardar ' + visible.length + ' transacciones';
 
+  // Conciliación / autochequeo + detección de duplicados dentro del lote
+  (function(){
+    const el = document.getElementById('erReconcile');
+    if (!el) return;
+    const seen = {}, dups = [];
+    visible.forEach(t => {
+      const k = (t.date||'') + '|' + (t.amount||0) + '|' + (t.description||'').trim().toLowerCase();
+      if (seen[k]) dups.push(t); else seen[k] = true;
+    });
+    let html = `<div style="background:#f5f3ff;border:1px solid rgba(99,91,255,.2);border-radius:10px;padding:.7rem .9rem;font-size:.8rem;color:var(--text);display:flex;gap:.6rem;align-items:flex-start">
+      <span style="font-size:1rem">🧮</span>
+      <div>Revisa antes de guardar: <b>${visible.length}</b> movimientos · Ingresos <b style="color:var(--ok)">${fmt(totalIn)}</b> − Egresos <b style="color:var(--err)">${fmt(totalOut)}</b> = Neto <b>${fmt(Math.abs(neto))}</b>. Confirma que el <b>neto cuadre</b> con el saldo de tu estado de cuenta.</div>
+    </div>`;
+    if (dups.length) {
+      html += `<div style="background:#fff7ed;border:1px solid rgba(217,119,6,.25);border-radius:10px;padding:.7rem .9rem;font-size:.8rem;color:var(--text);display:flex;gap:.6rem;align-items:flex-start;margin-top:.5rem">
+        <span style="font-size:1rem">⚠️</span>
+        <div><b>${dups.length}</b> posible(s) duplicado(s) (misma fecha, monto y descripción). Revísalos en la lista de transacciones y elimina los que sobren.</div>
+      </div>`;
+    }
+    el.innerHTML = html;
+  })();
+
   // Egresos (se usa en strip, chart y desglose)
   const egresos = visible.filter(t => t.type === 'egreso');
 
@@ -3354,6 +3379,16 @@ function removeEstadoTx(id) {
 async function confirmarEstado() {
   const toSave = _estadoTxs.filter(t => !t._remove);
   if (!toSave.length) { toast('No hay transacciones que guardar', 'error'); return; }
+
+  // Guardia anti-duplicado: avisar si ya se subió un archivo con el mismo nombre
+  if (_estadoFile?.name) {
+    const { data: existing } = await db.from('statements')
+      .select('id,name').eq('user_id', _user.id).eq('file_name', _estadoFile.name).limit(1);
+    if (existing && existing.length &&
+        !confirm(`Parece que ya subiste este archivo antes ("${existing[0].name}"). ¿Guardarlo otra vez de todas formas?`)) {
+      return;
+    }
+  }
 
   const btn = document.querySelector('#page-estados .tb-primary');
   btn.disabled = true; btn.textContent = 'Guardando...';
