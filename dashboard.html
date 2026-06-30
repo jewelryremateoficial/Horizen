@@ -849,6 +849,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <button class="tb-btn tb-ghost" onclick="resetEstados()">Cambiar archivo</button>
         </div>
       </div>
+
+      <!-- Estados guardados -->
+      <div id="savedStmtsWrap" style="margin-top:2.25rem">
+        <div class="card-ttl" style="margin-bottom:.75rem">📑 Estados guardados</div>
+        <div id="savedStmtsList"><div style="color:var(--muted);font-size:.85rem">Cargando...</div></div>
+      </div>
     </div>
 
     <!-- PASO 2: Procesando -->
@@ -1337,6 +1343,7 @@ function showPage(id) {
   if (id === 'debts')        renderDebts();
   if (id === 'taxes')        loadTaxes();
   if (id === 'alerts')       loadAlerts();
+  if (id === 'estados')      loadSavedStatements();
 }
 
 // ── Metrics ───────────────────────────────────────────────────
@@ -3372,15 +3379,69 @@ async function confirmarEstado() {
     const { error: txErr } = await db.from('transactions').insert(payload);
     if (txErr) throw txErr;
 
-    toast(`✓ ${toSave.length} transacciones guardadas`, 'success');
+    toast(`✓ ${toSave.length} transacciones guardadas en "${stmtName}"`, 'success');
     await Promise.all([loadMetrics(), loadRecentTx()]);
     resetEstados();
+    loadSavedStatements();
 
   } catch(err) {
     toast('Error al guardar: ' + err.message, 'error');
   } finally {
     btn.disabled = false; btn.textContent = '💾 Guardar todas';
   }
+}
+
+// ── Estados de cuenta guardados ───────────────────────────────
+const _escHtml = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function loadSavedStatements() {
+  const wrap = document.getElementById('savedStmtsList');
+  if (!wrap || !_user) return;
+  const { data, error } = await db.from('statements')
+    .select('id,name,bank_name,period_start,period_end,tx_count,created_at')
+    .eq('user_id', _user.id)
+    .order('created_at', { ascending: false });
+  if (error) {
+    wrap.innerHTML = `<div style="color:var(--muted);font-size:.85rem">No se pudo cargar la lista (${_escHtml(error.message)})</div>`;
+    return;
+  }
+  renderSavedStatements(data || []);
+}
+
+function renderSavedStatements(list) {
+  const wrap = document.getElementById('savedStmtsList');
+  if (!wrap) return;
+  if (!list.length) {
+    wrap.innerHTML = `<div style="color:var(--muted);font-size:.85rem;padding:.5rem 0">Aún no tienes estados guardados. Sube uno arriba y dale "Guardar" para verlo aquí.</div>`;
+    return;
+  }
+  wrap.innerHTML = list.map(s => {
+    const per = [s.period_start, s.period_end].filter(Boolean).join(' → ') || '—';
+    const fecha = s.created_at ? new Date(s.created_at).toLocaleDateString('es-MX') : '';
+    return `<div style="display:flex;align-items:center;gap:.75rem;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.75rem .9rem;margin-bottom:.5rem">
+      <div style="font-size:1.15rem">📄</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:.9rem;color:var(--text)">${_escHtml(s.name || 'Estado de cuenta')}</div>
+        <div style="font-size:.72rem;color:var(--muted)">${_escHtml(s.bank_name || '—')} · ${_escHtml(per)} · ${s.tx_count || 0} mov · ${fecha}</div>
+      </div>
+      <button class="tb-btn tb-ghost" onclick="deleteStatement('${s.id}', this)" title="Eliminar" style="padding:.4rem .75rem">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+async function deleteStatement(id, btn) {
+  if (!confirm('¿Eliminar este estado de cuenta y sus transacciones? Esta acción no se puede deshacer.')) return;
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  const { error } = await db.from('statements').delete().eq('id', id).eq('user_id', _user.id);
+  if (error) {
+    toast('Error al eliminar: ' + error.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '🗑'; }
+    return;
+  }
+  toast('Estado de cuenta eliminado', 'success');
+  loadSavedStatements();
+  if (typeof loadMetrics === 'function') loadMetrics();
+  if (typeof loadRecentTx === 'function') loadRecentTx();
 }
 
 function openEditTxCal(txId) {
