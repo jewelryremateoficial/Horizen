@@ -1596,7 +1596,7 @@ function updateNetWorth() {
 // ── Transactions ──────────────────────────────────────────────
 async function loadRecentTx() {
   const { data } = await db.from('transactions')
-    .select('*,accounts(name,institution_name)')
+    .select('*,accounts(institution_name)')
     .eq('user_id', _user.id)
     .order('date', { ascending: false })
     .order('created_at', { ascending: false })
@@ -1619,7 +1619,7 @@ async function loadTx() {
       _chip.innerHTML = `<span style="display:inline-flex;align-items:center;gap:.5rem;background:#f5f3ff;border:1px solid rgba(99,91,255,.25);color:var(--p);padding:.3rem .75rem;border-radius:999px;font-weight:600;font-size:.78rem">📄 ${_escHtml(_txStmtName)} <span onclick="clearStmtFilter()" style="cursor:pointer;font-weight:800">✕</span></span>`;
     } else { _chip.style.display = 'none'; _chip.innerHTML = ''; }
   }
-  let q = db.from('transactions').select('*,accounts(name,institution_name)')
+  let q = db.from('transactions').select('*,accounts(institution_name)')
     .eq('user_id', _user.id);
   if (_txStmtFilter)           q = q.eq('statement_id', _txStmtFilter);
   // Si estás viendo un estado de cuenta, ignora el filtro de mes (muestra TODO el estado)
@@ -1657,7 +1657,7 @@ function txRowFull(tx) {
   const sign = tx.type === 'ingreso' ? '+' : tx.type === 'egreso' ? '-' : '↔';
   return `<tr>
     <td><div style="font-weight:500;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tx.description}</div></td>
-    <td style="font-size:.8rem;color:var(--muted)">${tx.accounts?.name || '—'}</td>
+    <td style="font-size:.8rem;color:var(--muted)">${tx.accounts?.institution_name || '—'}</td>
     <td><span class="cat-pill">${tx.category || '—'}</span></td>
     <td><span class="src-tag src-${src}">${srcLabel(src)}</span></td>
     <td>${tx.is_fiscal ? '<span class="fiscal-tag">CFDI</span>' : '<span style="color:var(--muted);font-size:.8rem">—</span>'}</td>
