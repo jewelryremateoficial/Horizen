@@ -390,6 +390,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" onclick="showPage('finplan')"><span class="ico">🧠</span>Plan Financiero</button>
 
     <div class="nav-lbl">Cuenta</div>
+    <button class="ni" onclick="showPage('referidos')"><span class="ico">🤝</span>Mi red · Referidos</button>
     <button class="ni" onclick="showPage('settings')"><span class="ico">⚙️</span>Configuración</button>
   </div>
   <div class="sidebar-footer">
@@ -559,6 +560,38 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
     <div id="repBody"><div class="rep-empty">Cargando tus datos…</div></div>
+  </div>
+
+  <!-- ══ PAGE: Referidos (Mi red) ══════════════════════════ -->
+  <div class="page" id="page-referidos">
+    <style>
+    #page-referidos .rf-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.5rem 1.6rem;box-shadow:0 1px 2px rgba(10,37,64,.04);margin-bottom:1.15rem}
+    #page-referidos .rf-hero{background:linear-gradient(125deg,#5b53f0,#8b7cff);color:#fff;border:none}
+    #page-referidos .rf-hero .rf-cap{color:rgba(255,255,255,.85)}
+    #page-referidos .rf-cap{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+    #page-referidos .rf-linkrow{display:flex;gap:.6rem;margin-top:1rem;flex-wrap:wrap}
+    #page-referidos .rf-link{flex:1;min-width:220px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:10px;padding:.7rem .9rem;font-size:.88rem;font-weight:600;font-family:inherit}
+    #page-referidos .rf-btn{font-family:inherit;font-weight:700;font-size:.86rem;padding:.7rem 1.1rem;border-radius:10px;border:none;cursor:pointer}
+    #page-referidos .rf-btn.w{background:#25D366;color:#fff}
+    #page-referidos .rf-btn.c{background:#fff;color:var(--p2)}
+    #page-referidos .rf-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem;margin-bottom:1.15rem}
+    #page-referidos .rf-kpi{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.15rem 1.3rem}
+    #page-referidos .rf-kpi .v{font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin-top:.35rem;font-variant-numeric:tabular-nums}
+    #page-referidos .rf-kpi .s{font-size:.74rem;color:var(--muted);margin-top:.3rem}
+    #page-referidos .rf-rank{display:inline-flex;align-items:center;gap:.5rem;font-weight:800;font-size:1.02rem;background:#f1f0ff;color:var(--p2);padding:.4rem .8rem;border-radius:999px;border:1px solid rgba(99,91,255,.2)}
+    #page-referidos .rf-ladder div{display:flex;justify-content:space-between;padding:.42rem 0;font-size:.85rem;border-bottom:1px solid var(--border)}
+    #page-referidos .rf-ladder div:last-child{border-bottom:none}
+    #page-referidos .rf-ladder .on{color:var(--p2);font-weight:800}
+    #page-referidos table{width:100%;border-collapse:collapse;font-size:.85rem}
+    #page-referidos th,#page-referidos td{text-align:left;padding:.55rem .5rem;border-bottom:1px solid var(--border)}
+    #page-referidos th{font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+    #page-referidos .rf-badge{font-size:.72rem;font-weight:700;padding:.2rem .55rem;border-radius:999px}
+    #page-referidos .rf-badge.act{background:#e9f9f1;color:#0a7a55}
+    #page-referidos .rf-badge.tri{background:#fff4e5;color:#b25e09}
+    @media(max-width:760px){#page-referidos .rf-kpis{grid-template-columns:1fr}}
+    </style>
+    <div><div class="section-ttl">🤝 Mi red · Referidos</div><div class="section-sub">Invita a otros negocios y contadores. Ganas cada mes mientras ellos usen Horizen.</div></div>
+    <div id="redBody" style="margin-top:1rem"><div style="padding:2rem;text-align:center;color:var(--muted)">Cargando tu red…</div></div>
   </div>
 
   <!-- ══ PAGE: Transactions ══════════════════════════════════ -->
@@ -1396,7 +1429,8 @@ function showPage(id) {
     settings:     ['⚙️ Configuración',    ''],
     calendario:   ['📆 Calendario',       '— Flujo diario de ingresos y egresos'],
     estados:      ['📄 Subir Estado',     '— IA extrae y categoriza tus transacciones'],
-    reportes:     ['📈 Reportes',         '— Por mes y banco · descarga para tu contador']
+    reportes:     ['📈 Reportes',         '— Por mes y banco · descarga para tu contador'],
+    referidos:    ['🤝 Mi red · Referidos', '— Invita y gana cada mes']
   };
   const t = titles[id] || [id, ''];
   document.getElementById('topbarTitle').innerHTML =
@@ -1414,6 +1448,7 @@ function showPage(id) {
   if (id === 'estados')      loadSavedStatements();
   if (id === 'reportes')     loadReportes();
   if (id === 'overview')     renderInicio();
+  if (id === 'referidos')    loadReferidos();
 }
 
 // ── Metrics ───────────────────────────────────────────────────
@@ -3763,6 +3798,64 @@ async function repDownloadPDF() {
     doc.save(_repFileName('pdf'));
   } catch (e) { toast('Error al generar PDF: ' + (e.message || e), 'error'); }
   finally { btn.disabled = false; btn.textContent = old; }
+}
+
+// ══ REFERIDOS · Mi red ═══════════════════════════════════════
+const _RF_RANKS = [
+  { min: 200, name: '👑 Embajador', l1: .20 },
+  { min: 51,  name: '💎 Diamante',  l1: .18 },
+  { min: 21,  name: '🥇 Oro',       l1: .15 },
+  { min: 6,   name: '🥈 Plata',     l1: .12 },
+  { min: 1,   name: '🥉 Bronce',    l1: .10 },
+  { min: 0,   name: 'Sin referidos aún', l1: .10 }
+];
+const _RF_PRICE = { free: 0, trial: 0, basico: 990, pro: 1990, empresa: 3990 };
+
+async function loadReferidos() {
+  const body = document.getElementById('redBody'); if (!body) return;
+  const code = (_profile && _profile.referral_code) || _user.id.replace(/-/g, '').slice(0, 8).toUpperCase();
+  const link = 'https://horizen.com.mx/signup.html?ref=' + code;
+  const waMsg = encodeURIComponent('Te comparto Horizen: subes tu estado de cuenta y sabes si tu negocio gana o pierde, sin contador y sin Excel. Regístrate con mi link y tu primer mes va con descuento 👉 ' + link);
+  body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted)">Cargando tu red…</div>';
+  let net = [];
+  try { const r = await db.rpc('get_my_network'); if (!r.error) net = r.data || []; } catch (e) {}
+  const activos = net.filter(n => n.subscription_status === 'active');
+  const rank = _RF_RANKS.find(r => activos.length >= r.min);
+  const next = _RF_RANKS.slice().reverse().find(r => r.min > activos.length);
+  const estMonth = activos.reduce((s, n) => s + (_RF_PRICE[n.plan] || 0) * rank.l1, 0);
+  body.innerHTML = `
+    <div class="rf-card rf-hero">
+      <div class="rf-cap">Tu link de invitación</div>
+      <div style="font-size:1.18rem;font-weight:800;margin-top:.5rem;line-height:1.4">Gana ${Math.round(rank.l1 * 100)}% de la mensualidad de cada negocio o contador que invites — <u>cada mes</u>.</div>
+      <div class="rf-linkrow">
+        <input class="rf-link" id="rfLink" readonly value="${link}">
+        <button class="rf-btn c" onclick="rfCopy()">📋 Copiar</button>
+        <button class="rf-btn w" onclick="window.open('https://wa.me/?text=${waMsg}','_blank')">🟢 WhatsApp</button>
+      </div>
+    </div>
+    <div class="rf-kpis">
+      <div class="rf-kpi"><div class="rf-cap">Tu rango</div><div style="margin-top:.55rem"><span class="rf-rank">${rank.name}</span></div><div class="s" style="margin-top:.5rem">${next ? `Faltan ${next.min - activos.length} activos para ${next.name} (${Math.round(next.l1 * 100)}%)` : '¡Máximo rango!'}</div></div>
+      <div class="rf-kpi"><div class="rf-cap">Referidos activos</div><div class="v">${activos.length}</div><div class="s">${net.length} en total (incluye pruebas)</div></div>
+      <div class="rf-kpi"><div class="rf-cap">Ganancia estimada</div><div class="v" style="color:#0e9f6e">${_repMoney(estMonth)}</div><div class="s">al mes, con tus activos actuales</div></div>
+    </div>
+    <div class="rf-card">
+      <div class="rf-cap" style="margin-bottom:.85rem">El reto: entre más invitas, más ganas</div>
+      <div class="rf-ladder">
+        ${_RF_RANKS.slice(0, 5).reverse().map(r => `<div class="${r.name === rank.name ? 'on' : ''}"><span>${r.name} · ${r.min}+ activos</span><span>${Math.round(r.l1 * 100)}% Nivel 1</span></div>`).join('')}
+      </div>
+      <div style="font-size:.78rem;color:var(--muted);margin-top:.75rem">Además, <b>5% de Nivel 2</b> (los referidos de tus referidos). Se paga solo sobre suscripciones activas reales — cuando ellos pagan, tú ganas.</div>
+    </div>
+    <div class="rf-card">
+      <div class="rf-cap" style="margin-bottom:.85rem">Tus referidos (${net.length})</div>
+      ${net.length ? `<table><thead><tr><th>Nombre</th><th>Plan</th><th>Estado</th><th>Desde</th></tr></thead><tbody>${net.map(n => `<tr><td>${_escHtml(n.full_name || '—')}</td><td>${_escHtml(n.plan || 'free')}</td><td>${n.subscription_status === 'active' ? '<span class="rf-badge act">Activo</span>' : '<span class="rf-badge tri">Prueba</span>'}</td><td>${(n.created_at || '').slice(0, 10)}</td></tr>`).join('')}</tbody></table>` : '<div style="color:var(--muted);font-size:.9rem;padding:.5rem 0">Aún no tienes referidos. Comparte tu link y empieza a construir tu red 🚀</div>'}
+    </div>`;
+}
+function rfCopy() {
+  const el = document.getElementById('rfLink'); if (!el) return;
+  el.select(); el.setSelectionRange(0, 999);
+  try { document.execCommand('copy'); } catch (e) {}
+  if (navigator.clipboard) navigator.clipboard.writeText(el.value).catch(() => {});
+  toast('Link copiado ✓', 'success');
 }
 
 // ══ INICIO premium (datos del periodo seleccionado) ══════════

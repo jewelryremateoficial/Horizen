@@ -188,6 +188,8 @@ async function handleSignup(e) {
 
   // Crear perfil en tabla profiles
   if (data.user) {
+    // Atribución de referido: ?ref=CODIGO en la URL de invitación
+    const _refCode = (new URLSearchParams(location.search).get('ref') || '').trim().toUpperCase().slice(0, 12) || null;
     await db.from('profiles').insert({
       id: data.user.id,
       full_name: `${firstName} ${lastName}`,
@@ -195,7 +197,9 @@ async function handleSignup(e) {
       rfc: rfc || null,
       plan: 'free',
       subscription_status: 'trial',
-      trial_ends_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+      trial_ends_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+      referral_code: data.user.id.replace(/-/g, '').slice(0, 8).toUpperCase(),
+      referred_by_code: _refCode
     });
   }
 

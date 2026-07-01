@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Horizen — Calculadora de Referidos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--p:#635bff;--p2:#4b45c6;--sec:#8b7cff;--ink:#0a2540;--slate:#3c4a5e;--muted:#7a8aa0;
+--line:#e9edf3;--bg:#f5f7fb;--card:#fff;--ok:#0e9f6e;--okbg:#e9f9f1;--err:#e2435f}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;letter-spacing:-.011em;padding:2rem 1.25rem}
+.wrap{max-width:1000px;margin:0 auto}
+.tnum{font-variant-numeric:tabular-nums}
+.brand{display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem}
+.brand .mk{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--p),var(--sec));display:grid;place-items:center;color:#fff;font-weight:800;box-shadow:0 4px 12px rgba(99,91,255,.35)}
+.brand .nm{font-weight:800;font-size:1.2rem}.brand .nm span{color:var(--p)}
+h1{font-size:1.7rem;font-weight:800;letter-spacing:-.03em;margin-bottom:.3rem}
+.sub{color:var(--muted);font-size:.92rem;margin-bottom:1.6rem}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:1.6rem;box-shadow:0 1px 2px rgba(10,37,64,.05),0 14px 30px -16px rgba(10,37,64,.12)}
+.cap{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.field{margin-bottom:1.5rem}
+.field label{display:flex;justify-content:space-between;align-items:baseline;font-size:.86rem;font-weight:600;margin-bottom:.55rem}
+.field label b{font-size:1.05rem;color:var(--p2);font-weight:800}
+input[type=range]{width:100%;accent-color:var(--p);height:6px}
+.plans{display:flex;gap:.5rem;flex-wrap:wrap}
+.planbtn{flex:1;min-width:90px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:.7rem .5rem;cursor:pointer;text-align:center;font-family:inherit;transition:.15s}
+.planbtn.on{border-color:var(--p);background:#f1f0ff;box-shadow:0 0 0 3px rgba(99,91,255,.12)}
+.planbtn .pn{font-size:.78rem;font-weight:700}.planbtn .pp{font-size:.74rem;color:var(--muted);margin-top:.15rem}
+.presets{display:flex;gap:.5rem;margin-top:.4rem}
+.presets button{flex:1;border:1px solid var(--line);background:#fff;border-radius:10px;padding:.5rem;font-family:inherit;font-weight:600;font-size:.82rem;cursor:pointer;color:var(--slate)}
+.presets button:hover{border-color:var(--p);color:var(--p)}
+.rankbadge{display:inline-flex;align-items:center;gap:.5rem;font-weight:800;font-size:1.05rem;background:#f1f0ff;color:var(--p2);padding:.5rem .9rem;border-radius:999px;border:1px solid rgba(99,91,255,.2)}
+.bignum{font-size:3rem;font-weight:900;letter-spacing:-.04em;line-height:1;margin:.7rem 0 .3rem;color:var(--ok)}
+.bigcap{color:var(--muted);font-size:.86rem}
+.split{display:flex;gap:1.4rem;margin-top:1.3rem;padding-top:1.3rem;border-top:1px solid var(--line);flex-wrap:wrap}
+.split .k{font-size:.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.split .v{font-size:1.15rem;font-weight:800;margin-top:.2rem}
+.annual{margin-top:1.2rem;background:var(--okbg);border:1px solid rgba(14,159,110,.25);border-radius:12px;padding:.9rem 1.1rem;font-size:.9rem;color:#0a7a55;font-weight:600}
+.annual b{font-size:1.15rem;color:#075e41}
+.co-row{display:flex;justify-content:space-between;align-items:center;padding:.65rem 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.co-row:last-child{border-bottom:none}
+.co-row .v{font-weight:700;font-variant-numeric:tabular-nums}
+.co-row.tot{font-size:1.05rem}.co-row.tot .v{color:var(--ok);font-weight:800}
+.bar{height:12px;border-radius:99px;background:#eef1f6;overflow:hidden;display:flex;margin:.8rem 0 .4rem}
+.bar .seg{height:100%}
+.legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:.74rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:.35rem}
+.dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+.note{font-size:.76rem;color:var(--muted);margin-top:1.5rem;line-height:1.5;text-align:center}
+.tiers{margin-top:1rem;font-size:.8rem;color:var(--slate)}
+.tiers div{display:flex;justify-content:space-between;padding:.3rem 0}
+.tiers .hl{color:var(--p2);font-weight:800}
+h2{font-size:1.05rem;margin-bottom:1rem}
+</style></head>
+<body><div class="wrap">
+
+<div class="brand"><div class="mk">H</div><div class="nm">Horiz<span>en</span></div></div>
+<h1>Calculadora del Programa de Referidos</h1>
+<div class="sub">Mueve los controles y mira cuánto gana un referidor — y cuánto te queda a ti. Todo sobre suscripciones reales (legal).</div>
+
+<div class="grid">
+  <!-- Controles + ganancia del referidor -->
+  <div class="card">
+    <div class="cap" style="margin-bottom:.8rem">Plan que pagan tus referidos</div>
+    <div class="plans" id="plans">
+      <button class="planbtn" data-p="590"><div class="pn">Emprendedor</div><div class="pp">$590/mes</div></button>
+      <button class="planbtn on" data-p="1490"><div class="pn">Profesional</div><div class="pp">$1,490/mes</div></button>
+      <button class="planbtn" data-p="3490"><div class="pn">Empresarial</div><div class="pp">$3,490/mes</div></button>
+      <button class="planbtn" data-p="4990"><div class="pn">Despacho 👔</div><div class="pp">$4,990/mes</div></button>
+    </div>
+    <div style="font-size:.76rem;color:var(--muted);margin-top:.55rem;line-height:1.45">👔 <b>Despacho/Contador</b>: maneja varias empresas-cliente en una sola cuenta. Son tus referidos de mayor valor — y un solo contador puede traerte a todos sus clientes.</div>
+
+    <div class="field" style="margin-top:1.5rem">
+      <label>Personas que TÚ invitas directo (Nivel 1) <b id="n1v">100</b></label>
+      <input type="range" id="n1" min="0" max="1000" value="100" step="1">
+      <div class="presets">
+        <button data-n1="10">10</button><button data-n1="100">100</button>
+        <button data-n1="500">500</button><button data-n1="1000">1000</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>En promedio, cada uno invita a… (Nivel 2) <b id="n2v">3</b></label>
+      <input type="range" id="n2" min="0" max="20" value="3" step="1">
+    </div>
+
+    <div style="margin-top:1.7rem">
+      <span class="rankbadge" id="rank">🥉 Bronce</span>
+      <div class="bignum tnum" id="monthly">$0</div>
+      <div class="bigcap">tu ganancia <b>al mes</b>, recurrente, mientras sigan pagando</div>
+      <div class="split">
+        <div><div class="k">Nivel 1 (<span id="l1pct">10</span>%)</div><div class="v tnum" id="l1e">$0</div></div>
+        <div><div class="k">Nivel 2 (5%)</div><div class="v tnum" id="l2e">$0</div></div>
+        <div><div class="k">Red total</div><div class="v tnum" id="netusers">0</div></div>
+      </div>
+      <div class="annual">Al año ganarías <b class="tnum" id="annual">$0</b></div>
+    </div>
+
+    <div class="tiers" id="tiers"></div>
+  </div>
+
+  <!-- Sostenibilidad para la empresa -->
+  <div class="card">
+    <h2>¿Le conviene a Horizen? (a ti)</h2>
+    <div class="cap">De toda esa red, cada mes:</div>
+    <div style="margin-top:1rem">
+      <div class="co-row"><span>Ingreso total de la red</span><span class="v tnum" id="co-rev">$0</span></div>
+      <div class="co-row"><span>− Comisiones a referidores (todos los niveles)</span><span class="v tnum" style="color:var(--err)" id="co-com">$0</span></div>
+      <div class="co-row"><span>− Costos (IA + plataforma + PayPal, ~10%)</span><span class="v tnum" style="color:var(--err)" id="co-cogs">$0</span></div>
+      <div class="co-row tot"><span>= Te queda (margen neto)</span><span class="v tnum" id="co-net">$0</span></div>
+    </div>
+
+    <div class="bar" id="bar"></div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--ok)"></i> Tu ganancia (<span id="m-net">0</span>%)</span>
+      <span><i class="dot" style="background:var(--sec)"></i> Comisiones (<span id="m-com">0</span>%)</span>
+      <span><i class="dot" style="background:#cbd2de"></i> Costos (<span id="m-cogs">0</span>%)</span>
+    </div>
+
+    <div class="annual" style="background:#f1f0ff;border-color:rgba(99,91,255,.2);color:var(--p2)">
+      A ti te quedan <b class="tnum" id="co-net-yr" style="color:var(--p2)">$0</b> al año de esta sola red.
+    </div>
+
+    <div class="cap" style="margin-top:1.6rem">La regla que lo hace legal</div>
+    <p style="font-size:.86rem;color:var(--slate);line-height:1.55;margin-top:.5rem">
+      Solo pagas comisión sobre <b>suscripciones que de verdad se cobran</b>. Si un referido deja de pagar,
+      dejas de pagar su comisión. Inscribirse es <b>gratis</b> y el ingreso viene del <b>servicio</b>, no de
+      reclutar — así es multinivel legal, no pirámide.
+    </p>
+  </div>
+</div>
+
+<div class="note">
+  Modelo ilustrativo. Comisión recurrente sobre suscripción activa real. Rangos: Bronce 10% · Plata 12% ·
+  Oro 15% · Diamante 18% · Embajador 20% (Nivel 1) + 5% (Nivel 2). Costos estimados ~10% del ingreso.
+  Antes de lanzar, valida el contrato del programa con un abogado.
+</div>
+
+<script>
+const RANKS=[
+  {min:200,name:'👑 Embajador',l1:.20},
+  {min:51, name:'💎 Diamante', l1:.18},
+  {min:21, name:'🥇 Oro',      l1:.15},
+  {min:6,  name:'🥈 Plata',    l1:.12},
+  {min:1,  name:'🥉 Bronce',   l1:.10},
+  {min:0,  name:'— Sin referidos aún', l1:0}
+];
+const L2=.05, COGS=.10;
+let plan=1490;
+const $=id=>document.getElementById(id);
+const money=n=>'$'+Math.round(n).toLocaleString('es-MX');
+
+function rankFor(n){ return RANKS.find(r=>n>=r.min); }
+
+function calc(){
+  const n1=+$('n1').value, n2=+$('n2').value;
+  $('n1v').textContent=n1.toLocaleString('es-MX');
+  $('n2v').textContent=n2;
+  const rank=rankFor(n1);
+  const totalL2=n1*n2;
+  const l1e=n1*plan*rank.l1;
+  const l2e=totalL2*plan*L2;
+  const monthly=l1e+l2e;
+  // referidor
+  $('rank').textContent=rank.name;
+  $('l1pct').textContent=Math.round(rank.l1*100);
+  $('monthly').textContent=money(monthly);
+  $('l1e').textContent=money(l1e);
+  $('l2e').textContent=money(l2e);
+  $('netusers').textContent=(n1+totalL2).toLocaleString('es-MX');
+  $('annual').textContent=money(monthly*12);
+  // empresa: ingreso de toda la red
+  const netUsers=n1+totalL2;
+  const revenue=netUsers*plan;
+  // comisiones totales pagadas en la red:
+  //  - a ESTE referidor: l1e (sobre sus N1) + l2e (sobre sus nietos)
+  //  - a los sponsors directos de los nietos (Nivel 1 ~ asumimos 10% base): totalL2*plan*0.10
+  const commissions=l1e+l2e+(totalL2*plan*0.10);
+  const cogs=revenue*COGS;
+  const net=revenue-commissions-cogs;
+  $('co-rev').textContent=money(revenue);
+  $('co-com').textContent='−'+money(commissions);
+  $('co-cogs').textContent='−'+money(cogs);
+  $('co-net').textContent=money(net);
+  $('co-net-yr').textContent=money(net*12);
+  // barra de margen
+  const tot=revenue||1;
+  const pNet=Math.max(0,net/tot), pCom=commissions/tot, pCogs=cogs/tot;
+  $('bar').innerHTML=`<div class="seg" style="width:${pNet*100}%;background:var(--ok)"></div>`+
+    `<div class="seg" style="width:${pCom*100}%;background:var(--sec)"></div>`+
+    `<div class="seg" style="width:${pCogs*100}%;background:#cbd2de"></div>`;
+  $('m-net').textContent=Math.round(pNet*100);
+  $('m-com').textContent=Math.round(pCom*100);
+  $('m-cogs').textContent=Math.round(pCogs*100);
+  // tabla de rangos resaltando el actual
+  $('tiers').innerHTML=RANKS.slice(0,5).reverse().map(r=>{
+    const on=r.name===rank.name;
+    return `<div class="${on?'hl':''}"><span>${r.name} (${r.min}+ referidos)</span><span>${Math.round(r.l1*100)}% Nivel 1</span></div>`;
+  }).join('');
+}
+
+// plan buttons
+document.querySelectorAll('.planbtn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.planbtn').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); plan=+b.dataset.p; calc();
+});
+// presets
+document.querySelectorAll('.presets button').forEach(b=>b.onclick=()=>{ $('n1').value=b.dataset.n1; calc(); });
+$('n1').oninput=calc; $('n2').oninput=calc;
+calc();
+</script>
+</div></body></html>
