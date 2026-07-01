@@ -6,30 +6,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const PROMPT = `Eres un experto en estados de cuenta bancarios mexicanos.
-Analiza este estado de cuenta y extrae TODAS las transacciones que encuentres.
+// Formato COMPACTO: una línea por transacción (mucho más eficiente en tokens que JSON,
+// así caben cientos de movimientos en una sola respuesta sin cortarse).
+const PROMPT = `Analiza este estado de cuenta bancario mexicano y extrae TODAS las transacciones.
 
-Para cada transacción devuelve:
-- date: fecha en formato YYYY-MM-DD (si no hay año usa el año del periodo del estado)
-- description: descripción limpia y legible del movimiento (máximo 80 caracteres)
-- amount: monto en números positivos sin signos (ejemplo: 1234.56)
-- type: "ingreso" si entró dinero a la cuenta, "egreso" si salió dinero
-- category: elige la más apropiada de: Nómina, Renta, Comida, Transporte, Servicios, Entretenimiento, Transferencia, SAT/Impuestos, Salud, Educación, Otros
+Responde ÚNICAMENTE en texto plano, SIN markdown, SIN comentarios, SIN encabezados de tabla.
+Usa EXACTAMENTE este formato, con campos separados por el carácter | (barra vertical):
 
-Responde ÚNICAMENTE con JSON válido y sin texto adicional ni markdown:
-{"bank":"nombre del banco","period_start":"YYYY-MM-DD","period_end":"YYYY-MM-DD","currency":"MXN","transactions":[{"date":"YYYY-MM-DD","description":"descripción","amount":1234.56,"type":"egreso","category":"Servicios"}]}`
+Primera línea (metadatos del estado):
+#META|<banco>|<period_start YYYY-MM-DD>|<period_end YYYY-MM-DD>|<moneda>
 
-// Convierte bytes a base64 por bloques (evita ahogar la memoria con PDFs grandes)
+Después UNA línea por cada transacción:
+<YYYY-MM-DD>|<descripción sin barras, máx 60 caracteres>|<monto positivo sin signo>|<ingreso o egreso>|<categoría>
+
+Reglas:
+- type es "ingreso" si entró dinero, "egreso" si salió.
+- categoría: elige una de: Nómina, Renta, Comida, Transporte, Servicios, Entretenimiento, Transferencia, SAT/Impuestos, Salud, Educación, Otros.
+- Si falta el año en una fecha, usa el año del periodo del estado.
+- No inventes movimientos. No agregues ninguna línea que no sea #META o una transacción.
+
+Ejemplo:
+#META|BBVA|2025-06-01|2025-06-30|MXN
+2025-06-03|OXXO TIENDA 123|120.00|egreso|Comida
+2025-06-05|DEPOSITO CLIENTE|5000.00|ingreso|Transferencia`
+
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = ''
-  const chunk = 0x8000 // 32k por bloque
+  const chunk = 0x8000
   for (let i = 0; i < bytes.length; i += chunk) {
     binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)) as unknown as number[])
   }
   return btoa(binary)
 }
 
-// Llama a Claude con reintentos ante errores transitorios (saturación / 5xx / rate limit)
 async function callClaude(apiKey: string, messageContent: unknown, maxRetries = 3): Promise<Response> {
   let lastErr = ''
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -44,7 +53,7 @@ async function callClaude(apiKey: string, messageContent: unknown, maxRetries = 
         },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
-          max_tokens: 8192, // suficiente para estados con muchos movimientos (antes 4096 cortaba el JSON)
+          max_tokens: 12000, // con formato compacto esto rinde ~800+ movimientos
           messages: [{ role: 'user', content: messageContent }],
         }),
       })
@@ -54,16 +63,44 @@ async function callClaude(apiKey: string, messageContent: unknown, maxRetries = 
       continue
     }
     if (res.ok) return res
-    // 429 (rate limit) y 5xx / 529 (saturado) → reintentar
     if (res.status === 429 || res.status >= 500) {
       lastErr = 'HTTP ' + res.status
       await new Promise(r => setTimeout(r, 1500 * attempt))
       continue
     }
-    // Otros errores (400, 401, etc.) no se reintentan
     return res
   }
   throw new Error('La IA está saturada en este momento (' + lastErr + '). Intenta de nuevo en unos segundos.')
+}
+
+const CATS = ['Nómina','Renta','Comida','Transporte','Servicios','Entretenimiento','Transferencia','SAT/Impuestos','Salud','Educación','Otros']
+
+// Parsea el formato compacto (líneas separadas por |) a la estructura que espera el frontend.
+function parseCompact(text: string) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  let bank = 'Desconocido', period_start: string | null = null, period_end: string | null = null, currency = 'MXN'
+  const transactions: Array<Record<string, unknown>> = []
+  for (const line of lines) {
+    if (line.startsWith('#META')) {
+      const p = line.split('|')
+      if (p[1]) bank = p[1].trim()
+      if (p[2] && /\d{4}-\d{2}-\d{2}/.test(p[2])) period_start = p[2].trim()
+      if (p[3] && /\d{4}-\d{2}-\d{2}/.test(p[3])) period_end = p[3].trim()
+      if (p[4]) currency = p[4].trim()
+      continue
+    }
+    if (line.startsWith('```') || line.startsWith('#')) continue
+    const p = line.split('|')
+    if (p.length < 4) continue
+    const date = (p[0] || '').trim()
+    if (!/\d{4}-\d{2}-\d{2}/.test(date)) continue
+    const amount = Math.abs(parseFloat(String(p[2]).replace(/[^0-9.\-]/g, '')) || 0)
+    const type = (p[3] || '').toLowerCase().includes('ingreso') ? 'ingreso' : 'egreso'
+    let category = (p[4] || 'Otros').trim()
+    if (!CATS.includes(category)) category = 'Otros'
+    transactions.push({ date: date.slice(0, 10), description: (p[1] || 'Movimiento').trim().slice(0, 80), amount, type, category })
+  }
+  return { bank, period_start, period_end, currency, transactions }
 }
 
 serve(async (req) => {
@@ -90,14 +127,8 @@ serve(async (req) => {
 
     const arrayBuffer = await fileBlob.arrayBuffer()
     const bytes = new Uint8Array(arrayBuffer)
-
-    // Guardia de tamaño (el cliente ya limita, pero por si acaso)
-    if (bytes.length > 30 * 1024 * 1024) {
-      throw new Error('El archivo es demasiado grande (más de 30MB). Sube un PDF más ligero o divídelo.')
-    }
-    if (bytes.length === 0) {
-      throw new Error('El archivo llegó vacío. Vuelve a subirlo.')
-    }
+    if (bytes.length > 30 * 1024 * 1024) throw new Error('El archivo es demasiado grande (más de 30MB). Sube un PDF más ligero o divídelo.')
+    if (bytes.length === 0) throw new Error('El archivo llegó vacío. Vuelve a subirlo.')
 
     const isPDF = fileType === 'application/pdf' || (storagePath || '').toLowerCase().endsWith('.pdf')
 
@@ -114,11 +145,9 @@ serve(async (req) => {
     }
 
     const anthropicRes = await callClaude(ANTHROPIC_API_KEY, messageContent)
-
     if (!anthropicRes.ok) {
       let detail = ''
       try { detail = JSON.stringify(await anthropicRes.json()) } catch { /* ignore */ }
-      // Mensajes claros para casos comunes
       if (anthropicRes.status === 400 && /pdf|page|document/i.test(detail)) {
         throw new Error('No pudimos leer este PDF (puede estar protegido, dañado o ser una imagen escaneada de baja calidad). Intenta con otro archivo o exporta el estado como PDF desde tu banca en línea.')
       }
@@ -129,30 +158,39 @@ serve(async (req) => {
     const stopReason = anthropicData.stop_reason
     const rawText = anthropicData.content?.[0]?.text || ''
 
-    let parsed
-    try {
-      const cleaned = rawText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
-      parsed = JSON.parse(cleaned)
-    } catch (_e) {
+    // Soporta tanto el formato compacto nuevo como JSON (por si el modelo responde en JSON)
+    let parsed: { bank: string; period_start: string | null; period_end: string | null; currency: string; transactions: Array<Record<string, unknown>> }
+    if (rawText.includes('#META') || rawText.includes('|')) {
+      parsed = parseCompact(rawText)
+    } else {
+      try {
+        const cleaned = rawText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
+        const j = JSON.parse(cleaned)
+        parsed = { bank: j.bank || 'Desconocido', period_start: j.period_start || null, period_end: j.period_end || null, currency: j.currency || 'MXN', transactions: j.transactions || [] }
+      } catch (_e) {
+        parsed = parseCompact(rawText)
+      }
+    }
+
+    // Si se truncó Y aun así casi no salió nada, avisar claro. Si truncó pero ya trae muchos, los entregamos.
+    if ((!parsed.transactions || parsed.transactions.length === 0)) {
       if (stopReason === 'max_tokens') {
         throw new Error('El estado tiene demasiados movimientos para procesar de una vez. Sube el estado dividido por mes, o contáctanos.')
       }
-      throw new Error('No pudimos leer las transacciones de este archivo. Verifica que sea un estado de cuenta legible (PDF con texto, no una foto).')
+      throw new Error('No encontramos transacciones en el archivo. Asegúrate de subir un estado de cuenta con movimientos legibles.')
     }
 
-    if (!Array.isArray(parsed.transactions) || parsed.transactions.length === 0) {
-      throw new Error('No encontramos transacciones en el archivo. Asegúrate de subir un estado de cuenta con movimientos.')
-    }
-
-    // Éxito: limpiar el archivo temporal
+    // Éxito
     await supabase.storage.from('statements').remove([storagePath])
 
-    return new Response(JSON.stringify(parsed), {
+    // Avisar (sin bloquear) si hubo truncamiento para que el frontend pueda mostrar una nota
+    const result = { ...parsed, truncated: stopReason === 'max_tokens' }
+
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
   } catch (error) {
-    // Limpiar el archivo temporal aunque haya fallado (no dejar basura)
     try { if (supabase && storagePath) await supabase.storage.from('statements').remove([storagePath]) } catch { /* ignore */ }
     return new Response(JSON.stringify({ error: (error as Error).message || 'Error procesando el archivo' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
