@@ -3038,7 +3038,7 @@ function estadoFileSelected(e) {
 }
 
 function applyEstadoFile(file) {
-  if (file.size > 5 * 1024 * 1024) { toast('El archivo supera 5MB', 'error'); return; }
+  if (file.size > 10 * 1024 * 1024) { toast('El archivo supera 10MB. Sube un PDF más ligero o divídelo por mes.', 'error'); return; }
   const ext = file.name.split('.').pop().toLowerCase();
   if (!['pdf','csv'].includes(ext)) { toast('Solo se aceptan archivos PDF o CSV', 'error'); return; }
   _estadoFile = file;
@@ -3081,23 +3081,42 @@ async function procesarEstado() {
     const { error: upErr } = await db.storage.from('statements').upload(storagePath, _estadoFile);
     if (upErr) throw new Error('Error subiendo archivo: ' + upErr.message);
 
-    // 2. Llamar Edge Function con la ruta (no el archivo completo)
-    document.getElementById('procMsg').textContent = 'La IA está analizando tus transacciones... (15-30 seg)';
+    // 2. Llamar Edge Function (con timeout y un reintento automático)
+    document.getElementById('procMsg').textContent = 'La IA está analizando tus transacciones… (puede tardar hasta 1 min en PDFs)';
     const session = await db.auth.getSession();
     const token = session.data.session?.access_token;
 
-    const res = await fetch(EDGE_PROCESS, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token,
-        'apikey': SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({ storagePath, fileType: _estadoFile.type })
-    });
+    async function llamarIA() {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 115000);
+      try {
+        let res;
+        try {
+          res = await fetch(EDGE_PROCESS, {
+            method: 'POST', signal: ctrl.signal,
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'apikey': SUPABASE_ANON_KEY },
+            body: JSON.stringify({ storagePath, fileType: _estadoFile.type })
+          });
+        } catch (netErr) {
+          if (netErr.name === 'AbortError') throw new Error('El análisis tardó demasiado. Puede ser un PDF muy pesado o escaneado; intenta con uno más ligero o divídelo por mes.');
+          throw new Error('Se perdió la conexión durante el análisis. Revisa tu internet e intenta de nuevo.');
+        }
+        let d = null;
+        try { d = await res.json(); } catch (_e) { /* respuesta no-JSON */ }
+        if (!res.ok || !d || d.error) throw new Error((d && d.error) || 'El análisis falló temporalmente. Intenta de nuevo en unos segundos.');
+        return d;
+      } finally { clearTimeout(to); }
+    }
 
-    const data = await res.json();
-    if (!res.ok || data.error) throw new Error(data.error || 'Error procesando el archivo');
+    let data;
+    try {
+      data = await llamarIA();
+    } catch (e1) {
+      // Reintento automático ante un fallo transitorio
+      document.getElementById('procMsg').textContent = 'Reintentando el análisis…';
+      await new Promise(r => setTimeout(r, 1800));
+      data = await llamarIA();
+    }
 
     _estadoMeta = { bank: data.bank, period_start: data.period_start, period_end: data.period_end, currency: data.currency };
 
@@ -3131,9 +3150,15 @@ async function procesarEstado() {
     }
 
   } catch(err) {
-    toast('Error: ' + err.message, 'error');
+    // No perder el archivo: dejarlo listo para reintentar con un clic
+    toast(err.message || 'No se pudo analizar el archivo. Intenta de nuevo.', 'error');
     document.getElementById('estadosStep2').style.display = 'none';
     document.getElementById('estadosStep1').style.display = 'block';
+    // Mantener el archivo seleccionado visible para reintentar sin volver a subirlo
+    if (_estadoFile) {
+      document.getElementById('estadoFileChip').style.display = 'block';
+      document.getElementById('uploadZone').style.display = 'none';
+    }
     setEstadoStep(1);
   }
 }
