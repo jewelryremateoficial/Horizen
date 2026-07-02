@@ -24,6 +24,11 @@ CÓMO DECIDIR ingreso o egreso (crítico, no te equivoques):
 - "egreso" = el dinero SALE de la cuenta: compras, pagos, cargos, comisiones, retiros, SPEI/transferencia ENVIADA, domiciliaciones. Suele venir en la columna de CARGOS o con (-).
 - Guíate por la COLUMNA (cargo vs abono), no solo por la palabra.
 
+⚠️ SI ES ESTADO DE TARJETA DE CRÉDITO (detéctalo si ves "tarjeta de crédito", "TDC", límite de crédito, pago mínimo, fecha de corte):
+- Los PAGOS que se hacen A la tarjeta son INGRESO (reducen el saldo). Detéctalos por textos como: "PAGO", "SU PAGO", "GRACIAS POR SU PAGO", "BMOVIL PAGO", "BMOBILE PAGO", "PAGO TDC", "PAGO TARJETA", "PAGO RECIBIDO", "PAGO SPEI", "ABONO". Ponles categoría "Transferencia".
+- Las COMPRAS, CARGOS, DISPOSICIONES DE EFECTIVO, INTERESES y COMISIONES son EGRESO.
+- Es MUY común equivocarse aquí: un "BMOBILE PAGO TDC" NO es un gasto, es un INGRESO (el pago que abona a la tarjeta).
+
 CÓMO elegir la categoría (elige la MÁS específica; si NO encaja claro usa "Otros", NUNCA uses "Entretenimiento" como comodín):
 Ventas, Proveedores, Nómina, Publicidad, Renta, Servicios (luz/agua/internet/teléfono), Comisiones (cargos bancarios), Comida (restaurantes/súper), Transporte (gasolina/casetas/Uber), Salud, Educación, SAT/Impuestos, Transferencia (SPEI y traspasos entre cuentas), Entretenimiento (SOLO ocio claro: cine, streaming, bar), Otros.
 - Cualquier SPEI, traspaso o transferencia entre cuentas → "Transferencia".
