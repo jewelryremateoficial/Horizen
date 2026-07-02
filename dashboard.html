@@ -344,6 +344,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .er-tx-toggle{width:100%;text-align:left;background:none;border:none;color:var(--text);cursor:pointer;padding:.5rem 0;font-size:.82rem;font-weight:700;display:flex;justify-content:space-between;align-items:center}
 .cat-group-strip{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem}
 .cat-group-chip{display:inline-flex;align-items:center;gap:.35rem;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:.3rem .7rem;font-size:.72rem;font-weight:600;white-space:nowrap}
+.grp-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin-bottom:1.25rem}
+.grp-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:.75rem .9rem}
+.grp-card .g-nm{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:.2rem}
+.grp-card .g-amt{font-size:1.05rem;font-weight:800;margin-top:.15rem;color:var(--err)}
+.grp-card .g-pct{font-size:.66rem;color:var(--muted);margin-top:.1rem}
+.cat-org-row{display:flex;align-items:center;gap:.5rem;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.4rem .6rem}
+.cat-org-row select{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:.72rem;padding:.25rem .4rem;font-family:'Inter',sans-serif;outline:none;width:120px}
 .custom-cat-item{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.8rem}
 .custom-cat-item:last-child{border-bottom:none}
 .cat-badge{display:inline-block;background:var(--bg3);border-radius:6px;padding:.15rem .45rem;font-size:.67rem;color:var(--muted);margin-left:.4rem}
@@ -1322,12 +1329,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <button class="tb-btn tb-primary" onclick="addCustomCat()">+ Crear</button>
         </div>
       </div>
-      <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem">Mis categorías</div>
-      <div id="customCatList"><div style="color:var(--muted);font-size:.8rem">Aún no tienes categorías personalizadas.</div></div>
-      <div style="margin-top:1.1rem;padding-top:1rem;border-top:1px solid var(--border)">
-        <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.6rem">Categorías predefinidas por grupo</div>
-        <div id="predefinedCatList"></div>
-      </div>
+      <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.35rem">Organiza tus categorías</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.8rem">Cambia el grupo de cualquier categoría con su menú. Los totales por grupo se actualizan en todo Horizen: análisis, inicio y reportes.</div>
+      <div id="catOrganizer"></div>
     </div>
     <div class="mod-footer">
       <button class="btn-cancel" onclick="closeModal('catModal')">Cerrar</button>
@@ -3034,6 +3038,23 @@ function getCatGroup(name) {
   return _CAT_GROUPS[name] || 'Otros';
 }
 
+// ── Totales por GRUPO (Negocios, Comida, Hogar, Personal, Finanzas, Otros) ──
+const _GRP_ORDER = ['Negocios','Comida','Hogar','Personal','Finanzas','Otros'];
+function _grpTotals(cats) { // cats: [{cat, amt}]
+  const g = {};
+  (cats || []).forEach(c => { const gr = getCatGroup(c.cat); g[gr] = (g[gr] || 0) + c.amt; });
+  return _GRP_ORDER.filter(k => g[k]).map(k => ({ group: k, amt: g[k] }))
+    .concat(Object.keys(g).filter(k => !_GRP_ORDER.includes(k)).map(k => ({ group: k, amt: g[k] })));
+}
+function _grpCardsHTML(cats, totalExp, moneyFn) {
+  const gt = _grpTotals(cats);
+  if (!gt.length) return '';
+  const money = moneyFn || fmt;
+  return `<div class="grp-cards">` + gt.map(x =>
+    `<div class="grp-card"><div style="font-size:1rem">${_CAT_GROUP_ICONS[x.group] || '⬜'}</div><div class="g-nm">${_escHtml(x.group)}</div><div class="g-amt">${money(x.amt)}</div><div class="g-pct">${totalExp ? Math.round(x.amt / totalExp * 100) : 0}% de tus egresos</div></div>`
+  ).join('') + `</div>`;
+}
+
 function uploadDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('dragover'); }
 function uploadDragLeave(e) { document.getElementById('uploadZone').classList.remove('dragover'); }
 function uploadDrop(e) {
@@ -3240,13 +3261,9 @@ function renderEstadosTxs() {
   // Egresos (se usa en strip, chart y desglose)
   const egresos = visible.filter(t => t.type === 'egreso');
 
-  // Strip de grupos
-  const groupTotals = {};
-  egresos.forEach(t => { const g = getCatGroup(t.category); groupTotals[g] = (groupTotals[g]||0) + t.amount; });
-  document.getElementById('erGroupStrip').innerHTML = Object.entries(groupTotals)
-    .sort((a,b) => b[1]-a[1])
-    .map(([g,amt]) => `<div class="cat-group-chip">${_CAT_GROUP_ICONS[g]||'⬜'} ${g} <b style="color:var(--err);margin-left:.2rem">${fmt(amt)}</b></div>`)
-    .join('');
+  // Totales por grupo (tarjetas destacadas)
+  document.getElementById('erGroupStrip').innerHTML =
+    _grpCardsHTML(egresos.map(t => ({ cat: t.category, amt: t.amount })), totalOut);
 
   // Gráfica por categoría
   renderERChart(visible);
@@ -3410,29 +3427,46 @@ function openCatModal() {
 }
 
 function renderCatModal() {
-  // Mis categorías personalizadas
-  const listEl = document.getElementById('customCatList');
-  listEl.innerHTML = _customCats.length ? _customCats.map(c => `
-    <div class="custom-cat-item">
-      <div><b>${c.name}</b><span class="cat-badge">${_CAT_GROUP_ICONS[c.group_name]||'⬜'} ${c.group_name}</span></div>
-      <button onclick="deleteCustomCat('${c.name}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:.2rem .4rem" title="Eliminar">✕</button>
-    </div>`).join('')
-  : '<div style="color:var(--muted);font-size:.8rem;padding:.5rem 0">Aún no tienes categorías personalizadas.</div>';
-
-  // Predefinidas agrupadas
-  const grouped = {};
-  _PREDEFINED_CATS.forEach(cat => {
-    const g = _CAT_GROUPS[cat] || 'Otros';
-    if (!grouped[g]) grouped[g] = [];
-    grouped[g].push(cat);
-  });
-  document.getElementById('predefinedCatList').innerHTML = Object.entries(grouped).map(([g, cats]) =>
-    `<div style="margin-bottom:.6rem">
-      <div style="font-size:.7rem;font-weight:700;margin-bottom:.3rem">${_CAT_GROUP_ICONS[g]||'⬜'} ${g}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:.3rem">${cats.map(c =>
-        `<span style="background:var(--bg3);border-radius:6px;padding:.2rem .5rem;font-size:.7rem">${c}</span>`).join('')}
+  const el = document.getElementById('catOrganizer');
+  if (!el) return;
+  const byGroup = {};
+  getAllCats().forEach(c => { const g = getCatGroup(c); (byGroup[g] = byGroup[g] || []).push(c); });
+  const isCustom = name => !_PREDEFINED_CATS.includes(name);
+  const moved = name => _PREDEFINED_CATS.includes(name) && _customCats.some(c => c.name === name);
+  el.innerHTML = _GRP_ORDER.map(g => `
+    <div style="margin-bottom:1rem">
+      <div style="font-size:.78rem;font-weight:800;margin-bottom:.45rem">${_CAT_GROUP_ICONS[g] || '⬜'} ${g} <span style="font-size:.65rem;color:var(--muted);font-weight:500">(${(byGroup[g] || []).length})</span></div>
+      <div style="display:flex;flex-direction:column;gap:.35rem">
+        ${(byGroup[g] || []).map(c => {
+          const safe = c.replace(/['\\]/g, ' ');
+          return `<div class="cat-org-row">
+            <span style="flex:1;font-size:.8rem;font-weight:600">${_escHtml(c)}${isCustom(c) ? ' <span style="font-size:.58rem;color:var(--p);font-weight:800">PROPIA</span>' : ''}${moved(c) ? ' <span style="font-size:.58rem;color:var(--muted)" title="Movida de su grupo original">↪</span>' : ''}</span>
+            <select onchange="moveCatToGroup('${safe}', this.value)">
+              ${_GRP_ORDER.map(og => `<option ${og === g ? 'selected' : ''}>${og}</option>`).join('')}
+            </select>
+            ${isCustom(c) ? `<button onclick="deleteCustomCat('${safe}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem" title="Eliminar categoría">✕</button>` : ''}
+          </div>`;
+        }).join('') || '<div style="color:var(--muted);font-size:.72rem">Sin categorías en este grupo</div>'}
       </div>
     </div>`).join('');
+}
+
+// Mover una categoría (predefinida o propia) a otro grupo — persiste en BD
+async function moveCatToGroup(name, group) {
+  if (_PREDEFINED_CATS.includes(name) && _CAT_GROUPS[name] === group) {
+    // Volvió a su grupo original → quitar el override
+    await db.from('custom_categories').delete().eq('user_id', _user.id).eq('name', name);
+  } else {
+    const { error } = await db.from('custom_categories')
+      .upsert({ user_id: _user.id, name, group_name: group }, { onConflict: 'user_id,name' });
+    if (error) { toast('No se pudo mover: ' + error.message, 'error'); return; }
+  }
+  await loadCustomCats();
+  renderCatModal();
+  if (_estadoTxs.length) renderEstadosTxs();                 // análisis abierto
+  try { if (_repCurrent) repRender(); } catch (_) {}          // reportes
+  try { renderInicioBody(); } catch (_) {}                    // inicio
+  toast(`✓ "${name}" ahora está en ${group}`, 'success');
 }
 
 async function addCustomCat() {
@@ -3860,6 +3894,7 @@ function repRender() {
       <div class="rep-kpi"><div class="k">Utilidad</div><div class="v ${r.util >= 0 ? 'pos' : 'neg'}">${_repMoney(r.util)}</div></div>
       <div class="rep-kpi"><div class="k">Margen</div><div class="v">${Math.round(r.margin)}%</div></div>
     </div>
+    ${_grpCardsHTML(r.cats, r.exp, _repMoney)}
     <div class="rep-grid">
       <div class="rep-card">
         <h3>Gasto por categoría</h3>
@@ -3908,6 +3943,7 @@ async function repDownloadExcel() {
     const { r, rows, label, bank } = _repCurrent;
     const resumen = [['REPORTE HORIZEN'], ['Periodo', label], ['Banco', bank], ['Generado', new Date().toLocaleDateString('es-MX')], [],
       ['Entró', Math.round(r.inc)], ['Salió', Math.round(r.exp)], ['Utilidad', Math.round(r.util)], ['Margen %', Math.round(r.margin)], ['Transferencias', Math.round(r.tr)], ['Movimientos', r.count], [],
+      ['TOTALES POR GRUPO', 'Monto'], ..._grpTotals(r.cats).map(g => [g.group, Math.round(g.amt)]), [],
       ['GASTO POR CATEGORÍA', 'Monto'], ...r.cats.map(c => [c.cat, Math.round(c.amt)])];
     const movs = [['Fecha', 'Descripción', 'Categoría', 'Tipo', 'Monto'], ...rows.map(t => [t.date, (t.description || ''), (t.category || 'Otros'), t.type, parseFloat(t.amount) || 0])];
     const wb = XLSX.utils.book_new();
@@ -3933,6 +3969,8 @@ async function repDownloadPDF() {
     doc.setTextColor(10, 37, 64); doc.setFontSize(13); doc.setFont(undefined, 'bold'); doc.text(`${label}  ·  ${bank}`, 14, 38);
     doc.autoTable({ startY: 44, theme: 'plain', styles: { fontSize: 11 }, body: [
       ['Entró', _repMoney(r.inc)], ['Salió', _repMoney(r.exp)], ['Utilidad', _repMoney(r.util)], ['Margen', Math.round(r.margin) + '%'], ['Movimientos', String(r.count)] ] });
+    const _grps = _grpTotals(r.cats);
+    if (_grps.length) doc.autoTable({ startY: doc.lastAutoTable.finalY + 6, head: [['Totales por grupo', 'Monto']], body: _grps.map(g => [g.group, _repMoney(g.amt)]), headStyles: { fillColor: [99, 91, 255] } });
     if (r.cats.length) doc.autoTable({ startY: doc.lastAutoTable.finalY + 6, head: [['Gasto por categoría', 'Monto']], body: r.cats.map(c => [c.cat, _repMoney(c.amt)]), headStyles: { fillColor: [99, 91, 255] } });
     doc.autoTable({ startY: doc.lastAutoTable.finalY + 6, head: [['Fecha', 'Descripción', 'Categoría', 'Tipo', 'Monto']], body: rows.map(t => [t.date, (t.description || '').slice(0, 40), t.category || 'Otros', t.type, _repMoney(parseFloat(t.amount) || 0)]), headStyles: { fillColor: [99, 91, 255] }, styles: { fontSize: 8 } });
     doc.save(_repFileName('pdf'));
@@ -4098,6 +4136,7 @@ function renderInicioBody() {
       <div class="ini-card ini-kpi"><div class="ini-cap">Por clasificar</div><div class="v" style="color:${otrosPct >= 30 ? '#e2435f' : 'inherit'}">${otrosPct}%</div><div class="s">en "Otros"</div></div>
     </div>
     <div class="ini-nova"><div class="ic">✦</div><div><div class="tag">NOVA · tu copiloto</div><p>${nova}</p></div></div>
+    ${r.cats.length ? `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem"><div class="ini-cap" style="margin:0">Totales por grupo · ${_escHtml(mesNom)}</div><button class="tb-btn tb-ghost" style="padding:.3rem .7rem;font-size:.72rem" onclick="openCatModal()">⚙️ Organizar categorías</button></div>${_grpCardsHTML(r.cats, r.exp, _repMoney)}` : ''}
     <div class="ini-card" style="margin-bottom:1.15rem">
       <div class="ini-cap" style="margin-bottom:1.1rem">A dónde se fue tu dinero · ${_escHtml(mesNom)}</div>
       ${r.cats.length ? r.cats.slice(0, 6).map(c => `<div class="ini-row"><div class="nm">${_escHtml(c.cat)}</div><div class="track"><i style="width:${Math.max(4, c.amt / maxCat * 100)}%"></i></div><div class="amt">${_repMoney(c.amt)}</div><div class="pct">${r.exp ? Math.round(c.amt / r.exp * 100) : 0}%</div></div>`).join('') : '<div style="color:var(--muted);font-size:.88rem">Sin gastos registrados este mes</div>'}
