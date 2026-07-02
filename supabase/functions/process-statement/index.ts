@@ -60,10 +60,9 @@ async function callClaude(apiKey: string, messageContent: unknown, maxRetries = 
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          // Sonnet: más preciso que Haiku clasificando ingreso/egreso y categorías.
-          // Con formato compacto rinde ~500 movimientos dentro del límite de tiempo.
-          model: 'claude-sonnet-4-6',
-          max_tokens: 24000,
+          // Haiku (rápido, ~2.7x) + el prompt detallado de abajo = rápido sin perder calidad.
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 24000, // Haiku admite hasta 64k; ~900 movimientos dentro del límite de tiempo
           messages: [{ role: 'user', content: messageContent }],
         }),
       })
