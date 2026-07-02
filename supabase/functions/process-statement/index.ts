@@ -29,10 +29,22 @@ CÓMO DECIDIR ingreso o egreso (crítico, no te equivoques):
 - Las COMPRAS, CARGOS, DISPOSICIONES DE EFECTIVO, INTERESES y COMISIONES son EGRESO.
 - Es MUY común equivocarse aquí: un "BMOBILE PAGO TDC" NO es un gasto, es un INGRESO (el pago que abona a la tarjeta).
 
-CÓMO elegir la categoría (elige la MÁS específica; si NO encaja claro usa "Otros", NUNCA uses "Entretenimiento" como comodín):
-Ventas, Proveedores, Nómina, Publicidad, Renta, Servicios (luz/agua/internet/teléfono), Comisiones (cargos bancarios), Comida (restaurantes/súper), Transporte (gasolina/casetas/Uber), Salud, Educación, SAT/Impuestos, Transferencia (SPEI y traspasos entre cuentas), Entretenimiento (SOLO ocio claro: cine, streaming, bar), Otros.
+CÓMO elegir la categoría — USA TU CONOCIMIENTO DEL MUNDO. Tú conoces la mayoría de los comercios, plataformas y servicios que aparecen en un estado de cuenta; identifícalos y clasifícalos aunque el texto venga abreviado. "Otros" es el ÚLTIMO recurso, solo para descripciones verdaderamente irreconocibles.
+
+Categorías permitidas:
+Ventas, Proveedores, Mercancía (compra de producto para el negocio), Nómina, Publicidad, Software, Papelería, Renta, Contabilidad, Servicios (luz/agua/internet/teléfono), Envíos (paquetería y logística), Honorarios, Comisiones (cargos bancarios), Comida (restaurantes/café), Supermercado, Farmacia, Salud, Entretenimiento (SOLO ocio claro: cine, streaming, bar), Ropa, Transporte (gasolina/casetas/Uber), Viajes (hoteles/vuelos/hospedaje), SAT/Impuestos, Transferencia (SPEI y traspasos entre cuentas), Inversiones, Educación, Otros.
+
+Ejemplos de cómo aplicar tu conocimiento (mismo criterio para comercios similares):
+- ALIBABA, ALIEXPRESS, TEMU, SHEIN, AMAZON compra → Mercancía
+- MARRIOTT, HILTON, CITY EXPRESS, HOTELES, AIRBNB, EXPEDIA, VOLARIS, AEROMEXICO, VIVA AEROBUS → Viajes
+- DHL, FEDEX, ESTAFETA, UPS, PAQUETEXPRESS, 99MINUTOS → Envíos
+- FACEBK/META ADS, GOOGLE ADS, TIKTOK ADS → Publicidad
+- GODADDY, CANVA, ADOBE, OPENAI, SHOPIFY, HOSTINGER, MICROSOFT, GOOGLE WORKSPACE → Software
+- NETFLIX, SPOTIFY, CINEPOLIS, HBO → Entretenimiento
+- OXXO, 7 ELEVEN → Comida · WALMART, SORIANA, CHEDRAUI, COSTCO → Supermercado
+- UBER → Transporte · UBER EATS, RAPPI, DIDI FOOD → Comida
+- PEMEX, gasolineras, casetas, estacionamientos → Transporte
 - Cualquier SPEI, traspaso o transferencia entre cuentas → "Transferencia".
-- Si dudas, usa "Otros" (nunca Entretenimiento por defecto).
 
 Reglas finales:
 - Si falta el año en una fecha, usa el año del periodo del estado.
@@ -87,7 +99,7 @@ async function callClaude(apiKey: string, messageContent: unknown, maxRetries = 
   throw new Error('La IA está saturada en este momento (' + lastErr + '). Intenta de nuevo en unos segundos.')
 }
 
-const CATS = ['Ventas','Proveedores','Nómina','Publicidad','Renta','Servicios','Comisiones','Comida','Transporte','Salud','Educación','SAT/Impuestos','Transferencia','Entretenimiento','Otros']
+const CATS = ['Ventas','Proveedores','Mercancía','Nómina','Publicidad','Software','Papelería','Renta','Contabilidad','Servicios','Envíos','Honorarios','Comisiones','Comida','Café','Supermercado','Farmacia','Salud','Entretenimiento','Ropa','Transporte','Viajes','SAT/Impuestos','Transferencia','Inversiones','Educación','Otros']
 
 // Parsea el formato compacto (líneas separadas por |) a la estructura que espera el frontend.
 function parseCompact(text: string) {
