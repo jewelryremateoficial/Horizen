@@ -1950,9 +1950,19 @@ function toggleFiscal() {
 
 async function deleteTx(id) {
   if (!confirm('¿Eliminar transacción?')) return;
-  await db.from('transactions').delete().eq('id', id);
-  toast('Transacción eliminada', 'info');
-  loadTx(); loadMetrics();
+  try {
+    const { error } = await db.from('transactions').delete().eq('id', id).eq('user_id', _user.id);
+    if (error) { toast('No se pudo eliminar: ' + (error.message || error.details || 'intenta de nuevo'), 'error'); return; }
+    toast('Transacción eliminada', 'info');
+  } catch (e) {
+    toast('No se pudo eliminar: ' + (e.message || 'intenta de nuevo'), 'error');
+    return;
+  }
+  // Refrescar vistas sin que un fallo de recarga rompa la eliminación
+  try { await loadTx(); } catch (e) {}
+  try { await loadMetrics(); } catch (e) {}
+  try { if (typeof loadRecentTx === 'function') loadRecentTx(); } catch (e) {}
+  try { if (typeof renderInicio === 'function') renderInicio(); } catch (e) {}
 }
 
 // ── Save Account ──────────────────────────────────────────────
