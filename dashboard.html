@@ -344,16 +344,65 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .er-tx-toggle{width:100%;text-align:left;background:none;border:none;color:var(--text);cursor:pointer;padding:.5rem 0;font-size:.82rem;font-weight:700;display:flex;justify-content:space-between;align-items:center}
 .cat-group-strip{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem}
 .cat-group-chip{display:inline-flex;align-items:center;gap:.35rem;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:.3rem .7rem;font-size:.72rem;font-weight:600;white-space:nowrap}
-.grp-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin-bottom:1.25rem}
-.grp-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:.75rem .9rem}
-.grp-card .g-nm{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:.2rem}
-.grp-card .g-amt{font-size:1.05rem;font-weight:800;margin-top:.15rem;color:var(--err)}
-.grp-card .g-pct{font-size:.66rem;color:var(--muted);margin-top:.1rem}
-.cat-org-row{display:flex;align-items:center;gap:.5rem;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.4rem .6rem}
-.cat-org-row select{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:6px;font-size:.72rem;padding:.25rem .4rem;font-family:'Inter',sans-serif;outline:none;width:120px}
+/* ── Totales por grupo — tarjetas premium ─────────────────── */
+.grp-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin-bottom:1.25rem}
+.grp-card{--ga:#697386;--ga-soft:rgba(105,115,134,.10);position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:.85rem .95rem .8rem;box-shadow:0 1px 2px rgba(10,37,64,.05),0 8px 20px -14px rgba(10,37,64,.10);transition:transform .18s ease,box-shadow .18s ease;overflow:hidden}
+.grp-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ga);opacity:0;transition:opacity .18s ease}
+.grp-card:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(10,37,64,.06),0 16px 32px -14px rgba(10,37,64,.16)}
+.grp-card:hover::after{opacity:.85}
+.grp-card .g-top{display:flex;align-items:center;gap:.5rem;margin-bottom:.55rem;min-width:0}
+.grp-card .g-ico{width:26px;height:26px;border-radius:8px;background:var(--ga-soft);display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0}
+.grp-card .g-nm{font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grp-card .g-amt{font-size:1.18rem;font-weight:800;letter-spacing:-.02em;color:var(--text);font-variant-numeric:tabular-nums;line-height:1.15}
+.grp-card .g-meter{height:4px;border-radius:50px;background:rgba(10,37,64,.07);margin:.55rem 0 .38rem;overflow:hidden}
+.grp-card .g-meter span{display:block;height:100%;border-radius:50px;background:var(--ga)}
+.grp-card .g-pct{font-size:.66rem;color:var(--muted)}
+.grp-card .g-pct b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+
+/* ── Modal "Mis Categorías" — shell + organizador ─────────── */
+.mod{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.5rem 1.6rem;width:100%;max-width:510px;animation:modalIn .2s ease;box-shadow:0 24px 64px -16px rgba(10,37,64,.28),0 4px 16px rgba(10,37,64,.08)}
+.mod-hdr{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:1.15rem}
+.mod-ttl{font-size:1.02rem;font-weight:800;letter-spacing:-.01em}
+.mod-close{width:30px;height:30px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.mod-close:hover{background:rgba(10,37,64,.06);color:var(--text)}
+.mod-inp{background:rgba(10,37,64,.04);border:1px solid var(--border);color:var(--text);padding:.55rem .8rem;border-radius:9px;font-size:.82rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .18s,box-shadow .18s}
+.mod-inp:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(99,91,255,.12)}
+.mod-inp::placeholder{color:var(--muted)}
+select.mod-inp{cursor:pointer}
+.cat-new{background:linear-gradient(180deg,rgba(99,91,255,.055),rgba(99,91,255,.02));border:1px dashed rgba(99,91,255,.35);border-radius:12px;padding:.9rem 1rem;margin-bottom:1.25rem}
+.cat-new-ttl{font-size:.74rem;font-weight:700;margin-bottom:.6rem}
+.cat-new-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.cat-org-hint{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem}
+.cat-org-sub{font-size:.74rem;color:var(--muted);line-height:1.45;margin-bottom:.9rem}
+.cat-org-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;align-items:start}
+@media(max-width:600px){.cat-org-grid{grid-template-columns:1fr}}
+.cat-grp-sec{--ga:#697386;--ga-soft:rgba(105,115,134,.10);border:1px solid var(--border);border-radius:12px;background:var(--bg2);overflow:hidden;box-shadow:0 1px 2px rgba(10,37,64,.04)}
+.cat-grp-hd{display:flex;align-items:center;gap:.5rem;padding:.55rem .7rem;background:var(--bg3);border-bottom:1px solid var(--border)}
+.cat-grp-ico{width:22px;height:22px;border-radius:7px;background:var(--ga-soft);display:flex;align-items:center;justify-content:center;font-size:.68rem;flex-shrink:0}
+.cat-grp-nm{font-size:.76rem;font-weight:800;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-grp-count{font-size:.62rem;font-weight:700;color:var(--muted);background:var(--bg2);border:1px solid var(--border);border-radius:50px;padding:.06rem .42rem;font-variant-numeric:tabular-nums;flex-shrink:0}
+.cat-grp-rows{padding:.3rem}
+.cat-org-row{display:flex;align-items:center;gap:.45rem;padding:.32rem .45rem;border-radius:8px;transition:background .15s}
+.cat-org-row:hover{background:rgba(10,37,64,.04)}
+.cat-org-nm{flex:1;min-width:0;font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:.35rem}
+.cat-org-nm .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-org-row select{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:7px;font-size:.7rem;padding:.28rem .35rem;font-family:'Inter',sans-serif;outline:none;width:96px;flex-shrink:0;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.cat-org-row select:hover{border-color:var(--p)}
+.cat-org-row select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(99,91,255,.12)}
+.cat-moved{font-size:.62rem;color:var(--muted);flex-shrink:0}
+.cat-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.7rem;width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.55;transition:all .15s}
+.cat-del:hover{opacity:1;color:var(--err);background:rgba(226,67,95,.10)}
+.cat-grp-empty{color:var(--muted);font-size:.7rem;font-style:italic;padding:.45rem .55rem .5rem}
+/* Acentos por grupo (comparten .grp-card y .cat-grp-sec) */
+[data-g="Negocios"]{--ga:#635bff;--ga-soft:rgba(99,91,255,.10)}
+[data-g="Comida"]{--ga:#d97706;--ga-soft:rgba(217,119,6,.11)}
+[data-g="Hogar"]{--ga:#0d9488;--ga-soft:rgba(13,148,136,.11)}
+[data-g="Personal"]{--ga:#db2777;--ga-soft:rgba(219,39,119,.10)}
+[data-g="Finanzas"]{--ga:#0e9f6e;--ga-soft:rgba(14,159,110,.11)}
+[data-g="Otros"]{--ga:#697386;--ga-soft:rgba(105,115,134,.10)}
 .custom-cat-item{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.8rem}
 .custom-cat-item:last-child{border-bottom:none}
-.cat-badge{display:inline-block;background:var(--bg3);border-radius:6px;padding:.15rem .45rem;font-size:.67rem;color:var(--muted);margin-left:.4rem}
+.cat-badge{display:inline-block;font-size:.54rem;font-weight:800;letter-spacing:.06em;color:var(--p);background:rgba(99,91,255,.10);border:1px solid rgba(99,91,255,.28);border-radius:50px;padding:.1rem .4rem;flex-shrink:0;line-height:1.3}
 .estado-steps{display:flex;gap:.5rem;margin-bottom:1.5rem;align-items:center}
 .step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0}
 .step-dot.done{background:var(--ok);color:#fff}
@@ -1312,15 +1361,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 </div>
 
 <div class="overlay" id="catModal">
-  <div class="mod" style="max-width:520px">
+  <div class="mod" style="max-width:640px">
     <div class="mod-hdr">
       <div class="mod-ttl">⚙️ Mis Categorías</div>
       <button class="mod-close" onclick="closeModal('catModal')">✕</button>
     </div>
     <div class="mod-body" style="max-height:70vh;overflow-y:auto">
-      <div style="background:var(--bg3);border-radius:10px;padding:.9rem;margin-bottom:1.1rem">
-        <div style="font-size:.75rem;font-weight:700;margin-bottom:.6rem">➕ Nueva categoría personalizada</div>
-        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <div class="cat-new">
+        <div class="cat-new-ttl">➕ Nueva categoría personalizada</div>
+        <div class="cat-new-row">
           <input id="newCatName" class="mod-inp" placeholder="Ej: Gasolina, Publicidad digital..." style="flex:1;min-width:140px">
           <select id="newCatGroup" class="mod-inp" style="width:130px">
             <option>Negocios</option><option>Comida</option><option>Hogar</option>
@@ -1329,8 +1378,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <button class="tb-btn tb-primary" onclick="addCustomCat()">+ Crear</button>
         </div>
       </div>
-      <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.35rem">Organiza tus categorías</div>
-      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.8rem">Cambia el grupo de cualquier categoría con su menú. Los totales por grupo se actualizan en todo Horizen: análisis, inicio y reportes.</div>
+      <div class="cat-org-hint">Organiza tus categorías</div>
+      <div class="cat-org-sub">Cambia el grupo de cualquier categoría con su menú. Los totales por grupo se actualizan en todo Horizen: análisis, inicio y reportes.</div>
       <div id="catOrganizer"></div>
     </div>
     <div class="mod-footer">
@@ -3051,7 +3100,7 @@ function _grpCardsHTML(cats, totalExp, moneyFn) {
   if (!gt.length) return '';
   const money = moneyFn || fmt;
   return `<div class="grp-cards">` + gt.map(x =>
-    `<div class="grp-card"><div style="font-size:1rem">${_CAT_GROUP_ICONS[x.group] || '⬜'}</div><div class="g-nm">${_escHtml(x.group)}</div><div class="g-amt">${money(x.amt)}</div><div class="g-pct">${totalExp ? Math.round(x.amt / totalExp * 100) : 0}% de tus egresos</div></div>`
+    `<div class="grp-card" data-g="${_escHtml(x.group)}"><div class="g-top"><span class="g-ico">${_CAT_GROUP_ICONS[x.group] || '⬜'}</span><span class="g-nm">${_escHtml(x.group)}</span></div><div class="g-amt">${money(x.amt)}</div><div class="g-meter"><span style="width:${totalExp ? Math.min(100, Math.round(x.amt / totalExp * 100)) : 0}%"></span></div><div class="g-pct"><b>${totalExp ? Math.round(x.amt / totalExp * 100) : 0}%</b> de tus egresos</div></div>`
   ).join('') + `</div>`;
 }
 
@@ -3433,22 +3482,22 @@ function renderCatModal() {
   getAllCats().forEach(c => { const g = getCatGroup(c); (byGroup[g] = byGroup[g] || []).push(c); });
   const isCustom = name => !_PREDEFINED_CATS.includes(name);
   const moved = name => _PREDEFINED_CATS.includes(name) && _customCats.some(c => c.name === name);
-  el.innerHTML = _GRP_ORDER.map(g => `
-    <div style="margin-bottom:1rem">
-      <div style="font-size:.78rem;font-weight:800;margin-bottom:.45rem">${_CAT_GROUP_ICONS[g] || '⬜'} ${g} <span style="font-size:.65rem;color:var(--muted);font-weight:500">(${(byGroup[g] || []).length})</span></div>
-      <div style="display:flex;flex-direction:column;gap:.35rem">
+  el.innerHTML = `<div class="cat-org-grid">` + _GRP_ORDER.map(g => `
+    <div class="cat-grp-sec" data-g="${_escHtml(g)}">
+      <div class="cat-grp-hd"><span class="cat-grp-ico">${_CAT_GROUP_ICONS[g] || '⬜'}</span><span class="cat-grp-nm">${_escHtml(g)}</span><span class="cat-grp-count">${(byGroup[g] || []).length}</span></div>
+      <div class="cat-grp-rows">
         ${(byGroup[g] || []).map(c => {
           const safe = c.replace(/['\\]/g, ' ');
           return `<div class="cat-org-row">
-            <span style="flex:1;font-size:.8rem;font-weight:600">${_escHtml(c)}${isCustom(c) ? ' <span style="font-size:.58rem;color:var(--p);font-weight:800">PROPIA</span>' : ''}${moved(c) ? ' <span style="font-size:.58rem;color:var(--muted)" title="Movida de su grupo original">↪</span>' : ''}</span>
+            <span class="cat-org-nm"><span class="t">${_escHtml(c)}</span>${isCustom(c) ? ' <span class="cat-badge">PROPIA</span>' : ''}${moved(c) ? ' <span class="cat-moved" title="Movida de su grupo original">↪</span>' : ''}</span>
             <select onchange="moveCatToGroup('${safe}', this.value)">
               ${_GRP_ORDER.map(og => `<option ${og === g ? 'selected' : ''}>${og}</option>`).join('')}
             </select>
-            ${isCustom(c) ? `<button onclick="deleteCustomCat('${safe}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem" title="Eliminar categoría">✕</button>` : ''}
+            ${isCustom(c) ? `<button class="cat-del" onclick="deleteCustomCat('${safe}')" title="Eliminar categoría">✕</button>` : ''}
           </div>`;
-        }).join('') || '<div style="color:var(--muted);font-size:.72rem">Sin categorías en este grupo</div>'}
+        }).join('') || '<div class="cat-grp-empty">Sin categorías en este grupo</div>'}
       </div>
-    </div>`).join('');
+    </div>`).join('') + `</div>`;
 }
 
 // Mover una categoría (predefinida o propia) a otro grupo — persiste en BD
