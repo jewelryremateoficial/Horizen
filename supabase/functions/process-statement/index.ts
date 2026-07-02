@@ -55,7 +55,7 @@ async function callClaude(apiKey: string, messageContent: unknown, maxRetries = 
           // Haiku: 2-3x más rápido y 3x más barato que Sonnet, suficiente para extraer datos
           // de un estado de cuenta. Clave para procesar estados grandes sin timeout.
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 8000, // con formato compacto rinde ~500+ movimientos
+          max_tokens: 24000, // Haiku admite hasta 64k; 24k ≈ ~900 movimientos en ~90s (dentro del límite)
           messages: [{ role: 'user', content: messageContent }],
         }),
       })
@@ -174,21 +174,18 @@ serve(async (req) => {
       }
     }
 
-    // Si se truncó Y aun así casi no salió nada, avisar claro. Si truncó pero ya trae muchos, los entregamos.
-    if ((!parsed.transactions || parsed.transactions.length === 0)) {
-      if (stopReason === 'max_tokens') {
-        throw new Error('El estado tiene demasiados movimientos para procesar de una vez. Sube el estado dividido por mes, o contáctanos.')
-      }
+    // Si se truncó, NUNCA entregamos datos incompletos (daría totales equivocados): avisamos claro.
+    if (stopReason === 'max_tokens') {
+      throw new Error('El estado tiene demasiados movimientos para procesar de una vez. Sube el estado dividido por mes, o contáctanos.')
+    }
+    if (!parsed.transactions || parsed.transactions.length === 0) {
       throw new Error('No encontramos transacciones en el archivo. Asegúrate de subir un estado de cuenta con movimientos legibles.')
     }
 
     // Éxito
     await supabase.storage.from('statements').remove([storagePath])
 
-    // Avisar (sin bloquear) si hubo truncamiento para que el frontend pueda mostrar una nota
-    const result = { ...parsed, truncated: stopReason === 'max_tokens' }
-
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
