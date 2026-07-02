@@ -374,9 +374,12 @@ select.mod-inp{cursor:pointer}
 .cat-new-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
 .cat-org-hint{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem}
 .cat-org-sub{font-size:.74rem;color:var(--muted);line-height:1.45;margin-bottom:.9rem}
-.cat-org-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;align-items:start}
-@media(max-width:600px){.cat-org-grid{grid-template-columns:1fr}}
-.cat-grp-sec{--ga:#697386;--ga-soft:rgba(105,115,134,.10);border:1px solid var(--border);border-radius:12px;background:var(--bg2);overflow:hidden;box-shadow:0 1px 2px rgba(10,37,64,.04)}
+.cat-org-grid{columns:2;column-gap:.8rem}
+@media(max-width:600px){.cat-org-grid{columns:1}}
+.cat-grp-sec{--ga:#697386;--ga-soft:rgba(105,115,134,.10);border:1px solid var(--border);border-radius:12px;background:var(--bg2);overflow:hidden;box-shadow:0 1px 2px rgba(10,37,64,.04);break-inside:avoid;margin-bottom:.8rem}
+.mod-fade{position:sticky;bottom:-1px;height:34px;margin-top:-34px;background:linear-gradient(to bottom,rgba(255,255,255,0),var(--bg2) 78%);pointer-events:none;display:flex;align-items:flex-end;justify-content:center}
+.mod-fade span{font-size:.85rem;color:var(--muted);animation:fadeBounce 1.6s ease-in-out infinite;line-height:1}
+@keyframes fadeBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
 .cat-grp-hd{display:flex;align-items:center;gap:.5rem;padding:.55rem .7rem;background:var(--bg3);border-bottom:1px solid var(--border)}
 .cat-grp-ico{width:22px;height:22px;border-radius:7px;background:var(--ga-soft);display:flex;align-items:center;justify-content:center;font-size:.68rem;flex-shrink:0}
 .cat-grp-nm{font-size:.76rem;font-weight:800;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1042,8 +1045,8 @@ select.mod-inp{cursor:pointer}
       <!-- Conciliación / autochequeo antes de guardar -->
       <div id="erReconcile" style="margin-bottom:1.25rem"></div>
 
-      <!-- Strip de grupos -->
-      <div class="cat-group-strip" id="erGroupStrip"></div>
+      <!-- Totales por grupo -->
+      <div id="erGroupStrip"></div>
 
       <!-- 4 métricas -->
       <div class="er-metrics">
@@ -1381,6 +1384,7 @@ select.mod-inp{cursor:pointer}
       <div class="cat-org-hint">Organiza tus categorías</div>
       <div class="cat-org-sub">Cambia el grupo de cualquier categoría con su menú. Los totales por grupo se actualizan en todo Horizen: análisis, inicio y reportes.</div>
       <div id="catOrganizer"></div>
+      <div class="mod-fade"><span>▾</span></div>
     </div>
     <div class="mod-footer">
       <button class="btn-cancel" onclick="closeModal('catModal')">Cerrar</button>
