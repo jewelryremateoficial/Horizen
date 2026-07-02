@@ -8,27 +8,35 @@ const corsHeaders = {
 
 // Formato COMPACTO: una línea por transacción (mucho más eficiente en tokens que JSON,
 // así caben cientos de movimientos en una sola respuesta sin cortarse).
-const PROMPT = `Analiza este estado de cuenta bancario mexicano y extrae TODAS las transacciones.
+const PROMPT = `Analiza este estado de cuenta bancario mexicano y extrae TODAS las transacciones (no inventes ni omitas ninguna).
 
-Responde ÚNICAMENTE en texto plano, SIN markdown, SIN comentarios, SIN encabezados de tabla.
-Usa EXACTAMENTE este formato, con campos separados por el carácter | (barra vertical):
+Responde ÚNICAMENTE en texto plano, SIN markdown, SIN comentarios, SIN encabezados.
+Formato EXACTO, campos separados por | (barra vertical):
 
-Primera línea (metadatos del estado):
+Primera línea (metadatos):
 #META|<banco>|<period_start YYYY-MM-DD>|<period_end YYYY-MM-DD>|<moneda>
 
-Después UNA línea por cada transacción:
+Una línea por transacción:
 <YYYY-MM-DD>|<descripción sin barras, máx 60 caracteres>|<monto positivo sin signo>|<ingreso o egreso>|<categoría>
 
-Reglas:
-- type es "ingreso" si entró dinero, "egreso" si salió.
-- categoría: elige una de: Nómina, Renta, Comida, Transporte, Servicios, Entretenimiento, Transferencia, SAT/Impuestos, Salud, Educación, Otros.
+CÓMO DECIDIR ingreso o egreso (crítico, no te equivoques):
+- "ingreso" = el dinero ENTRA a la cuenta: depósitos, abonos, SPEI/transferencia RECIBIDA, devoluciones, intereses a favor. En el estado suele venir en la columna de ABONOS o con (+).
+- "egreso" = el dinero SALE de la cuenta: compras, pagos, cargos, comisiones, retiros, SPEI/transferencia ENVIADA, domiciliaciones. Suele venir en la columna de CARGOS o con (-).
+- Guíate por la COLUMNA (cargo vs abono), no solo por la palabra.
+
+CÓMO elegir la categoría (elige la MÁS específica; si NO encaja claro usa "Otros", NUNCA uses "Entretenimiento" como comodín):
+Ventas, Proveedores, Nómina, Publicidad, Renta, Servicios (luz/agua/internet/teléfono), Comisiones (cargos bancarios), Comida (restaurantes/súper), Transporte (gasolina/casetas/Uber), Salud, Educación, SAT/Impuestos, Transferencia (SPEI y traspasos entre cuentas), Entretenimiento (SOLO ocio claro: cine, streaming, bar), Otros.
+- Cualquier SPEI, traspaso o transferencia entre cuentas → "Transferencia".
+- Si dudas, usa "Otros" (nunca Entretenimiento por defecto).
+
+Reglas finales:
 - Si falta el año en una fecha, usa el año del periodo del estado.
-- No inventes movimientos. No agregues ninguna línea que no sea #META o una transacción.
+- No agregues ninguna línea que no sea #META o una transacción.
 
 Ejemplo:
-#META|BBVA|2025-06-01|2025-06-30|MXN
-2025-06-03|OXXO TIENDA 123|120.00|egreso|Comida
-2025-06-05|DEPOSITO CLIENTE|5000.00|ingreso|Transferencia`
+#META|BBVA|2026-04-22|2026-05-21|MXN
+2026-04-23|OXXO SUCURSAL 123|120.00|egreso|Comida
+2026-04-25|SPEI RECIBIDO JUAN PEREZ|5000.00|ingreso|Transferencia`
 
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = ''
@@ -52,10 +60,10 @@ async function callClaude(apiKey: string, messageContent: unknown, maxRetries = 
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          // Haiku: 2-3x más rápido y 3x más barato que Sonnet, suficiente para extraer datos
-          // de un estado de cuenta. Clave para procesar estados grandes sin timeout.
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 24000, // Haiku admite hasta 64k; 24k ≈ ~900 movimientos en ~90s (dentro del límite)
+          // Sonnet: más preciso que Haiku clasificando ingreso/egreso y categorías.
+          // Con formato compacto rinde ~500 movimientos dentro del límite de tiempo.
+          model: 'claude-sonnet-4-6',
+          max_tokens: 24000,
           messages: [{ role: 'user', content: messageContent }],
         }),
       })
@@ -75,7 +83,7 @@ async function callClaude(apiKey: string, messageContent: unknown, maxRetries = 
   throw new Error('La IA está saturada en este momento (' + lastErr + '). Intenta de nuevo en unos segundos.')
 }
 
-const CATS = ['Nómina','Renta','Comida','Transporte','Servicios','Entretenimiento','Transferencia','SAT/Impuestos','Salud','Educación','Otros']
+const CATS = ['Ventas','Proveedores','Nómina','Publicidad','Renta','Servicios','Comisiones','Comida','Transporte','Salud','Educación','SAT/Impuestos','Transferencia','Entretenimiento','Otros']
 
 // Parsea el formato compacto (líneas separadas por |) a la estructura que espera el frontend.
 function parseCompact(text: string) {
