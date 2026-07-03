@@ -4,19 +4,84 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — Horizen</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- Belvo Connect Widget SDK — URL correcta (la anterior daba 404) -->
 <script src="https://cdn.belvo.io/belvo-widget-1-stable.js"></script>
 <style>
-/* ── Design Tokens ────────────────────────────────────────── */
+/* ── Design Tokens (DISENO-SISTEMA v1.0) ─────────────────── */
 :root{
-  --p:#635bff;--p2:#4b45c6;--sec:#8b7cff;
-  --ok:#0e9f6e;--warn:#d97706;--err:#e2435f;
-  --bg:#f6f9fc;--bg2:#ffffff;--bg3:#f3f5f9;--bg4:#eef1f6;
-  --border:rgba(10,37,64,.10);--text:#0a2540;--muted:#697386;
+  /* Marca / interactivo — SOLO botones primarios, links, estado activo, focus */
+  --p:#635bff;            /* identidad Horizen */
+  --p-hover:#4b45c6;
+  --p-soft:rgba(99,91,255,.08);   /* fondo de item activo del sidebar */
+  --p-border:rgba(99,91,255,.25); /* borde de elementos seleccionados */
+
+  /* Tinta y superficies */
+  --ink:#0a2540;          /* texto principal (--text queda como alias) */
+  --text:#0a2540;
+  --slate:#425466;        /* texto secundario largo */
+  --muted:#697386;        /* labels, captions, metadatos */
+  --bg:#f6f9fc;           /* fondo de la app */
+  --bg2:#ffffff;          /* superficies (tarjetas, sidebar, topbar) */
+  --bg3:#f3f5f9;          /* superficies hundidas (inputs, zonas de carga) */
+  --bg4:#eef1f6;          /* tracks de medidores, hover de filas */
+  --line:rgba(10,37,64,.08);   /* borde estándar (unificado con --border) */
+  --border:rgba(10,37,64,.08);
+
+  /* Dinero — ÚNICO uso permitido de verde y rojo */
+  --pos:#0e9f6e;          /* monto positivo / ingreso (≥1rem) */
+  --pos-text:#0a7a55;     /* verde para texto chico (<1rem) */
+  --pos-bg:#e9f9f1;       /* fondo de chips/banners positivos */
+  --neg:#df1b41;          /* monto negativo / egreso (único rojo) */
+  --neg-text:#b3093c;     /* rojo para texto chico */
+  --neg-bg:#fdecef;       /* fondo de chips/banners negativos */
+
+  /* Advertencia — solo alertas reales */
+  --warn:#b45309;
+  --warn-bg:#fff7ed;
+  --warn-border:rgba(217,119,6,.25);
+
+  /* Radios */
+  --r-sm:8px; --r-md:12px; --r-lg:16px;
+
+  /* Sombras — SOLO estas dos */
+  --shadow-1:0 1px 2px rgba(10,37,64,.06);
+  --shadow-2:0 4px 16px -4px rgba(10,37,64,.12);
+
+  /* Aliases legados (páginas fuera del rediseño; se mapean a los tokens nuevos) */
+  --p2:var(--p-hover);
+  --sec:#8b7cff;
+  --ok:var(--pos);
+  --err:var(--neg);
 }
+
+/* ── Iconos Lucide (SVG inline, currentColor) ─────────────── */
+.ic{width:16px;height:16px;flex-shrink:0;vertical-align:-2px}
+.ic-20{width:20px;height:20px}
+.ic-24{width:24px;height:24px}
+
+/* ── Tipografía — escala única ────────────────────────────── */
+.t-page{font-size:1.25rem;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+.t-sub{font-size:.875rem;color:var(--muted);line-height:1.5;font-weight:400}
+.t-card{font-size:.875rem;font-weight:600;color:var(--ink)}
+.t-cap{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.t-hero{font-size:2.5rem;font-weight:700;letter-spacing:-.03em;line-height:1.05;font-variant-numeric:tabular-nums}
+.t-num{font-size:1.25rem;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.t-num-sm{font-size:.875rem;font-weight:600;font-variant-numeric:tabular-nums}
+.t-body{font-size:.875rem;line-height:1.55;color:var(--slate)}
+.t-meta{font-size:.75rem;color:var(--muted)}
+
+/* ── Botones — solo estos 3 ───────────────────────────────── */
+.btn{font:600 .875rem/1 'Inter',sans-serif;padding:10px 16px;border-radius:var(--r-sm);border:1px solid transparent;
+  cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .15s,border-color .15s}
+.btn-primary{background:var(--p);color:#fff}
+.btn-primary:hover{background:var(--p-hover)}
+.btn-ghost{background:var(--bg2);color:var(--ink);border-color:var(--line)}
+.btn-ghost:hover{border-color:var(--muted)}
+.btn-danger{background:var(--bg2);color:var(--neg-text);border-color:var(--line)}
+.btn-danger:hover{border-color:var(--neg-text)}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
 
@@ -36,8 +101,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   cursor:pointer;font-size:.84rem;font-weight:500;color:var(--muted);border:none;background:none;
   width:100%;text-align:left;transition:all .15s}
 .ni:hover{background:rgba(10,37,64,.05);color:var(--text)}
-.ni.active{background:rgba(99,91,255,.1);color:var(--p);font-weight:600}
-.ni .ico{width:16px;text-align:center;font-size:.9rem;flex-shrink:0}
+.ni.active{background:var(--p-soft);color:var(--p);font-weight:600}
+.ni .ico{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 .ni .badge{margin-left:auto;background:var(--err);color:#fff;font-size:.6rem;font-weight:800;
   padding:.1rem .4rem;border-radius:50px;min-width:18px;text-align:center}
 
@@ -55,11 +120,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   padding:0 1.75rem;display:flex;align-items:center;gap:.85rem;position:sticky;top:0;z-index:50;flex-shrink:0}
 .topbar-title{font-size:.95rem;font-weight:700;flex:1}
 .topbar-sub{font-size:.78rem;color:var(--muted);font-weight:400}
-.tb-btn{padding:.38rem .8rem;border-radius:8px;font-size:.75rem;font-weight:600;border:none;cursor:pointer;transition:all .15s}
+.tb-btn{padding:8px 12px;border-radius:var(--r-sm);font-size:.75rem;font-weight:600;border:1px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s,border-color .15s}
 .tb-primary{background:var(--p);color:#fff}
-.tb-primary:hover{background:var(--p2);transform:translateY(-1px)}
-.tb-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
-.tb-ghost:hover{border-color:var(--p);color:var(--p)}
+.tb-primary:hover{background:var(--p-hover)}
+.tb-ghost{background:var(--bg2);color:var(--ink);border:1px solid var(--line)}
+.tb-ghost:hover{border-color:var(--muted)}
 .notif{position:relative;background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.05rem;padding:.3rem;transition:color .15s}
 .notif:hover{color:var(--text)}
 .notif-dot{position:absolute;top:2px;right:2px;width:7px;height:7px;background:var(--err);border-radius:50%;border:2px solid var(--bg2)}
@@ -80,13 +145,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   font-size:.68rem;font-weight:800;padding:.25rem .7rem;border-radius:50px;letter-spacing:.5px;text-transform:uppercase}
 .omc-ttl{font-size:.92rem;font-weight:700;color:var(--muted)}
 .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
-.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:1.35rem;transition:border-color .3s}
-.kpi.red{border-color:rgba(244,63,94,.4)}
-.kpi.yellow{border-color:rgba(245,158,11,.35)}
-.kpi.green{border-color:rgba(99,91,255,.3)}
-.kpi-lbl{font-size:.69rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.6rem}
-.kpi-val{font-size:2.4rem;font-weight:900;letter-spacing:-1.5px;line-height:1;margin-bottom:.4rem}
-.kpi-val.c-green{color:var(--p)}
+.kpi{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-md);padding:20px}
+.kpi-lbl{font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem}
+.kpi-val{font-size:1.25rem;font-weight:700;letter-spacing:-.01em;line-height:1;margin-bottom:.4rem;font-variant-numeric:tabular-nums}
+.kpi-val.c-green{color:var(--pos)}
 .kpi-val.c-yellow{color:var(--warn)}
 .kpi-val.c-red{color:var(--err)}
 .kpi-sub{font-size:.75rem;color:var(--muted);line-height:1.5}
@@ -106,9 +168,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   padding:.18rem .55rem;border-radius:50px;border:1px solid}
 
 /* ── CARDS ──────────────────────────────────────────────────── */
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.35rem}
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-md);padding:20px;box-shadow:var(--shadow-1)}
 .card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem}
-.card-ttl{font-size:.88rem;font-weight:700}
+.card-ttl{font-size:.875rem;font-weight:600;color:var(--ink)}
 .card-act{font-size:.76rem;color:var(--p);cursor:pointer;font-weight:600;background:none;border:none;transition:opacity .2s}
 .card-act:hover{opacity:.7}
 
@@ -133,8 +195,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .tx-tbl td{padding:.7rem .9rem;border-bottom:1px solid rgba(10,37,64,.04);font-size:.83rem;vertical-align:middle}
 .tx-tbl tr:hover td{background:rgba(10,37,64,.02)}
 .tx-tbl tr:last-child td{border-bottom:none}
-.amt-in{color:var(--ok);font-weight:700}
-.amt-out{color:var(--err);font-weight:700}
+.amt-in{color:var(--pos-text);font-weight:600;font-variant-numeric:tabular-nums}
+.amt-out{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
 .fiscal-tag{font-size:.6rem;font-weight:700;padding:.08rem .38rem;border-radius:4px;
   background:rgba(99,91,255,.1);color:var(--p);border:1px solid rgba(99,91,255,.25)}
 .src-tag{font-size:.6rem;font-weight:700;padding:.08rem .38rem;border-radius:4px}
@@ -310,80 +372,80 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .cal-section-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:0 0 .5rem}
 
 /* ── SUBIR ESTADO DE CUENTA ──────────────────────────────────── */
-.upload-zone{border:2px dashed var(--border);border-radius:16px;padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3);margin-top:1rem}
-.upload-zone:hover,.upload-zone.dragover{border-color:var(--p);background:rgba(99,91,255,.05)}
-.upload-ico{font-size:3rem;margin-bottom:.75rem}
-.upload-ttl{font-size:1.05rem;font-weight:700;margin-bottom:.4rem}
-.upload-sub{font-size:.78rem;color:var(--muted)}
+.upload-zone{border:1.5px dashed var(--line);border-radius:var(--r-lg);padding:48px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:var(--bg2);margin-top:1rem}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--p);background:var(--p-soft)}
+.upload-ico{width:48px;height:48px;border-radius:50%;background:var(--bg4);color:var(--muted);display:flex;align-items:center;justify-content:center;margin:0 auto .75rem}
+.upload-ttl{font-size:.875rem;font-weight:600;color:var(--ink);margin-bottom:.4rem}
+.upload-sub{font-size:.75rem;color:var(--muted)}
 .proc-wrap{text-align:center;padding:4rem 2rem}
 .proc-spinner{width:52px;height:52px;border:4px solid var(--border);border-top-color:var(--p);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1.25rem}
 @keyframes spin{to{transform:rotate(360deg)}}
-.proc-msg{font-size:.9rem;color:var(--muted)}
+.proc-msg{font-size:.75rem;color:var(--muted)}
 .tx-rev-grid{display:grid;grid-template-columns:105px 1fr 110px 130px 100px 36px;gap:.4rem;align-items:center;padding:.45rem .25rem;border-bottom:1px solid var(--border)}
-.tx-rev-hdr{font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:.5rem .25rem}
-.rev-inp{background:var(--bg4);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.28rem .45rem;font-size:.75rem;width:100%}
-.rev-inp:focus{border-color:var(--p);outline:none}
-.rev-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:.2rem;transition:color .15s}
-.rev-del:hover{color:var(--err)}
-.file-chip{display:inline-flex;align-items:center;gap:.5rem;background:rgba(99,91,255,.1);border:1px solid rgba(99,91,255,.3);border-radius:8px;padding:.45rem .9rem;font-size:.82rem;font-weight:600;margin-top:1rem}
-.er-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.25rem}
-.er-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.25rem}
-.er-card-lbl{font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem}
-.er-card-val{font-size:1.45rem;font-weight:900}
-.er-card-val.pos{color:var(--ok)}.er-card-val.neg{color:var(--err)}
-.er-mid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
-.er-nova{background:linear-gradient(135deg,rgba(99,91,255,.07),rgba(123,97,255,.07));border:1px solid rgba(99,91,255,.22);margin-bottom:1.25rem}
-.er-nova-ttl{font-size:.85rem;font-weight:800;margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem}
-.er-insight{font-size:.82rem;color:var(--text);padding:.5rem 0;border-bottom:1px solid var(--border);display:flex;gap:.6rem;align-items:flex-start}
+.tx-rev-hdr{font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:.5rem .25rem}
+.rev-inp{background:var(--bg3);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:.28rem .45rem;font-size:.75rem;width:100%;font-variant-numeric:tabular-nums}
+.rev-inp:focus{border-color:var(--p);outline:none;background:var(--bg3)}
+.rev-del{background:none;border:none;color:var(--muted);cursor:pointer;padding:.2rem;transition:color .15s;display:inline-flex;align-items:center;justify-content:center}
+.rev-del:hover{color:var(--neg-text)}
+.file-chip{display:inline-flex;align-items:center;gap:.5rem;background:var(--bg3);border:1px solid var(--line);border-radius:var(--r-sm);padding:.45rem .9rem;font-size:.875rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);margin-top:1rem}
+.er-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.er-card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-md);padding:20px;box-shadow:var(--shadow-1)}
+.er-card-lbl{font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem}
+.er-card-val{font-size:1.25rem;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--ink)}
+.er-card-val.pos{color:var(--pos)}.er-card-val.neg{color:var(--neg)}
+.er-card-note{font-size:.75rem;color:var(--muted);margin-top:.35rem}
+.er-mid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.er-nova{background:var(--bg3);border:1px solid var(--line);margin-bottom:24px}
+.er-nova-ttl{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--p);margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem}
+.er-nova-chip{width:32px;height:32px;border-radius:var(--r-sm);background:var(--p-soft);color:var(--p);display:grid;place-items:center;flex-shrink:0}
+.er-insight{font-size:.875rem;line-height:1.55;color:var(--slate);padding:.5rem 0;border-bottom:1px solid var(--line);display:flex;gap:.6rem;align-items:flex-start}
+.er-insight b{color:var(--ink)}
 .er-insight:last-child{border-bottom:none;padding-bottom:0}
 .er-insight-ico{flex-shrink:0}
 .er-top-item{display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid var(--border)}
 .er-top-item:last-child{border-bottom:none}
 .er-top-cat{font-size:.78rem;font-weight:600}
 .er-top-val{font-size:.82rem;font-weight:800;color:var(--err)}
-.er-tx-toggle{width:100%;text-align:left;background:none;border:none;color:var(--text);cursor:pointer;padding:.5rem 0;font-size:.82rem;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.er-tx-toggle{width:100%;text-align:left;background:none;border:none;color:var(--ink);cursor:pointer;padding:.5rem 0;font-size:.875rem;font-weight:600;display:flex;justify-content:space-between;align-items:center}
 .cat-group-strip{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem}
 .cat-group-chip{display:inline-flex;align-items:center;gap:.35rem;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:.3rem .7rem;font-size:.72rem;font-weight:600;white-space:nowrap}
-/* ── Totales por grupo — tarjetas premium ─────────────────── */
-.grp-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin-bottom:1.25rem}
-.grp-card{--ga:#697386;--ga-soft:rgba(105,115,134,.10);position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:.85rem .95rem .8rem;box-shadow:0 1px 2px rgba(10,37,64,.05),0 8px 20px -14px rgba(10,37,64,.10);transition:transform .18s ease,box-shadow .18s ease;overflow:hidden}
-.grp-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ga);opacity:0;transition:opacity .18s ease}
-.grp-card:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(10,37,64,.06),0 16px 32px -14px rgba(10,37,64,.16)}
-.grp-card:hover::after{opacity:.85}
+/* ── Totales por grupo — neutralizadas (DISENO-SISTEMA §2.4) ── */
+.grp-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:24px}
+.grp-card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-md);padding:.85rem .95rem .8rem;box-shadow:var(--shadow-1)}
 .grp-card .g-top{display:flex;align-items:center;gap:.5rem;margin-bottom:.55rem;min-width:0}
-.grp-card .g-ico{width:26px;height:26px;border-radius:8px;background:var(--ga-soft);display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0}
-.grp-card .g-nm{font-size:.64rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.grp-card .g-amt{font-size:1.18rem;font-weight:800;letter-spacing:-.02em;color:var(--text);font-variant-numeric:tabular-nums;line-height:1.15}
-.grp-card .g-meter{height:4px;border-radius:50px;background:rgba(10,37,64,.07);margin:.55rem 0 .38rem;overflow:hidden}
-.grp-card .g-meter span{display:block;height:100%;border-radius:50px;background:var(--ga)}
-.grp-card .g-pct{font-size:.66rem;color:var(--muted)}
-.grp-card .g-pct b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+.grp-card .g-ico{width:28px;height:28px;border-radius:var(--r-sm);background:var(--bg4);color:var(--slate);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.grp-card .g-nm{font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grp-card .g-amt{font-size:.875rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.15}
+.grp-card .g-meter{height:4px;border-radius:50px;background:var(--bg4);margin:.55rem 0 .38rem;overflow:hidden}
+.grp-card .g-meter span{display:block;height:100%;border-radius:50px;background:var(--ink)}
+.grp-card .g-pct{font-size:.75rem;color:var(--muted)}
+.grp-card .g-pct b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
 
 /* ── Modal "Mis Categorías" — shell + organizador ─────────── */
-.mod{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.5rem 1.6rem;width:100%;max-width:510px;animation:modalIn .2s ease;box-shadow:0 24px 64px -16px rgba(10,37,64,.28),0 4px 16px rgba(10,37,64,.08)}
+.mod{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-lg);padding:1.5rem 1.6rem;width:100%;max-width:510px;animation:modalIn .2s ease;box-shadow:var(--shadow-2)}
 .mod-hdr{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:1.15rem}
-.mod-ttl{font-size:1.02rem;font-weight:800;letter-spacing:-.01em}
+.mod-ttl{font-size:1rem;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
 .mod-close{width:30px;height:30px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
 .mod-close:hover{background:rgba(10,37,64,.06);color:var(--text)}
 .mod-inp{background:rgba(10,37,64,.04);border:1px solid var(--border);color:var(--text);padding:.55rem .8rem;border-radius:9px;font-size:.82rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .18s,box-shadow .18s}
 .mod-inp:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(99,91,255,.12)}
 .mod-inp::placeholder{color:var(--muted)}
 select.mod-inp{cursor:pointer}
-.cat-new{background:linear-gradient(180deg,rgba(99,91,255,.055),rgba(99,91,255,.02));border:1px dashed rgba(99,91,255,.35);border-radius:12px;padding:.9rem 1rem;margin-bottom:1.25rem}
-.cat-new-ttl{font-size:.74rem;font-weight:700;margin-bottom:.6rem}
+.cat-new{background:var(--bg3);border:1px dashed var(--line);border-radius:var(--r-md);padding:.9rem 1rem;margin-bottom:1.25rem}
+.cat-new-ttl{font-size:.75rem;font-weight:600;margin-bottom:.6rem}
 .cat-new-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
 .cat-org-hint{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem}
 .cat-org-sub{font-size:.74rem;color:var(--muted);line-height:1.45;margin-bottom:.9rem}
 .cat-org-grid{columns:2;column-gap:.8rem}
 @media(max-width:600px){.cat-org-grid{columns:1}}
-.cat-grp-sec{--ga:#697386;--ga-soft:rgba(105,115,134,.10);border:1px solid var(--border);border-radius:12px;background:var(--bg2);overflow:hidden;box-shadow:0 1px 2px rgba(10,37,64,.04);break-inside:avoid;margin-bottom:.8rem}
+.cat-grp-sec{border:1px solid var(--line);border-radius:var(--r-md);background:var(--bg2);overflow:hidden;box-shadow:var(--shadow-1);break-inside:avoid;margin-bottom:.8rem}
 .mod-fade{position:sticky;bottom:-1px;height:34px;margin-top:-34px;background:linear-gradient(to bottom,rgba(255,255,255,0),var(--bg2) 78%);pointer-events:none;display:flex;align-items:flex-end;justify-content:center}
 .mod-fade span{font-size:.85rem;color:var(--muted);animation:fadeBounce 1.6s ease-in-out infinite;line-height:1}
 @keyframes fadeBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
 .cat-grp-hd{display:flex;align-items:center;gap:.5rem;padding:.55rem .7rem;background:var(--bg3);border-bottom:1px solid var(--border)}
-.cat-grp-ico{width:22px;height:22px;border-radius:7px;background:var(--ga-soft);display:flex;align-items:center;justify-content:center;font-size:.68rem;flex-shrink:0}
-.cat-grp-nm{font-size:.76rem;font-weight:800;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cat-grp-count{font-size:.62rem;font-weight:700;color:var(--muted);background:var(--bg2);border:1px solid var(--border);border-radius:50px;padding:.06rem .42rem;font-variant-numeric:tabular-nums;flex-shrink:0}
+.cat-grp-ico{width:22px;height:22px;border-radius:7px;background:var(--bg4);color:var(--slate);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cat-grp-nm{font-size:.75rem;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-grp-count{font-size:.75rem;font-weight:600;color:var(--muted);background:var(--bg2);border:1px solid var(--line);border-radius:50px;padding:.06rem .42rem;font-variant-numeric:tabular-nums;flex-shrink:0}
 .cat-grp-rows{padding:.3rem}
 .cat-org-row{display:flex;align-items:center;gap:.45rem;padding:.32rem .45rem;border-radius:8px;transition:background .15s}
 .cat-org-row:hover{background:rgba(10,37,64,.04)}
@@ -392,27 +454,24 @@ select.mod-inp{cursor:pointer}
 .cat-org-row select{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-radius:7px;font-size:.7rem;padding:.28rem .35rem;font-family:'Inter',sans-serif;outline:none;width:96px;flex-shrink:0;cursor:pointer;transition:border-color .15s,box-shadow .15s}
 .cat-org-row select:hover{border-color:var(--p)}
 .cat-org-row select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(99,91,255,.12)}
-.cat-moved{font-size:.62rem;color:var(--muted);flex-shrink:0}
-.cat-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.7rem;width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.55;transition:all .15s}
-.cat-del:hover{opacity:1;color:var(--err);background:rgba(226,67,95,.10)}
-.cat-grp-empty{color:var(--muted);font-size:.7rem;font-style:italic;padding:.45rem .55rem .5rem}
-/* Acentos por grupo (comparten .grp-card y .cat-grp-sec) */
-[data-g="Negocios"]{--ga:#635bff;--ga-soft:rgba(99,91,255,.10)}
-[data-g="Comida"]{--ga:#d97706;--ga-soft:rgba(217,119,6,.11)}
-[data-g="Hogar"]{--ga:#0d9488;--ga-soft:rgba(13,148,136,.11)}
-[data-g="Personal"]{--ga:#db2777;--ga-soft:rgba(219,39,119,.10)}
-[data-g="Finanzas"]{--ga:#0e9f6e;--ga-soft:rgba(14,159,110,.11)}
-[data-g="Otros"]{--ga:#697386;--ga-soft:rgba(105,115,134,.10)}
+.cat-moved{font-size:.75rem;color:var(--muted);flex-shrink:0}
+.cat-del{background:none;border:none;color:var(--muted);cursor:pointer;width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.55;transition:all .15s}
+.cat-del:hover{opacity:1;color:var(--neg-text);background:var(--neg-bg)}
+.cat-grp-empty{color:var(--muted);font-size:.75rem;font-style:italic;padding:.45rem .55rem .5rem}
+/* Acentos por grupo eliminados — los grupos se identifican por icono + etiqueta (DISENO-SISTEMA §2.4) */
 .custom-cat-item{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.8rem}
 .custom-cat-item:last-child{border-bottom:none}
-.cat-badge{display:inline-block;font-size:.54rem;font-weight:800;letter-spacing:.06em;color:var(--p);background:rgba(99,91,255,.10);border:1px solid rgba(99,91,255,.28);border-radius:50px;padding:.1rem .4rem;flex-shrink:0;line-height:1.3}
+.cat-badge{display:inline-block;font-size:.75rem;font-weight:600;letter-spacing:.05em;color:var(--p);background:var(--p-soft);border:1px solid var(--p-border);border-radius:50px;padding:.05rem .4rem;flex-shrink:0;line-height:1.3}
 .estado-steps{display:flex;gap:.5rem;margin-bottom:1.5rem;align-items:center}
-.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0}
-.step-dot.done{background:var(--ok);color:#fff}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:600;flex-shrink:0}
+.step-dot.done{background:var(--ink);color:#fff}
 .step-dot.active{background:var(--p);color:#fff}
-.step-dot.pending{background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
-.step-line{flex:1;height:2px;background:var(--border)}
-.step-line.done{background:var(--ok)}
+.step-dot.pending{background:var(--bg3);color:var(--muted);border:1px solid var(--line)}
+.step-dot .sd-check{display:none}
+.step-dot.done .sd-n{display:none}
+.step-dot.done .sd-check{display:inline-flex}
+.step-line{flex:1;height:2px;background:var(--line)}
+.step-line.done{background:var(--ink)}
 
 /* ── RESPONSIVE ──────────────────────────────────────────────── */
 @media(max-width:900px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.kpi-grid{grid-template-columns:1fr}}
@@ -429,28 +488,28 @@ select.mod-inp{cursor:pointer}
   </div>
   <div class="nav">
     <div class="nav-lbl">Principal</div>
-    <button class="ni active" onclick="showPage('overview')"><span class="ico">⚡</span>One-Minute Check</button>
-    <button class="ni" onclick="showPage('transactions')"><span class="ico">📊</span>Transacciones</button>
-    <button class="ni" onclick="showPage('reportes')"><span class="ico">📈</span>Reportes</button>
-    <button class="ni" onclick="showPage('accounts')"><span class="ico">🏦</span>Cuentas</button>
+    <button class="ni active" onclick="showPage('overview')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>Resumen</button>
+    <button class="ni" onclick="showPage('transactions')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></span>Transacciones</button>
+    <button class="ni" onclick="showPage('reportes')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>Reportes</button>
+    <button class="ni" onclick="showPage('accounts')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg></span>Cuentas</button>
 
     <div class="nav-lbl">Finanzas</div>
-    <button class="ni" onclick="showPage('ingresos')"><span class="ico">💰</span>Ingresos</button>
-    <button class="ni" onclick="showPage('gastos')"><span class="ico">📅</span>Gastos Fijos</button>
-    <button class="ni" onclick="showPage('calendario')"><span class="ico">📆</span>Calendario</button>
-    <button class="ni" onclick="showPage('estados')"><span class="ico">📄</span>Subir Estado</button>
+    <button class="ni" onclick="showPage('ingresos')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg></span>Ingresos</button>
+    <button class="ni" onclick="showPage('gastos')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg></span>Gastos Fijos</button>
+    <button class="ni" onclick="showPage('calendario')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg></span>Calendario</button>
+    <button class="ni" onclick="showPage('estados')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></span>Subir Estado</button>
     <button class="ni" onclick="showPage('debts')">
-      <span class="ico">💳</span>Deudas
+      <span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg></span>Deudas
       <span class="badge" id="debtBadge" style="display:none"></span>
     </button>
-    <button class="ni" onclick="showPage('taxes')"><span class="ico">🧾</span>SAT / Fiscal</button>
+    <button class="ni" onclick="showPage('taxes')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg></span>SAT / Fiscal</button>
 
     <div class="nav-lbl">Inteligencia</div>
-    <button class="ni" onclick="showPage('finplan')"><span class="ico">🧠</span>Plan Financiero</button>
+    <button class="ni" onclick="showPage('finplan')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>Plan Financiero</button>
 
     <div class="nav-lbl">Cuenta</div>
-    <button class="ni" onclick="showPage('referidos')"><span class="ico">🤝</span>Mi red · Referidos</button>
-    <button class="ni" onclick="showPage('settings')"><span class="ico">⚙️</span>Configuración</button>
+    <button class="ni" onclick="showPage('referidos')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Mi red · Referidos</button>
+    <button class="ni" onclick="showPage('settings')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span>Configuración</button>
   </div>
   <div class="sidebar-footer">
     <div class="user-row" onclick="showPage('settings')">
@@ -469,13 +528,13 @@ select.mod-inp{cursor:pointer}
   <!-- Topbar -->
   <div class="topbar">
     <div class="topbar-title" id="topbarTitle">
-      ⚡ One-Minute Check <span class="topbar-sub">— Tu salud financiera al instante</span>
+      Resumen <span class="topbar-sub">— Así va tu negocio</span>
     </div>
     <div style="display:flex;align-items:center;gap:.6rem">
       <button class="tb-btn tb-ghost" onclick="openModal('txModal')">+ Transacción</button>
       <button class="tb-btn tb-primary" onclick="syncNow()" style="display:none">↺ Sync</button>
       <button class="notif" onclick="showPage('alerts')">
-        🔔<div class="notif-dot" id="notifDot" style="display:none"></div>
+        <svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><div class="notif-dot" id="notifDot" style="display:none"></div>
       </button>
       <button onclick="confirmSignOut()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.82rem;font-weight:600">Salir</button>
     </div>
@@ -489,53 +548,56 @@ select.mod-inp{cursor:pointer}
 
     <!-- ══ INICIO premium (datos del periodo) ══ -->
     <style>
-    #page-overview .ini-pill{font-family:inherit;font-size:.84rem;font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:999px;padding:.5rem .85rem;cursor:pointer}
-    #page-overview .ini-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:1.15rem;margin-bottom:1.15rem}
-    #page-overview .ini-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:1.5rem 1.6rem;box-shadow:0 1px 2px rgba(10,37,64,.05),0 12px 28px -14px rgba(10,37,64,.10)}
-    #page-overview .ini-cap{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
-    #page-overview .ini-big{font-size:3rem;font-weight:800;letter-spacing:-.04em;line-height:1;margin:.45rem 0 .5rem}
-    #page-overview .ini-trend{display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;font-weight:700;padding:.26rem .62rem;border-radius:999px}
-    #page-overview .ini-trend.up{color:#0a7a55;background:#e9f9f1}
-    #page-overview .ini-trend.down{color:#c0314a;background:#fdecef}
-    #page-overview .ini-trend.flat{color:var(--muted);background:#f1f3f8}
-    #page-overview .ini-flow{display:flex;gap:1.9rem;margin-top:1.25rem;padding-top:1.2rem;border-top:1px solid var(--line);flex-wrap:wrap}
-    #page-overview .ini-flow .k{font-size:.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-    #page-overview .ini-flow .v{font-size:1.2rem;font-weight:800;margin-top:.2rem;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-    #page-overview .ini-flow .v.in{color:#0e9f6e} #page-overview .ini-flow .v.out{color:#e2435f}
-    #page-overview .ini-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1.15rem;margin-bottom:1.15rem}
-    #page-overview .ini-kpi .v{font-size:1.45rem;font-weight:800;letter-spacing:-.03em;margin-top:.4rem;font-variant-numeric:tabular-nums}
-    #page-overview .ini-kpi .v.sm{font-size:1.1rem}
-    #page-overview .ini-kpi .s{font-size:.74rem;color:var(--muted);margin-top:.28rem}
+    #page-overview .ini-pill{font-family:inherit;font-size:.875rem;font-weight:600;color:var(--ink);background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:.5rem .85rem;cursor:pointer}
+    #page-overview .ini-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:24px}
+    #page-overview .ini-card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-md);padding:20px;box-shadow:var(--shadow-1)}
+    #page-overview .ini-hero{border-radius:var(--r-lg);padding:24px}
+    #page-overview .ini-cap{font-size:.75rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+    #page-overview .ini-big{font-size:2.5rem;font-weight:700;letter-spacing:-.03em;line-height:1.05;font-variant-numeric:tabular-nums;margin:.45rem 0 .5rem}
+    #page-overview .ini-trend{display:inline-flex;align-items:center;gap:.4rem;font-size:.75rem;font-weight:600;padding:.26rem .62rem;border-radius:999px}
+    #page-overview .ini-trend.up{color:var(--pos-text);background:var(--pos-bg)}
+    #page-overview .ini-trend.down{color:var(--neg-text);background:var(--neg-bg)}
+    #page-overview .ini-trend.flat{color:var(--muted);background:var(--bg3)}
+    #page-overview .ini-flow{display:flex;gap:1.9rem;margin-top:20px;padding-top:20px;border-top:1px solid var(--line);flex-wrap:wrap}
+    #page-overview .ini-flow .k{font-size:.75rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+    #page-overview .ini-flow .v{font-size:1.25rem;font-weight:700;margin-top:.2rem;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--ink)}
+    #page-overview .ini-flow .v.in{color:var(--pos-text)} #page-overview .ini-flow .v.out{color:var(--ink)}
+    #page-overview .ini-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+    #page-overview .ini-kpi .v{font-size:1.25rem;font-weight:700;letter-spacing:-.01em;margin-top:.4rem;font-variant-numeric:tabular-nums;color:var(--ink)}
+    #page-overview .ini-kpi .v.sm{font-size:1rem}
+    #page-overview .ini-kpi .s{font-size:.75rem;color:var(--muted);margin-top:.28rem}
     #page-overview .ini-bars{display:flex;align-items:flex-end;justify-content:center;gap:1.6rem;height:120px;margin-top:.4rem}
     #page-overview .ini-bars .col{display:flex;flex-direction:column;align-items:center;gap:.45rem;height:100%;justify-content:flex-end}
-    #page-overview .ini-bars .bar{width:54px;border-radius:9px 9px 5px 5px}
-    #page-overview .ini-bars .in{background:linear-gradient(180deg,var(--sec),var(--p))}
-    #page-overview .ini-bars .out{background:linear-gradient(180deg,#ffb4c0,#e2435f)}
-    #page-overview .ini-bars .bl{font-size:.72rem;color:var(--muted);font-weight:600;text-align:center}
-    #page-overview .ini-row{display:flex;align-items:center;gap:.8rem;margin-bottom:.82rem}
+    #page-overview .ini-bars .bar{width:48px;border-radius:6px 6px 0 0}
+    #page-overview .ini-bars .in{background:var(--pos)}
+    #page-overview .ini-bars .out{background:#94a3b8}
+    #page-overview .ini-bars .bl{font-size:.75rem;color:var(--muted);font-weight:400;text-align:center}
+    #page-overview .ini-bars .bl b{font-size:.875rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+    #page-overview .ini-row{display:flex;align-items:center;gap:.8rem;margin-bottom:12px}
     #page-overview .ini-row:last-child{margin-bottom:0}
-    #page-overview .ini-row .nm{font-size:.86rem;font-weight:600;min-width:120px}
-    #page-overview .ini-row .track{flex:1;height:9px;background:#eef1f6;border-radius:99px;overflow:hidden}
-    #page-overview .ini-row .track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--p),var(--sec))}
-    #page-overview .ini-row .amt{font-size:.83rem;font-weight:700;min-width:92px;text-align:right;font-variant-numeric:tabular-nums}
-    #page-overview .ini-row .pct{font-size:.72rem;color:var(--muted);min-width:34px;text-align:right}
-    #page-overview .ini-nova{display:flex;gap:.9rem;align-items:flex-start;background:linear-gradient(120deg,#f6f5ff,#eef0ff);border:1px solid #e2e0ff;border-radius:16px;padding:1.15rem 1.4rem;margin-bottom:1.15rem}
-    #page-overview .ini-nova .ic{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--p),var(--sec));color:#fff;display:grid;place-items:center;flex-shrink:0}
-    #page-overview .ini-nova .tag{font-size:.68rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--p2)}
-    #page-overview .ini-nova p{font-size:.9rem;color:var(--slate);line-height:1.5;margin-top:.2rem}
+    #page-overview .ini-row .nm{font-size:.875rem;font-weight:400;color:var(--ink);min-width:120px}
+    #page-overview .ini-row .track{flex:1;height:8px;background:var(--bg4);border-radius:99px;overflow:hidden}
+    #page-overview .ini-row .track i{display:block;height:100%;border-radius:99px;background:var(--ink)}
+    #page-overview .ini-row .amt{font-size:.875rem;font-weight:600;min-width:92px;text-align:right;font-variant-numeric:tabular-nums}
+    #page-overview .ini-row .pct{font-size:.75rem;color:var(--muted);min-width:34px;text-align:right}
+    #page-overview .ini-nova{display:flex;gap:.9rem;align-items:flex-start;background:var(--bg3);border:1px solid var(--line);border-radius:var(--r-md);padding:20px;margin-bottom:24px}
+    #page-overview .ini-nova .nv-chip{width:32px;height:32px;border-radius:var(--r-sm);background:var(--p-soft);color:var(--p);display:grid;place-items:center;flex-shrink:0}
+    #page-overview .ini-nova .tag{font-size:.75rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--p)}
+    #page-overview .ini-nova p{font-size:.875rem;color:var(--slate);line-height:1.55;margin-top:.2rem}
     #page-overview .ini-nova b{color:var(--ink)}
-    #page-overview .ini-empty{background:#fff;border:1px solid var(--line);border-radius:18px;padding:3rem 2rem;text-align:center;color:var(--muted)}
+    #page-overview .ini-empty{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-lg);padding:48px 24px;text-align:center;color:var(--muted)}
+    #page-overview .ini-empty .e-ico{width:48px;height:48px;border-radius:50%;background:var(--bg4);color:var(--muted);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
     @media(max-width:860px){#page-overview .ini-grid,#page-overview .ini-kpis{grid-template-columns:1fr 1fr}}
     </style>
     <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:1.4rem;gap:1rem;flex-wrap:wrap">
       <div>
-        <div id="iniHi" style="font-size:1.5rem;font-weight:800;letter-spacing:-.025em">Hola 👋</div>
-        <div style="font-size:.84rem;color:var(--muted);margin-top:.25rem">Esto es lo que pasó en tu negocio</div>
+        <div id="iniHi" class="t-page">Hola</div>
+        <div class="t-sub" style="margin-top:.25rem">Así va tu negocio este mes</div>
       </div>
       <div style="display:flex;align-items:center;gap:.55rem;flex-wrap:wrap">
         <select id="iniMonth" class="ini-pill" onchange="renderInicioBody()"></select>
         <select id="iniBank" class="ini-pill" onchange="renderInicioBody()"><option value="__all__">Todos los bancos</option></select>
-        <button class="tb-btn tb-primary" onclick="showPage('estados')">＋ Subir estado</button>
+        <button class="btn btn-primary" onclick="showPage('estados')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Subir estado</button>
       </div>
     </div>
 
@@ -544,7 +606,7 @@ select.mod-inp{cursor:pointer}
     <!-- Últimas transacciones -->
     <div class="card">
       <div class="card-hdr">
-        <div class="card-ttl">🕐 Últimas Transacciones</div>
+        <div class="card-ttl">Últimas transacciones</div>
         <button class="card-act" onclick="openModal('txModal')">+ Nueva</button>
       </div>
       <div style="overflow-x:auto">
@@ -970,21 +1032,21 @@ select.mod-inp{cursor:pointer}
 
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem">
       <div>
-        <div class="section-ttl">📄 Subir Estado de Cuenta</div>
-        <div class="section-sub">Sube tu PDF o CSV — la IA extrae y categoriza todas las transacciones automáticamente</div>
+        <div class="t-page">Subir estado de cuenta</div>
+        <div class="t-sub">Sube el PDF de tu banco y en un minuto tendrás tus números listos.</div>
       </div>
     </div>
 
     <!-- Indicador de pasos -->
     <div class="estado-steps">
-      <div class="step-dot active" id="sdot1">1</div>
+      <div class="step-dot active" id="sdot1"><span class="sd-n">1</span><span class="sd-check"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span></div>
       <div class="step-line" id="sline1"></div>
-      <div class="step-dot pending" id="sdot2">2</div>
+      <div class="step-dot pending" id="sdot2"><span class="sd-n">2</span><span class="sd-check"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span></div>
       <div class="step-line" id="sline2"></div>
-      <div class="step-dot pending" id="sdot3">3</div>
+      <div class="step-dot pending" id="sdot3"><span class="sd-n">3</span><span class="sd-check"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span></div>
     </div>
-    <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-bottom:1.5rem">
-      <span>Seleccionar archivo</span><span>IA procesando</span><span>Revisar y guardar</span>
+    <div class="t-meta" style="display:flex;justify-content:space-between;margin-bottom:1.5rem">
+      <span>Seleccionar archivo</span><span>Procesando</span><span>Revisar y guardar</span>
     </div>
 
     <!-- PASO 1: Zona de carga -->
@@ -993,21 +1055,21 @@ select.mod-inp{cursor:pointer}
         onclick="document.getElementById('estadoFileInput').click()"
         ondragover="uploadDragOver(event)" ondragleave="uploadDragLeave(event)" ondrop="uploadDrop(event)">
         <input type="file" id="estadoFileInput" accept=".pdf,.csv" style="display:none" onchange="estadoFileSelected(event)">
-        <div class="upload-ico">📁</div>
+        <div class="upload-ico"><svg class="ic ic-24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg></div>
         <div class="upload-ttl">Arrastra tu estado de cuenta aquí</div>
-        <div class="upload-sub">o da clic para seleccionar · PDF o CSV · máximo 5MB</div>
+        <div class="upload-sub">o da clic para buscarlo · PDF o CSV · hasta 10 MB</div>
       </div>
       <div id="estadoFileChip" style="display:none;margin-top:1rem">
-        <div class="file-chip" id="estadoFileChipTxt">📄 archivo.pdf</div>
+        <div class="file-chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg><span id="estadoFileChipTxt">archivo.pdf</span></div>
         <div style="margin-top:1.25rem;display:flex;gap:.75rem">
-          <button class="tb-btn tb-primary" onclick="procesarEstado()">✨ Analizar con IA</button>
-          <button class="tb-btn tb-ghost" onclick="resetEstados()">Cambiar archivo</button>
+          <button class="btn btn-primary" onclick="procesarEstado()">Analizar estado de cuenta</button>
+          <button class="btn btn-ghost" onclick="resetEstados()">Cambiar archivo</button>
         </div>
       </div>
 
       <!-- Estados guardados -->
       <div id="savedStmtsWrap" style="margin-top:2.25rem">
-        <div class="card-ttl" style="margin-bottom:.75rem">📑 Estados guardados</div>
+        <div class="card-ttl" style="margin-bottom:.75rem">Estados guardados</div>
         <div id="savedStmtsList"><div style="color:var(--muted);font-size:.85rem">Cargando...</div></div>
       </div>
     </div>
@@ -1016,8 +1078,8 @@ select.mod-inp{cursor:pointer}
     <div id="estadosStep2" style="display:none">
       <div class="proc-wrap">
         <div class="proc-spinner"></div>
-        <div style="font-size:1rem;font-weight:700;margin-bottom:.5rem">La IA está analizando tu estado de cuenta...</div>
-        <div class="proc-msg" id="procMsg">Leyendo transacciones · esto tarda 15-30 segundos</div>
+        <div class="t-card" style="margin-bottom:.5rem">Leyendo tu estado de cuenta…</div>
+        <div class="proc-msg t-meta" id="procMsg">Esto tarda de 15 a 60 segundos. No cierres la ventana.</div>
       </div>
     </div>
 
@@ -1027,18 +1089,18 @@ select.mod-inp{cursor:pointer}
       <!-- Header -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
         <div>
-          <div class="section-ttl" style="margin:0;font-size:1.15rem" id="erBanco">📊 Estado de Resultados</div>
-          <div style="font-size:.75rem;color:var(--muted);margin-top:.25rem" id="erPeriodo">—</div>
+          <div class="t-page" id="erBanco">Resultados de tu periodo</div>
+          <div class="t-sub" style="margin-top:.25rem" id="erPeriodo">—</div>
           <div style="margin-top:.6rem;display:flex;align-items:center;gap:.5rem">
-            <span style="font-size:.72rem;color:var(--muted)">Nombre:</span>
+            <span class="t-meta">Nombre:</span>
             <input id="stmtName" type="text" placeholder="Estado de cuenta 1" onchange="stmtNameChanged(this.value)"
-              style="background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:'Inter',sans-serif;font-size:.82rem;padding:.4rem .65rem;border-radius:8px;outline:none;width:240px">
+              style="background:var(--bg3);border:1px solid var(--line);color:var(--ink);font-family:'Inter',sans-serif;font-size:.875rem;padding:.4rem .65rem;border-radius:var(--r-sm);outline:none;width:240px">
           </div>
         </div>
         <div style="display:flex;gap:.6rem">
-          <button class="tb-btn tb-ghost" onclick="openCatModal()">⚙️ Categorías</button>
+          <button class="tb-btn tb-ghost" onclick="openCatModal()"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>Categorías</button>
           <button class="tb-btn tb-ghost" id="btnSubirOtro" onclick="resetEstados()">← Subir otro</button>
-          <button class="tb-btn tb-primary" id="btnGuardar" onclick="confirmarEstado()">💾 Guardar</button>
+          <button class="tb-btn tb-primary" id="btnGuardar" onclick="confirmarEstado()">Guardar</button>
         </div>
       </div>
 
@@ -1050,10 +1112,10 @@ select.mod-inp{cursor:pointer}
 
       <!-- 4 métricas -->
       <div class="er-metrics">
-        <div class="er-card"><div class="er-card-lbl">Ingresos totales</div><div class="er-card-val pos" id="erIngresos">—</div></div>
-        <div class="er-card"><div class="er-card-lbl">Egresos totales</div><div class="er-card-val neg" id="erEgresos">—</div></div>
-        <div class="er-card"><div class="er-card-lbl">Flujo neto</div><div class="er-card-val" id="erNeto">—</div></div>
-        <div class="er-card"><div class="er-card-lbl">Tasa de ahorro</div><div class="er-card-val" id="erAhorro">—</div></div>
+        <div class="er-card"><div class="er-card-lbl">Entró</div><div class="er-card-val pos" id="erIngresos">—</div></div>
+        <div class="er-card"><div class="er-card-lbl">Salió</div><div class="er-card-val" id="erEgresos">—</div></div>
+        <div class="er-card"><div class="er-card-lbl">Te quedó</div><div class="er-card-val" id="erNeto">—</div></div>
+        <div class="er-card"><div class="er-card-lbl">Margen</div><div class="er-card-val" id="erAhorro">—</div><div class="er-card-note">De cada $100 que entran, esto es lo que te queda</div></div>
       </div>
 
       <!-- Gráfica + Top gastos -->
@@ -1068,15 +1130,15 @@ select.mod-inp{cursor:pointer}
         </div>
       </div>
 
-      <!-- NOVA IA insights -->
+      <!-- NOVA insights -->
       <div class="card er-nova">
-        <div class="er-nova-ttl">🤖 NOVA IA te dice</div>
+        <div class="er-nova-ttl"><span class="er-nova-chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>NOVA · Lo importante de este estado</div>
         <div id="erInsights">—</div>
       </div>
 
       <!-- Transacciones colapsables -->
       <div class="card" style="margin-bottom:0">
-        <button class="er-tx-toggle" onclick="toggleErTxs()">
+        <button class="er-tx-toggle t-card" onclick="toggleErTxs()">
           <span id="erTxToggleLbl">Ver y editar transacciones</span>
           <span id="erTxToggleIco">▼</span>
         </button>
@@ -1366,12 +1428,12 @@ select.mod-inp{cursor:pointer}
 <div class="overlay" id="catModal">
   <div class="mod" style="max-width:640px">
     <div class="mod-hdr">
-      <div class="mod-ttl">⚙️ Mis Categorías</div>
-      <button class="mod-close" onclick="closeModal('catModal')">✕</button>
+      <div class="mod-ttl">Mis categorías</div>
+      <button class="mod-close" onclick="closeModal('catModal')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     </div>
     <div class="mod-body" style="max-height:70vh;overflow-y:auto">
       <div class="cat-new">
-        <div class="cat-new-ttl">➕ Nueva categoría personalizada</div>
+        <div class="cat-new-ttl"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Nueva categoría personalizada</div>
         <div class="cat-new-row">
           <input id="newCatName" class="mod-inp" placeholder="Ej: Gasolina, Publicidad digital..." style="flex:1;min-width:140px">
           <select id="newCatGroup" class="mod-inp" style="width:130px">
@@ -1401,6 +1463,43 @@ select.mod-inp{cursor:pointer}
 //           cutting_date, last_payment_date, sat_uuid,
 //           rfc_emisor, rfc_receptor, is_fiscal
 // ============================================================
+
+// ── Iconos Lucide (DISENO-SISTEMA §3) — SVG inline, currentColor ──
+const ICONS = {
+  calendario:   '<rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
+  documento:    '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>',
+  guardar:      '<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/>',
+  engrane:      '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  negocios:     '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>',
+  comida:       '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
+  hogar:        '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  persona:      '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  finanzas:     '<line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
+  moneda:       '<circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/>',
+  otros:        '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+  subir:        '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+  grafica:      '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+  tendencia:    '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+  editar:       '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
+  eliminar:     '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
+  campana:      '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  salir:        '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
+  atras:        '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+  check:        '<path d="M20 6 9 17l-5-5"/>',
+  mas:          '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  buscar:       '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  cerrar:       '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  alerta:       '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  nova:         '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>',
+  tarjeta:      '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
+  recibo:       '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/>',
+  rayo:         '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  arriba:       '<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
+  abajo:        '<path d="m7 7 10 10"/><path d="M17 7v10H7"/>'
+};
+function icon(name, cls = 'ic') {
+  return `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+}
 
 let _user = null, _profile = null;
 let _accounts = [], _debts = [], _txFilter = 'all';
@@ -1474,7 +1573,7 @@ function showPage(id) {
     if (n.getAttribute('onclick')?.includes(`'${id}'`)) n.classList.add('active');
   });
   const titles = {
-    overview:     ['⚡ One-Minute Check', '— Tu salud financiera al instante'],
+    overview:     ['Resumen', '— Así va tu negocio'],
     transactions: ['📊 Transacciones',    '— Movimientos y SAT unificados'],
     accounts:     ['🏦 Cuentas',          '— balance_available en tiempo real'],
     ingresos:     ['💰 Ingresos',          '— Fuentes de ingreso y total mensual'],
@@ -1485,7 +1584,7 @@ function showPage(id) {
     alerts:       ['🔔 Alertas',          ''],
     settings:     ['⚙️ Configuración',    ''],
     calendario:   ['📆 Calendario',       '— Flujo diario de ingresos y egresos'],
-    estados:      ['📄 Subir Estado',     '— IA extrae y categoriza tus transacciones'],
+    estados:      ['Subir estado de cuenta', '— Tus números listos en un minuto'],
     reportes:     ['📈 Reportes',         '— Por mes y banco · descarga para tu contador'],
     referidos:    ['🤝 Mi red · Referidos', '— Invita y gana cada mes']
   };
@@ -1588,11 +1687,11 @@ function fallbackMetrics() {
 function loadAlertBanners(m) {
   const banners = [];
   if (m.cutting_reserve > 0 && m.semaforo !== 'green')
-    banners.push({ sev:'warning', ico:'📅', ttl:`Fecha de corte TDC en los próximos 7 días`, msg:`Reservar ${fmt(m.cutting_reserve)} para el pago` });
+    banners.push({ sev:'warning', ico:`<span style="color:var(--warn)">${icon('calendario')}</span>`, ttl:`Fecha de corte TDC en los próximos 7 días`, msg:`Reservar ${fmt(m.cutting_reserve)} para el pago` });
   if (m.caja_libre < 0)
-    banners.push({ sev:'critical', ico:'🔴', ttl:'Caja libre negativa', msg:'Tus compromisos superan tu liquidez disponible' });
+    banners.push({ sev:'critical', ico:`<span style="color:var(--neg-text)">${icon('alerta')}</span>`, ttl:'Caja libre negativa', msg:'Tus compromisos superan tu liquidez disponible' });
   if (m.runway_days < 30 && m.runway_days < 999)
-    banners.push({ sev:'critical', ico:'⚠️', ttl:`Runway crítico: ${m.runway_days} días de vida`, msg:'Reduce gastos o aumenta ingresos inmediatamente' });
+    banners.push({ sev:'critical', ico:`<span style="color:var(--neg-text)">${icon('alerta')}</span>`, ttl:`Runway crítico: ${m.runway_days} días de vida`, msg:'Reduce gastos o aumenta ingresos inmediatamente' });
   document.getElementById('alertBanners').innerHTML = banners.length
     ? `<div class="alert-list">${banners.map(b => `
         <div class="alert-item ${b.sev}">
@@ -1695,7 +1794,7 @@ async function loadRecentTx() {
     .limit(8);
   const tbody = document.getElementById('recentTxBody');
   if (!data?.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty" style="padding:1.75rem"><div class="eico">📊</div><div class="etxt">Sin transacciones aún</div><button class="ecta" onclick="openModal('txModal')">+ Primera transacción</button></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty" style="padding:1.75rem"><div class="eico" style="width:48px;height:48px;border-radius:50%;background:var(--bg4);color:var(--muted);display:flex;align-items:center;justify-content:center;margin:0 auto .75rem">${icon('documento','ic ic-24')}</div><div class="etxt t-card">Sin transacciones aún</div><button class="btn btn-primary" onclick="openModal('txModal')">${icon('mas')}Primera transacción</button></div></td></tr>`;
     return;
   }
   tbody.innerHTML = data.map(tx => txRowShort(tx)).join('');
@@ -1733,7 +1832,7 @@ async function loadTx() {
 
 function txRowShort(tx) {
   const src = tx.source || 'manual';
-  const sign = tx.type === 'ingreso' ? '+' : tx.type === 'egreso' ? '-' : '↔';
+  const sign = tx.type === 'ingreso' ? '+' : tx.type === 'egreso' ? '−' : '↔';
   return `<tr>
     <td><div style="font-weight:500;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tx.description}</div>${tx.counterpart ? `<div style="font-size:.68rem;color:var(--muted)">${tx.counterpart}</div>` : ''}</td>
     <td><span class="cat-pill">${tx.category || '—'}</span></td>
@@ -3079,7 +3178,8 @@ const _CAT_GROUPS = {
   'Otros':'Otros'
 };
 
-const _CAT_GROUP_ICONS = { 'Negocios':'🏢','Comida':'🍽','Hogar':'🛒','Personal':'👤','Finanzas':'💰','Otros':'⬜' };
+// Iconos Lucide por grupo (nombres dentro de ICONS — DISENO-SISTEMA §2.4)
+const _CAT_GROUP_ICONS = { 'Negocios':'negocios','Comida':'comida','Hogar':'hogar','Personal':'persona','Finanzas':'finanzas','Otros':'otros' };
 
 function getAllCats() {
   const custom = _customCats.map(c => c.name);
@@ -3104,7 +3204,7 @@ function _grpCardsHTML(cats, totalExp, moneyFn) {
   if (!gt.length) return '';
   const money = moneyFn || fmt;
   return `<div class="grp-cards">` + gt.map(x =>
-    `<div class="grp-card" data-g="${_escHtml(x.group)}"><div class="g-top"><span class="g-ico">${_CAT_GROUP_ICONS[x.group] || '⬜'}</span><span class="g-nm">${_escHtml(x.group)}</span></div><div class="g-amt">${money(x.amt)}</div><div class="g-meter"><span style="width:${totalExp ? Math.min(100, Math.round(x.amt / totalExp * 100)) : 0}%"></span></div><div class="g-pct"><b>${totalExp ? Math.round(x.amt / totalExp * 100) : 0}%</b> de tus egresos</div></div>`
+    `<div class="grp-card" data-g="${_escHtml(x.group)}"><div class="g-top"><span class="g-ico">${icon(_CAT_GROUP_ICONS[x.group] || 'otros')}</span><span class="g-nm">${_escHtml(x.group)}</span></div><div class="g-amt">${money(x.amt)}</div><div class="g-meter"><span style="width:${totalExp ? Math.min(100, Math.round(x.amt / totalExp * 100)) : 0}%"></span></div><div class="g-pct"><b>${totalExp ? Math.round(x.amt / totalExp * 100) : 0}%</b> de tus egresos</div></div>`
   ).join('') + `</div>`;
 }
 
@@ -3127,14 +3227,14 @@ function applyEstadoFile(file) {
   const ext = file.name.split('.').pop().toLowerCase();
   if (!['pdf','csv'].includes(ext)) { toast('Solo se aceptan archivos PDF o CSV', 'error'); return; }
   _estadoFile = file;
-  document.getElementById('estadoFileChipTxt').textContent = `📄 ${file.name} (${(file.size/1024).toFixed(0)} KB)`;
+  document.getElementById('estadoFileChipTxt').textContent = `${file.name} · ${(file.size/1024).toFixed(0)} KB`;
   document.getElementById('estadoFileChip').style.display = 'block';
   document.getElementById('uploadZone').style.display = 'none';
 }
 
 function resetEstados() {
   _stmtView = null;
-  const _bg = document.getElementById('btnGuardar'); if (_bg) { _bg.style.display = ''; _bg.disabled = false; _bg.textContent = '💾 Guardar'; }
+  const _bg = document.getElementById('btnGuardar'); if (_bg) { _bg.style.display = ''; _bg.disabled = false; _bg.textContent = 'Guardar'; }
   const _bo = document.getElementById('btnSubirOtro'); if (_bo) _bo.textContent = '← Subir otro';
   const _ni = document.getElementById('stmtName'); if (_ni) _ni.value = '';
   if (typeof loadSavedStatements === 'function') loadSavedStatements();
@@ -3172,7 +3272,7 @@ async function procesarEstado() {
     if (upErr) throw new Error('Error subiendo archivo: ' + upErr.message);
 
     // 2. Llamar Edge Function (con timeout y un reintento automático)
-    document.getElementById('procMsg').textContent = 'La IA está analizando tus transacciones… (puede tardar hasta 1 min en PDFs)';
+    document.getElementById('procMsg').textContent = 'Leyendo tus movimientos… Esto tarda de 15 a 60 segundos. No cierres la ventana.';
     const session = await db.auth.getSession();
     const token = session.data.session?.access_token;
 
@@ -3263,7 +3363,7 @@ function renderEstadosTxs() {
   const ahorro = totalIn > 0 ? ((neto / totalIn) * 100) : 0;
 
   // Header
-  document.getElementById('erBanco').textContent = '📊 ' + (_estadoMeta.bank || 'Estado de Resultados');
+  document.getElementById('erBanco').textContent = (_estadoMeta.bank ? _estadoMeta.bank + ' · ' : '') + 'Resultados de tu periodo';
   if (_estadoMeta.period_start && _estadoMeta.period_end) {
     const fmt2 = d => new Date(d + 'T12:00:00').toLocaleDateString('es-MX', {day:'numeric',month:'short',year:'numeric'});
     document.getElementById('erPeriodo').textContent = fmt2(_estadoMeta.period_start) + ' — ' + fmt2(_estadoMeta.period_end) + ' · ' + visible.length + ' transacciones';
@@ -3273,23 +3373,23 @@ function renderEstadosTxs() {
   document.getElementById('erIngresos').textContent = fmt(totalIn);
   document.getElementById('erEgresos').textContent = fmt(totalOut);
   const netoEl = document.getElementById('erNeto');
-  netoEl.textContent = fmt(Math.abs(neto));
+  netoEl.textContent = (neto < 0 ? '−' : '') + fmt(Math.abs(neto));
   netoEl.className = 'er-card-val ' + (neto >= 0 ? 'pos' : 'neg');
   const ahorroEl = document.getElementById('erAhorro');
   ahorroEl.textContent = ahorro.toFixed(1) + '%';
   ahorroEl.className = 'er-card-val ' + (ahorro >= 20 ? 'pos' : ahorro >= 0 ? '' : 'neg');
 
   // Botón guardar
-  if (!_stmtView) document.getElementById('btnGuardar').textContent = '💾 Guardar ' + visible.length + ' transacciones';
+  if (!_stmtView) document.getElementById('btnGuardar').textContent = 'Guardar ' + visible.length + ' movimientos';
 
   // Conciliación / autochequeo + detección de duplicados dentro del lote
   (function(){
     const el = document.getElementById('erReconcile');
     if (!el) return;
     if (_stmtView) {
-      el.innerHTML = `<div style="background:#ecfdf5;border:1px solid rgba(16,185,129,.25);border-radius:10px;padding:.7rem .9rem;font-size:.8rem;color:var(--text);display:flex;gap:.6rem;align-items:flex-start">
-        <span style="font-size:1rem">💾</span>
-        <div>Este estado ya está guardado. <b>Cualquier cambio que hagas aquí se guarda automáticamente</b> — categorías, montos, tipos y eliminaciones.</div>
+      el.innerHTML = `<div style="background:var(--pos-bg);border:1px solid var(--line);border-radius:var(--r-md);padding:.7rem .9rem;font-size:.875rem;line-height:1.55;color:var(--slate);display:flex;gap:.6rem;align-items:flex-start">
+        <span style="color:var(--pos-text)">${icon('check')}</span>
+        <div>Este estado ya está guardado. <b style="color:var(--ink)">Cualquier cambio que hagas aquí se guarda automáticamente</b> — categorías, montos, tipos y eliminaciones.</div>
       </div>`;
       return;
     }
@@ -3298,14 +3398,14 @@ function renderEstadosTxs() {
       const k = (t.date||'') + '|' + (t.amount||0) + '|' + (t.description||'').trim().toLowerCase();
       if (seen[k]) dups.push(t); else seen[k] = true;
     });
-    let html = `<div style="background:#f5f3ff;border:1px solid rgba(99,91,255,.2);border-radius:10px;padding:.7rem .9rem;font-size:.8rem;color:var(--text);display:flex;gap:.6rem;align-items:flex-start">
-      <span style="font-size:1rem">🧮</span>
-      <div>Revisa antes de guardar: <b>${visible.length}</b> movimientos · Ingresos <b style="color:var(--ok)">${fmt(totalIn)}</b> − Egresos <b style="color:var(--err)">${fmt(totalOut)}</b> = Neto <b>${fmt(Math.abs(neto))}</b>. Confirma que el <b>neto cuadre</b> con el saldo de tu estado de cuenta.</div>
+    let html = `<div style="background:var(--bg3);border:1px solid var(--line);border-radius:var(--r-md);padding:.7rem .9rem;font-size:.875rem;line-height:1.55;color:var(--slate);display:flex;gap:.6rem;align-items:flex-start">
+      <span style="color:var(--muted)">${icon('check')}</span>
+      <div>Encontramos <b style="color:var(--ink)">${visible.length}</b> movimientos: entró <b style="color:var(--ink)">${fmt(totalIn)}</b> y salió <b style="color:var(--ink)">${fmt(totalOut)}</b>. Compara contra tu estado de cuenta: si los totales coinciden, dale Guardar.</div>
     </div>`;
     if (dups.length) {
-      html += `<div style="background:#fff7ed;border:1px solid rgba(217,119,6,.25);border-radius:10px;padding:.7rem .9rem;font-size:.8rem;color:var(--text);display:flex;gap:.6rem;align-items:flex-start;margin-top:.5rem">
-        <span style="font-size:1rem">⚠️</span>
-        <div><b>${dups.length}</b> posible(s) duplicado(s) (misma fecha, monto y descripción). Revísalos en la lista de transacciones y elimina los que sobren.</div>
+      html += `<div style="background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:var(--r-md);padding:.7rem .9rem;font-size:.875rem;line-height:1.55;color:var(--slate);display:flex;gap:.6rem;align-items:flex-start;margin-top:.5rem">
+        <span style="color:var(--warn)">${icon('alerta')}</span>
+        <div><b style="color:var(--ink)">${dups.length}</b> posible(s) duplicado(s) (misma fecha, monto y descripción). Revísalos en la lista de transacciones y elimina los que sobren.</div>
       </div>`;
     }
     el.innerHTML = html;
@@ -3330,35 +3430,35 @@ function renderEstadosTxs() {
     const total = catTxs.reduce((s,t)=>s+t.amount,0);
     const inner = catTxs.sort((a,b)=>b.amount-a.amount).map(t =>
       `<div style="border-bottom:1px solid rgba(10,37,64,.04)">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.28rem .6rem;font-size:.72rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.32rem .6rem">
           <div style="min-width:0">
-            <div style="color:var(--text);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</div>
-            <div style="color:var(--muted);font-size:.64rem;margin-top:.05rem">📅 ${t.date ? fmtDate(t.date + 'T12:00:00') : 'Sin fecha'}</div>
+            <div style="font-size:.875rem;color:var(--ink);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</div>
+            <div class="t-meta" style="margin-top:.05rem">${t.date ? fmtDate(t.date + 'T12:00:00') : 'Sin fecha'}</div>
           </div>
           <div style="display:flex;gap:.4rem;align-items:center;flex-shrink:0;margin-left:.5rem">
-            <span style="color:var(--text);font-weight:700">${fmt(t.amount)}</span>
-            <button onclick="showCatEdit(${t._id})" style="background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);cursor:pointer;font-size:.6rem;padding:.12rem .3rem" title="Cambiar categoría">✏️</button>
+            <span class="t-num-sm" style="color:var(--ink)">${fmt(t.amount)}</span>
+            <button onclick="showCatEdit(${t._id})" style="background:none;border:1px solid var(--line);border-radius:var(--r-sm);color:var(--muted);cursor:pointer;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;padding:0" title="Cambiar categoría">${icon('editar')}</button>
           </div>
         </div>
-        <div id="catedit${t._id}" style="display:none;padding:.4rem .6rem .5rem;background:rgba(0,0,0,.25);margin:.1rem .4rem .3rem;border-radius:6px">
-          <div style="font-size:.67rem;color:var(--muted);margin-bottom:.3rem">Mover a categoría y enseñarle a NOVA:</div>
+        <div id="catedit${t._id}" style="display:none;padding:.4rem .6rem .5rem;background:var(--bg3);margin:.1rem .4rem .3rem;border-radius:var(--r-sm)">
+          <div class="t-meta" style="margin-bottom:.3rem">Mover a categoría y enseñarle a NOVA:</div>
           <div style="display:flex;gap:.4rem;align-items:center">
             <select id="catsel${t._id}" class="rev-inp" style="flex:1">
               ${getAllCats().map(c => `<option ${c===t.category?'selected':''}>${c}</option>`).join('')}
             </select>
-            <button onclick="saveCategRule(${t._id})" class="tb-btn tb-primary" style="font-size:.7rem;padding:.28rem .55rem;white-space:nowrap">✓ Guardar</button>
-            <button onclick="document.getElementById('catedit${t._id}').style.display='none'" class="tb-btn tb-ghost" style="font-size:.7rem;padding:.28rem .45rem">✕</button>
+            <button onclick="saveCategRule(${t._id})" class="tb-btn tb-primary" style="white-space:nowrap">${icon('check')}Aplicar</button>
+            <button onclick="document.getElementById('catedit${t._id}').style.display='none'" class="tb-btn tb-ghost">${icon('cerrar')}</button>
           </div>
         </div>
       </div>`).join('');
-    return `<div style="border-bottom:1px solid var(--border)">
+    return `<div style="border-bottom:1px solid var(--line)">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:.42rem 0;cursor:pointer" onclick="var d=document.getElementById('cd${i}');d.style.display=d.style.display==='none'?'block':'none'">
-        <div style="font-size:.78rem;font-weight:700">${cat} <span style="font-size:.68rem;color:var(--muted);font-weight:400">(${catTxs.length})</span></div>
-        <div style="font-size:.78rem;font-weight:800;color:var(--err)">${fmt(total)} ▾</div>
+        <div class="t-num-sm" style="color:var(--ink)">${cat} <span class="t-meta" style="font-weight:400">(${catTxs.length})</span></div>
+        <div class="t-num-sm" style="color:var(--ink)">${fmt(total)} ▾</div>
       </div>
-      <div id="cd${i}" style="display:none;background:var(--bg3);border-radius:8px;margin-bottom:.4rem">${inner}</div>
+      <div id="cd${i}" style="display:none;background:var(--bg3);border-radius:var(--r-sm);margin-bottom:.4rem">${inner}</div>
     </div>`;
-  }).join('') : '<div style="color:var(--muted);font-size:.8rem">Sin egresos</div>';
+  }).join('') : '<div class="t-meta">Sin egresos</div>';
 
   // NOVA insights
   document.getElementById('erInsights').innerHTML = generateNovaInsights(visible, totalIn, totalOut, neto, ahorro);
@@ -3373,11 +3473,11 @@ function renderEstadosTxs() {
         ${getAllCats().map(c => `<option ${c===tx.category?'selected':''}>${c}</option>`).join('')}
       </select>
       <select class="rev-inp" onchange="updEstadoTx(${tx._id},'type',this.value)">
-        <option ${tx.type==='ingreso'?'selected':''} value="ingreso">💰 Ingreso</option>
-        <option ${tx.type==='egreso'?'selected':''} value="egreso">💸 Egreso</option>
-        ${tx.type==='transferencia'?'<option selected value="transferencia">↔ Transferencia</option>':''}
+        <option ${tx.type==='ingreso'?'selected':''} value="ingreso">Ingreso</option>
+        <option ${tx.type==='egreso'?'selected':''} value="egreso">Egreso</option>
+        ${tx.type==='transferencia'?'<option selected value="transferencia">Transferencia</option>':''}
       </select>
-      <button class="rev-del" onclick="removeEstadoTx(${tx._id})" title="Eliminar">✕</button>
+      <button class="rev-del" onclick="removeEstadoTx(${tx._id})" title="Eliminar">${icon('cerrar')}</button>
     </div>`).join('');
 }
 
@@ -3389,20 +3489,21 @@ function renderERChart(txs) {
   const fmtShort = v => v >= 1000 ? '$' + (v/1000).toFixed(1) + 'k' : '$' + v.toFixed(0);
   const labels = sorted.map(e => e[0] + '  ' + fmtShort(e[1]));
   const data   = sorted.map(e => e[1]);
-  const colors = ['#635bff','#8b7cff','#00b8d4','#ff80b5','#0e9f6e','#118ab2','#ef476f','#e76f51','#7b61ff','#457b9d','#2a9d8f'];
+  // Monocromática: un solo matiz (tinta) con opacidad decreciente — la barra más grande es la más oscura (DISENO-SISTEMA §2.5)
+  const colors = sorted.map((_, i) => `rgba(10,37,64,${Math.max(.25, .9 - i * .07)})`);
 
   if (_erChartInstance) { _erChartInstance.destroy(); _erChartInstance = null; }
   const ctx = document.getElementById('erChart').getContext('2d');
   _erChartInstance = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets: [{ data, backgroundColor: colors.slice(0, labels.length), borderRadius: 6, borderSkipped: false }] },
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 6, borderSkipped: false }] },
     options: {
       indexAxis: 'y',
       responsive: true,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + fmt(c.raw) } } },
       scales: {
-        x: { ticks: { color: '#8a9bb5', font: { size: 10 }, callback: v => '$' + (v>=1000?(v/1000).toFixed(0)+'k':v) }, grid: { color: 'rgba(10,37,64,.04)' } },
-        y: { ticks: { color: '#c9d6e8', font: { size: 11 } }, grid: { display: false } }
+        x: { ticks: { color: '#697386', font: { size: 10 }, callback: v => '$' + (v>=1000?(v/1000).toFixed(0)+'k':v) }, grid: { color: 'rgba(10,37,64,.04)' } },
+        y: { ticks: { color: '#425466', font: { size: 11 } }, grid: { display: false } }
       }
     }
   });
@@ -3421,27 +3522,27 @@ function generateNovaInsights(txs, totalIn, totalOut, neto, ahorro) {
     const pct = totalOut > 0 ? ((topCat[1]/totalOut)*100).toFixed(0) : 0;
     const catTxs = egresos.filter(t => t.category === topCat[0]).sort((a,b) => b.amount - a.amount).slice(0, 3);
     const detalle = catTxs.map(t => `<b>${t.description}</b> (${fmt(t.amount)})`).join(', ');
-    insights.push({ ico: '📌', txt: `Tu categoría de mayor gasto es <b>${topCat[0]}</b>: ${fmt(topCat[1])} (${pct}% de tus egresos). Los más altos: ${detalle}.` });
+    insights.push({ ico: `<span style="color:var(--muted)">${icon('grafica')}</span>`, txt: `Tu categoría de mayor gasto es <b>${topCat[0]}</b>: ${fmt(topCat[1])} (${pct}% de tus egresos). Los más altos: ${detalle}.` });
   }
 
   // Insight 2: salud financiera
   if (ahorro >= 30) {
-    insights.push({ ico: '🟢', txt: `Tu tasa de ahorro es <b>${ahorro.toFixed(1)}%</b> — excelente. Estás generando más de lo que gastas.` });
+    insights.push({ ico: `<span style="color:var(--pos-text)">${icon('check')}</span>`, txt: `Tu margen es <b>${ahorro.toFixed(1)}%</b> — excelente. Estás generando más de lo que gastas.` });
   } else if (ahorro >= 10) {
-    insights.push({ ico: '🟡', txt: `Tu tasa de ahorro es <b>${ahorro.toFixed(1)}%</b>. Hay oportunidad de optimizar gastos para llegar al 30%.` });
+    insights.push({ ico: `<span style="color:var(--warn)">${icon('alerta')}</span>`, txt: `Tu margen es <b>${ahorro.toFixed(1)}%</b>. Hay oportunidad de optimizar gastos para llegar al 30%.` });
   } else if (neto < 0) {
-    insights.push({ ico: '🔴', txt: `Tus egresos superaron tus ingresos por <b>${fmt(Math.abs(neto))}</b>. Revisa en qué categorías puedes reducir.` });
+    insights.push({ ico: `<span style="color:var(--neg-text)">${icon('alerta')}</span>`, txt: `Tus egresos superaron tus ingresos por <b>${fmt(Math.abs(neto))}</b>. Revisa en qué categorías puedes reducir.` });
   } else {
-    insights.push({ ico: '🟡', txt: `Tu flujo neto es <b>${fmt(neto)}</b>. Intenta aumentar tu tasa de ahorro reduciendo gastos variables.` });
+    insights.push({ ico: `<span style="color:var(--warn)">${icon('alerta')}</span>`, txt: `Te quedó <b>${fmt(neto)}</b>. Intenta mejorar tu margen reduciendo gastos variables.` });
   }
 
   // Insight 3: fuentes de ingreso
   if (ingresos.length === 0) {
-    insights.push({ ico: '💡', txt: `No se detectaron ingresos en este periodo. ¿Es un estado de egresos o falta información?` });
+    insights.push({ ico: `<span style="color:var(--muted)">${icon('nova')}</span>`, txt: `No se detectaron ingresos en este periodo. ¿Es un estado de egresos o falta información?` });
   } else if (ingresos.length === 1) {
-    insights.push({ ico: '💡', txt: `Tienes <b>1 fuente de ingreso</b> este periodo de ${fmt(totalIn)}. Diversificar reduce tu riesgo financiero.` });
+    insights.push({ ico: `<span style="color:var(--muted)">${icon('nova')}</span>`, txt: `Tienes <b>1 fuente de ingreso</b> este periodo de ${fmt(totalIn)}. Diversificar reduce tu riesgo financiero.` });
   } else {
-    insights.push({ ico: '💡', txt: `Detecté <b>${ingresos.length} entradas de dinero</b> por un total de ${fmt(totalIn)}. Revisa cuáles son recurrentes.` });
+    insights.push({ ico: `<span style="color:var(--muted)">${icon('nova')}</span>`, txt: `Detecté <b>${ingresos.length} entradas de dinero</b> por un total de ${fmt(totalIn)}. Revisa cuáles son recurrentes.` });
   }
 
   return insights.map(i => `<div class="er-insight"><span class="er-insight-ico">${i.ico}</span><span>${i.txt}</span></div>`).join('');
@@ -3491,7 +3592,7 @@ function renderCatModal() {
   const moved = name => _PREDEFINED_CATS.includes(name) && _customCats.some(c => c.name === name);
   el.innerHTML = `<div class="cat-org-grid">` + _GRP_ORDER.map(g => `
     <div class="cat-grp-sec" data-g="${_escHtml(g)}">
-      <div class="cat-grp-hd"><span class="cat-grp-ico">${_CAT_GROUP_ICONS[g] || '⬜'}</span><span class="cat-grp-nm">${_escHtml(g)}</span><span class="cat-grp-count">${(byGroup[g] || []).length}</span></div>
+      <div class="cat-grp-hd"><span class="cat-grp-ico">${icon(_CAT_GROUP_ICONS[g] || 'otros')}</span><span class="cat-grp-nm">${_escHtml(g)}</span><span class="cat-grp-count">${(byGroup[g] || []).length}</span></div>
       <div class="cat-grp-rows">
         ${(byGroup[g] || []).map(c => {
           const safe = c.replace(/['\\]/g, ' ');
@@ -3500,7 +3601,7 @@ function renderCatModal() {
             <select onchange="moveCatToGroup('${safe}', this.value)">
               ${_GRP_ORDER.map(og => `<option ${og === g ? 'selected' : ''}>${og}</option>`).join('')}
             </select>
-            ${isCustom(c) ? `<button class="cat-del" onclick="deleteCustomCat('${safe}')" title="Eliminar categoría">✕</button>` : ''}
+            ${isCustom(c) ? `<button class="cat-del" onclick="deleteCustomCat('${safe}')" title="Eliminar categoría">${icon('cerrar')}</button>` : ''}
           </div>`;
         }).join('') || '<div class="cat-grp-empty">Sin categorías en este grupo</div>'}
       </div>
@@ -3673,7 +3774,7 @@ async function confirmarEstado() {
     console.error('confirmarEstado error:', err);
     toast('No se pudo guardar: ' + (err.message || err.details || err.code || 'error desconocido'), 'error');
   } finally {
-    btn.disabled = false; btn.textContent = '💾 Guardar';
+    btn.disabled = false; btn.textContent = 'Guardar';
   }
 }
 
@@ -3785,26 +3886,26 @@ function renderSavedStatements(list) {
   wrap.innerHTML = list.map(s => {
     const per = [s.period_start, s.period_end].filter(Boolean).join(' → ') || '—';
     const fecha = s.created_at ? new Date(s.created_at).toLocaleDateString('es-MX') : '';
-    return `<div style="display:flex;align-items:center;gap:.75rem;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.75rem .9rem;margin-bottom:.5rem">
-      <div style="font-size:1.15rem">📄</div>
+    return `<div style="display:flex;align-items:center;gap:.75rem;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-md);padding:12px 16px;margin-bottom:.5rem;box-shadow:var(--shadow-1)">
+      <div style="width:32px;height:32px;border-radius:var(--r-sm);background:var(--bg4);color:var(--slate);display:flex;align-items:center;justify-content:center;flex-shrink:0">${icon('documento','ic ic-20')}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:.9rem;color:var(--text)">${_escHtml(s.name || 'Estado de cuenta')}</div>
-        <div style="font-size:.72rem;color:var(--muted)">${_escHtml(s.bank_name || '—')} · ${_escHtml(per)} · ${s.tx_count || 0} mov · ${fecha}</div>
+        <div class="t-num-sm" style="color:var(--ink)">${_escHtml(s.name || 'Estado de cuenta')}</div>
+        <div class="t-meta">${_escHtml(s.bank_name || '—')} · ${_escHtml(per)} · ${s.tx_count || 0} mov · ${fecha}</div>
       </div>
-      <button class="tb-btn tb-primary" onclick="openSavedStatement('${s.id}')" style="padding:.4rem .75rem">📊 Ver análisis</button>
-      <button class="tb-btn tb-ghost" onclick="openStatement('${s.id}','${(s.name||'Estado de cuenta').replace(/['\\]/g,' ')}')" style="padding:.4rem .75rem" title="Ver en tabla de transacciones">Movimientos</button>
-      <button class="tb-btn tb-ghost" onclick="deleteStatement('${s.id}', this)" title="Eliminar" style="padding:.4rem .75rem">🗑</button>
+      <button class="btn btn-ghost" onclick="openSavedStatement('${s.id}')" style="padding:8px 12px">Ver análisis</button>
+      <button class="btn btn-ghost" onclick="openStatement('${s.id}','${(s.name||'Estado de cuenta').replace(/['\\]/g,' ')}')" style="padding:8px 12px" title="Ver en tabla de transacciones">Movimientos</button>
+      <button class="btn btn-danger" onclick="deleteStatement('${s.id}', this)" title="Eliminar" style="padding:8px 10px">${icon('eliminar')}</button>
     </div>`;
   }).join('');
 }
 
 async function deleteStatement(id, btn) {
-  if (!confirm('¿Eliminar este estado de cuenta y sus transacciones? Esta acción no se puede deshacer.')) return;
+  if (!confirm('Vas a borrar este estado y sus movimientos. Tus totales del mes cambiarán. ¿Continuar?')) return;
   if (btn) { btn.disabled = true; btn.textContent = '…'; }
   const { error } = await db.from('statements').delete().eq('id', id).eq('user_id', _user.id);
   if (error) {
     toast('Error al eliminar: ' + error.message, 'error');
-    if (btn) { btn.disabled = false; btn.textContent = '🗑'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
     return;
   }
   toast('Estado de cuenta eliminado', 'success');
@@ -4097,7 +4198,7 @@ let _iniTx = [], _iniStmtBank = {};
 async function renderInicio() {
   const root = document.getElementById('inicioRoot'); if (!root) return;
   const nm = ((typeof _profile !== 'undefined' && _profile && _profile.full_name) || '').trim().split(' ')[0];
-  const hi = document.getElementById('iniHi'); if (hi) hi.textContent = nm ? `Hola, ${nm} 👋` : 'Hola 👋';
+  const hi = document.getElementById('iniHi'); if (hi) hi.textContent = nm ? `Hola, ${nm}` : 'Hola';
   root.innerHTML = '<div class="ini-empty">Cargando tu resumen…</div>';
   try {
     const [txRes, stRes] = await Promise.all([
@@ -4127,10 +4228,9 @@ function _iniSpark(trend) {
   const area = line + ` L${pts[pts.length - 1][0].toFixed(0)},${h} L${pts[0][0].toFixed(0)},${h} Z`;
   const last = pts[pts.length - 1];
   return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="margin-top:1.05rem;display:block">
-    <defs><linearGradient id="iniG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#635bff" stop-opacity=".18"/><stop offset="1" stop-color="#635bff" stop-opacity="0"/></linearGradient></defs>
-    <path d="${area}" fill="url(#iniG)"/>
-    <path d="${line}" fill="none" stroke="#635bff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="${last[0].toFixed(0)}" cy="${last[1].toFixed(0)}" r="5" fill="#fff" stroke="#635bff" stroke-width="3"/>
+    <path d="${area}" fill="rgba(10,37,64,.05)"/>
+    <path d="${line}" fill="none" stroke="#0a2540" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${last[0].toFixed(0)}" cy="${last[1].toFixed(0)}" r="4" fill="#fff" stroke="#0a2540" stroke-width="2"/>
   </svg>`;
 }
 
@@ -4140,7 +4240,7 @@ function renderInicioBody() {
   const bank = document.getElementById('iniBank').value;
   const inBank = t => { if (bank === '__all__') return true; const b = t.statement_id ? (_iniStmtBank[t.statement_id] || 'Sin banco') : 'Sin banco'; return b === bank; };
   if (!month) {
-    root.innerHTML = `<div class="ini-empty"><div style="font-size:2.2rem;margin-bottom:.5rem">📄</div><div style="font-weight:700;color:var(--ink);font-size:1.08rem">Sube tu primer estado de cuenta</div><div style="margin-top:.45rem;max-width:420px;margin-left:auto;margin-right:auto">En cuanto subas un PDF, aquí verás cuánto ganaste, a dónde se fue tu dinero y tu resumen completo.</div><button class="tb-btn tb-primary" style="margin-top:1.3rem" onclick="showPage('estados')">＋ Subir estado de cuenta</button></div>`;
+    root.innerHTML = `<div class="ini-empty"><div class="e-ico">${icon('documento','ic ic-24')}</div><div class="t-card">Sube tu primer estado de cuenta</div><div class="t-body" style="margin-top:.45rem;max-width:420px;margin-left:auto;margin-right:auto">En cuanto subas un PDF, aquí verás cuánto ganaste, a dónde se fue tu dinero y tu resumen completo.</div><button class="btn btn-primary" style="margin-top:1.3rem" onclick="showPage('estados')">${icon('mas')}Subir estado de cuenta</button></div>`;
     return;
   }
   const rows = _iniTx.filter(t => String(t.date || '').slice(0, 7) === month && inBank(t));
@@ -4155,8 +4255,8 @@ function renderInicioBody() {
   const maxCat = r.cats.length ? r.cats[0].amt : 1;
   const mayor = r.cats.find(c => c.cat !== 'Otros') || r.cats[0] || null;
   const trendChip = delta === null ? `<span class="ini-trend flat">— primer mes con datos</span>`
-    : delta >= 0 ? `<span class="ini-trend up">▲ ${_repMoney(delta)} vs mes anterior</span>`
-      : `<span class="ini-trend down">▼ ${_repMoney(Math.abs(delta))} vs mes anterior</span>`;
+    : delta >= 0 ? `<span class="ini-trend up">${icon('arriba')} ${_repMoney(delta)} vs mes anterior</span>`
+      : `<span class="ini-trend down">${icon('abajo')} ${_repMoney(Math.abs(delta))} vs mes anterior</span>`;
   let nova;
   if (otrosPct >= 30) nova = `<b>Ojo:</b> el <b>${otrosPct}% de tus egresos</b> (${_repMoney(otros ? otros.amt : 0)}) están sin clasificar como "Otros". Si los etiquetas, tu reporte para el contador y tu reserva de SAT serán mucho más precisos.`;
   else if (r.util >= 0) nova = `Buen mes: <b>ganaste ${_repMoney(r.util)}</b> con un margen del ${Math.round(r.margin)}%.${mayor ? ` Tu mayor gasto fue ${_escHtml(mayor.cat)} (${_repMoney(mayor.amt)}).` : ''}`;
@@ -4165,9 +4265,9 @@ function renderInicioBody() {
   const outH = r.exp >= r.inc ? 100 : Math.round(r.exp / (r.inc || 1) * 100);
   root.innerHTML = `
     <div class="ini-grid">
-      <div class="ini-card">
+      <div class="ini-card ini-hero">
         <div class="ini-cap">Utilidad de ${_escHtml(mesNom.toLowerCase())}</div>
-        <div class="ini-big" style="color:${r.util >= 0 ? '#0e9f6e' : '#e2435f'}">${_repMoney(r.util)}</div>
+        <div class="ini-big" style="color:${r.util >= 0 ? 'var(--pos)' : 'var(--neg)'}">${r.util < 0 ? '−' : ''}${_repMoney(Math.abs(r.util))}</div>
         ${trendChip}
         ${_iniSpark(trend)}
         <div class="ini-flow">
@@ -4182,24 +4282,24 @@ function renderInicioBody() {
           <div class="col"><div class="bar in" style="height:${inH}%"></div><div class="bl">Entró<br><b>${_repMoney(r.inc)}</b></div></div>
           <div class="col"><div class="bar out" style="height:${outH}%"></div><div class="bl">Salió<br><b>${_repMoney(r.exp)}</b></div></div>
         </div>
-        <div style="margin-top:1rem;font-size:.85rem;color:var(--slate);line-height:1.5">${r.util >= 0 ? `Tu negocio <b style="color:#0e9f6e">ganó dinero</b>: te quedó <b>${_repMoney(r.util)}</b> después de gastos.` : `Este mes <b style="color:#e2435f">gastaste más</b> de lo que entró.`}</div>
+        <div class="t-body" style="margin-top:1rem">${r.util >= 0 ? `Tu negocio <b style="color:var(--pos-text)">ganó dinero</b>: te quedó <b>${_repMoney(r.util)}</b> después de gastos.` : `Este mes <b style="color:var(--neg-text)">gastaste más</b> de lo que entró.`}</div>
       </div>
     </div>
     <div class="ini-kpis">
       <div class="ini-card ini-kpi"><div class="ini-cap">Movimientos</div><div class="v">${r.count}</div><div class="s">en ${_escHtml(mesNom)}</div></div>
       <div class="ini-card ini-kpi"><div class="ini-cap">Mayor gasto</div><div class="v sm">${mayor ? _escHtml(mayor.cat) : '—'}</div><div class="s">${mayor ? _repMoney(mayor.amt) : ''}</div></div>
       <div class="ini-card ini-kpi"><div class="ini-cap">Margen</div><div class="v">${Math.round(r.margin)}%</div><div class="s">${r.util >= 0 ? 'ganancia' : 'pérdida'}</div></div>
-      <div class="ini-card ini-kpi"><div class="ini-cap">Por clasificar</div><div class="v" style="color:${otrosPct >= 30 ? '#e2435f' : 'inherit'}">${otrosPct}%</div><div class="s">en "Otros"</div></div>
+      <div class="ini-card ini-kpi"><div class="ini-cap">Sin clasificar</div><div class="v" style="color:${otrosPct >= 30 ? 'var(--warn)' : 'inherit'}">${otrosPct}%</div><div class="s">movimientos que NOVA no supo etiquetar</div></div>
     </div>
-    <div class="ini-nova"><div class="ic">✦</div><div><div class="tag">NOVA · tu copiloto</div><p>${nova}</p></div></div>
-    ${r.cats.length ? `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem"><div class="ini-cap" style="margin:0">Totales por grupo · ${_escHtml(mesNom)}</div><button class="tb-btn tb-ghost" style="padding:.3rem .7rem;font-size:.72rem" onclick="openCatModal()">⚙️ Organizar categorías</button></div>${_grpCardsHTML(r.cats, r.exp, _repMoney)}` : ''}
-    <div class="ini-card" style="margin-bottom:1.15rem">
+    <div class="ini-nova"><div class="nv-chip">${icon('nova')}</div><div><div class="tag">NOVA · tu copiloto</div><p>${nova}</p></div></div>
+    ${r.cats.length ? `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem"><div class="ini-cap" style="margin:0">Totales por grupo · ${_escHtml(mesNom)}</div><button class="btn btn-ghost" style="padding:6px 12px;font-size:.75rem" onclick="openCatModal()">${icon('engrane')}Organizar categorías</button></div>${_grpCardsHTML(r.cats, r.exp, _repMoney)}` : ''}
+    <div class="ini-card" style="margin-bottom:24px">
       <div class="ini-cap" style="margin-bottom:1.1rem">A dónde se fue tu dinero · ${_escHtml(mesNom)}</div>
-      ${r.cats.length ? r.cats.slice(0, 6).map(c => `<div class="ini-row"><div class="nm">${_escHtml(c.cat)}</div><div class="track"><i style="width:${Math.max(4, c.amt / maxCat * 100)}%"></i></div><div class="amt">${_repMoney(c.amt)}</div><div class="pct">${r.exp ? Math.round(c.amt / r.exp * 100) : 0}%</div></div>`).join('') : '<div style="color:var(--muted);font-size:.88rem">Sin gastos registrados este mes</div>'}
+      ${r.cats.length ? r.cats.slice(0, 6).map(c => `<div class="ini-row"><div class="nm">${_escHtml(c.cat)}</div><div class="track"><i style="width:${Math.max(4, c.amt / maxCat * 100)}%"></i></div><div class="amt">${_repMoney(c.amt)}</div><div class="pct">${r.exp ? Math.round(c.amt / r.exp * 100) : 0}%</div></div>`).join('') : '<div class="t-body" style="color:var(--muted)">Sin gastos registrados este mes</div>'}
     </div>
     <div style="display:flex;gap:.6rem;flex-wrap:wrap">
-      <button class="tb-btn tb-primary" onclick="showPage('reportes')">📈 Ver reporte completo</button>
-      <button class="tb-btn tb-ghost" onclick="showPage('transactions')">Ver movimientos</button>
+      <button class="btn btn-primary" onclick="showPage('reportes')">${icon('tendencia')}Ver reporte completo</button>
+      <button class="btn btn-ghost" onclick="showPage('transactions')">Ver movimientos</button>
     </div>`;
 }
 </script>
