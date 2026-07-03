@@ -3330,8 +3330,11 @@ function renderEstadosTxs() {
     const total = catTxs.reduce((s,t)=>s+t.amount,0);
     const inner = catTxs.sort((a,b)=>b.amount-a.amount).map(t =>
       `<div style="border-bottom:1px solid rgba(10,37,64,.04)">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.22rem .6rem;font-size:.72rem">
-          <span style="color:var(--muted);max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.28rem .6rem;font-size:.72rem">
+          <div style="min-width:0">
+            <div style="color:var(--text);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</div>
+            <div style="color:var(--muted);font-size:.64rem;margin-top:.05rem">📅 ${t.date ? fmtDate(t.date + 'T12:00:00') : 'Sin fecha'}</div>
+          </div>
           <div style="display:flex;gap:.4rem;align-items:center;flex-shrink:0;margin-left:.5rem">
             <span style="color:var(--text);font-weight:700">${fmt(t.amount)}</span>
             <button onclick="showCatEdit(${t._id})" style="background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);cursor:pointer;font-size:.6rem;padding:.12rem .3rem" title="Cambiar categoría">✏️</button>
