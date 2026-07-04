@@ -46,7 +46,7 @@ select.input{-webkit-appearance:none}
   <div class="pill" style="margin-bottom:1.25rem"><span class="dot"></span> 14 días gratis — sin tarjeta de crédito</div>
 
   <h1>Crea tu cuenta</h1>
-  <p class="subtitle">Únete a las PYMEs mexicanas que ya toman mejores decisiones financieras</p>
+  <p class="subtitle">Únete a las personas y negocios que ya toman mejores decisiones financieras</p>
 
   <div class="form-card">
     <!-- Google OAuth -->
@@ -72,17 +72,17 @@ select.input{-webkit-appearance:none}
         </div>
       </div>
       <div class="field">
-        <label>Empresa</label>
-        <input class="input" type="text" id="company" placeholder="Grupo García SA de CV" required>
+        <label>Empresa o negocio <span style="font-weight:400;text-transform:none;opacity:.7">(opcional)</span></label>
+        <input class="input" type="text" id="company" placeholder="Si tienes negocio, escríbelo aquí">
       </div>
       <div class="field">
-        <label>RFC de la empresa</label>
-        <input class="input" type="text" id="rfc" placeholder="GGA210301AB3" maxlength="13" style="text-transform:uppercase">
+        <label>RFC <span style="font-weight:400;text-transform:none;opacity:.7">(opcional)</span></label>
+        <input class="input" type="text" id="rfc" placeholder="Puedes agregarlo después" maxlength="13" style="text-transform:uppercase">
         <div class="error-msg" id="rfcError">RFC inválido (formato: XXXXYYMMDDAAA)</div>
       </div>
       <div class="field">
         <label>Correo electrónico</label>
-        <input class="input" type="email" id="email" placeholder="juan@empresa.com" required autocomplete="email">
+        <input class="input" type="email" id="email" placeholder="juan@correo.com" required autocomplete="email">
         <div class="error-msg" id="emailError"></div>
       </div>
       <div class="field">
@@ -171,7 +171,7 @@ async function handleSignup(e) {
     options: {
       data: {
         full_name: `${firstName} ${lastName}`,
-        company_name: company
+        company_name: company || null
       }
     }
   });
@@ -193,7 +193,7 @@ async function handleSignup(e) {
     await db.from('profiles').insert({
       id: data.user.id,
       full_name: `${firstName} ${lastName}`,
-      company_name: company,
+      company_name: company || null,
       rfc: rfc || null,
       plan: 'free',
       subscription_status: 'trial',

@@ -563,7 +563,7 @@ select.mod-inp{cursor:pointer}
   <!-- Topbar -->
   <div class="topbar">
     <div class="topbar-title" id="topbarTitle">
-      Resumen <span class="topbar-sub">— Así va tu negocio</span>
+      Resumen <span class="topbar-sub">— Así va tu dinero</span>
     </div>
     <div style="display:flex;align-items:center;gap:.6rem">
       <button class="tb-btn tb-ghost" onclick="openModal('txModal')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Transacción</button>
@@ -632,7 +632,7 @@ select.mod-inp{cursor:pointer}
     <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:1.4rem;gap:1rem;flex-wrap:wrap">
       <div>
         <div id="iniHi" class="t-page">Hola</div>
-        <div class="t-sub" style="margin-top:.25rem">Así va tu negocio este mes</div>
+        <div class="t-sub" style="margin-top:.25rem">Así va tu dinero este mes</div>
       </div>
       <div style="display:flex;align-items:center;gap:.55rem;flex-wrap:wrap">
         <select id="iniMonth" class="ini-pill" onchange="renderInicioBody()"></select>
@@ -1262,7 +1262,7 @@ select.mod-inp{cursor:pointer}
     <div class="card" style="max-width:520px">
       <div class="card-ttl" style="margin-bottom:1.35rem">Perfil</div>
       <div class="fg"><label class="flbl">Nombre completo</label><input class="finp" id="sName" placeholder="Tu nombre"></div>
-      <div class="fg"><label class="flbl">Empresa</label><input class="finp" id="sCompany" placeholder="Nombre de tu empresa"></div>
+      <div class="fg"><label class="flbl">Empresa o negocio (opcional)</label><input class="finp" id="sCompany" placeholder="Si tienes negocio, escríbelo aquí"></div>
       <div class="fg"><label class="flbl">RFC</label><input class="finp" id="sRFC" placeholder="XAXX010101000" style="text-transform:uppercase"></div>
       <div class="fg"><label class="flbl">Correo</label><input class="finp" id="sEmail" disabled></div>
       <button class="btn-save" style="width:100%;margin-top:.25rem" onclick="saveProfile()">Guardar cambios</button>
@@ -1642,7 +1642,7 @@ function showPage(id) {
     if (n.getAttribute('onclick')?.includes(`'${id}'`)) n.classList.add('active');
   });
   const titles = {
-    overview:     ['Resumen', '— Así va tu negocio'],
+    overview:     ['Resumen', '— Así va tu dinero'],
     transactions: ['Transacciones',    '— Movimientos y SAT unificados'],
     accounts:     ['Cuentas',          '— Tus cuentas y saldos'],
     ingresos:     ['Ingresos',          '— Fuentes de ingreso y total mensual'],
@@ -4287,7 +4287,7 @@ async function loadReferidos() {
   const body = document.getElementById('redBody'); if (!body) return;
   const code = (_profile && _profile.referral_code) || _user.id.replace(/-/g, '').slice(0, 8).toUpperCase();
   const link = 'https://horizen.com.mx/signup.html?ref=' + code;
-  const waMsg = encodeURIComponent('Te comparto Horizen: subes tu estado de cuenta y sabes si tu negocio gana o pierde, sin contador y sin Excel. Regístrate con mi link y tu primer mes va con descuento 👉 ' + link);
+  const waMsg = encodeURIComponent('Te comparto Horizen: subes tu estado de cuenta y sabes si ganas o pierdes dinero, sin contador y sin Excel. Regístrate con mi link y tu primer mes va con descuento 👉 ' + link);
   body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted)">Cargando tu red…</div>';
   let net = [];
   try { const r = await db.rpc('get_my_network'); if (!r.error) net = r.data || []; } catch (e) {}
@@ -4419,7 +4419,7 @@ function renderInicioBody() {
           <div class="col"><div class="bar in" style="height:${inH}%"></div><div class="bl">Entró<br><b>${_repMoney(r.inc)}</b></div></div>
           <div class="col"><div class="bar out" style="height:${outH}%"></div><div class="bl">Salió<br><b>${_repMoney(r.exp)}</b></div></div>
         </div>
-        <div class="t-body" style="margin-top:1rem">${r.util >= 0 ? `Tu negocio <b style="color:var(--money-in)">ganó dinero</b>: te quedó <b>${_repMoney(r.util)}</b> después de gastos.` : `Este mes <b style="color:var(--ink)">gastaste más</b> de lo que entró.`}</div>
+        <div class="t-body" style="margin-top:1rem">${r.util >= 0 ? `Este mes <b style="color:var(--money-in)">ganaste dinero</b>: te quedó <b>${_repMoney(r.util)}</b> después de gastos.` : `Este mes <b style="color:var(--ink)">gastaste más</b> de lo que entró.`}</div>
       </div>
     </div>
     <div class="ini-kpis">
