@@ -1917,8 +1917,8 @@ async function loadDebts() {
   // Badge — deudas con corte o pago en ≤ 7 días
   const today = new Date();
   const urgent = _debts.filter(d => {
-    const cut  = d.cutting_date  ? new Date(d.cutting_date)  : null;
-    const pay  = d.next_payment_date ? new Date(d.next_payment_date) : null;
+    const cut  = d.cutting_date  ? dateLocal(d.cutting_date)  : null;
+    const pay  = d.next_payment_date ? dateLocal(d.next_payment_date) : null;
     const days7 = new Date(today.getTime() + 7 * 86400000);
     return (cut && cut <= days7) || (pay && pay <= days7);
   });
@@ -1943,8 +1943,8 @@ function renderDebts() {
 
   list.innerHTML = _debts.map(d => {
     // Fecha de corte (cutting_date) — CRÍTICO
-    const cut = d.cutting_date ? new Date(d.cutting_date) : null;
-    const pay = d.next_payment_date ? new Date(d.next_payment_date) : null;
+    const cut = d.cutting_date ? dateLocal(d.cutting_date) : null;
+    const pay = d.next_payment_date ? dateLocal(d.next_payment_date) : null;
     const daysToCut = cut ? Math.ceil((cut - today) / 86400000) : null;
     const daysToPay = pay ? Math.ceil((pay - today) / 86400000) : null;
 

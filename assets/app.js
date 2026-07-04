@@ -77,7 +77,19 @@ function fmt(n, currency = 'MXN') {
 }
 
 function fmtDate(d) {
-  return new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+  // Fechas sin hora ("YYYY-MM-DD") se anclan a mediodía LOCAL.
+  // Sin esto, JS las toma como medianoche UTC y en México se muestran
+  // con un día menos (y un AÑO menos si la fecha es 1 de enero).
+  const s = String(d || '');
+  const safe = /^\d{4}-\d{2}-\d{2}$/.test(s) ? s + 'T12:00:00' : d;
+  return new Date(safe).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// Convierte una fecha a objeto Date anclado a mediodía local si viene sin hora
+// (evita el corrimiento de día/año por zona horaria en México)
+function dateLocal(d) {
+  const s = String(d || '');
+  return new Date(/^\d{4}-\d{2}-\d{2}$/.test(s) ? s + 'T12:00:00' : d);
 }
 
 function fmtRelative(d) {
