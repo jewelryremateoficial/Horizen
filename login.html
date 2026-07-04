@@ -46,6 +46,14 @@ blockquote::before{content:'\201C';font-size:3rem;line-height:0;vertical-align:-
   .auth-right{display:none}
   .auth-left{padding:2.5rem 1.5rem;max-width:none;margin:0 auto;max-width:440px}
 }
+
+/* Accesibilidad: sin movimiento si el sistema lo pide (Calma Premium B.2) */
+@media (prefers-reduced-motion: reduce) {
+  .cta-band::before, .auth-right::before, .gradient-hero {
+    animation: none !important;
+    background-size: 100% 100%;
+  }
+}
 </style>
 </head>
 <body>

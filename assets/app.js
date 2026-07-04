@@ -105,24 +105,34 @@ function planBadge(plan) {
 
 function statusBadge(status) {
   const map = {
-    active:   { label: 'Activo',     color: '#10b981' },
+    active:   { label: 'Activo',     color: '#0a7a55' },
     trial:    { label: 'Trial',      color: '#f59e0b' },
-    cancelled:{ label: 'Cancelado',  color: '#f43f5e' },
-    past_due: { label: 'Vencido',    color: '#f43f5e' }
+    cancelled:{ label: 'Cancelado',  color: '#b3093c' },
+    past_due: { label: 'Vencido',    color: '#b3093c' }
   };
   const s = map[status] || { label: status, color: '#6b7280' };
   return `<span style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44;padding:.2rem .6rem;border-radius:50px;font-size:.7rem;font-weight:700;">${s.label}</span>`;
 }
 
-// ── Toast notifications ───────────────────────────────────
+// ── Toast notifications (Calma Premium: tema claro) ──────────
+// Tipos: 'success' (alias 'ok'), 'error', 'info'. Estado del
+// sistema — aquí SÍ vive la semántica éxito/error.
 function toast(msg, type = 'success') {
   const el = document.createElement('div');
-  const colors = { success: '#10b981', error: '#f43f5e', info: '#6366f1' };
-  el.style.cssText = `position:fixed;bottom:24px;right:24px;background:#0d1526;border:1px solid ${colors[type]}44;
-    color:#f0f4f8;padding:1rem 1.5rem;border-radius:12px;font-size:.88rem;font-weight:500;
-    box-shadow:0 20px 40px rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;gap:.75rem;
-    animation:slideIn .3s ease;max-width:360px;border-left:3px solid ${colors[type]}`;
-  el.innerHTML = `<span style="font-size:1.1rem">${type==='success'?'✓':type==='error'?'✗':'ℹ'}</span><span>${msg}</span>`;
+  const colors = {
+    success: 'var(--state-ok, #0a7a55)',
+    ok:      'var(--state-ok, #0a7a55)',   // alias: antes caía a undefined
+    error:   'var(--state-err, #b3093c)',
+    info:    '#635bff'
+  };
+  const accent = colors[type] || colors.info;
+  const isOk  = type === 'success' || type === 'ok';
+  const isErr = type === 'error';
+  el.style.cssText = `position:fixed;bottom:24px;right:24px;background:#ffffff;border:1px solid rgba(10,37,64,.08);
+    color:var(--ink, #0a2540);padding:1rem 1.5rem;border-radius:12px;font-size:.88rem;font-weight:500;
+    box-shadow:var(--shadow-2, 0 4px 16px -4px rgba(10,37,64,.12));z-index:9999;display:flex;align-items:center;gap:.75rem;
+    animation:slideIn .3s ease;max-width:360px;border-left:3px solid ${accent}`;
+  el.innerHTML = `<span style="font-size:1.1rem;color:${accent}">${isOk ? '✓' : isErr ? '✗' : 'ℹ'}</span><span>${msg}</span>`;
   document.body.appendChild(el);
   setTimeout(() => { el.style.animation = 'slideOut .3s ease forwards'; setTimeout(() => el.remove(), 300); }, 3500);
 }
@@ -145,5 +155,9 @@ styleTag.textContent = `
   .skeleton { background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.08) 50%, rgba(255,255,255,.04) 75%);
     background-size: 400% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
   @keyframes shimmer { 0% { background-position:100% 0 } 100% { background-position:-100% 0 } }
+  @media (prefers-reduced-motion: reduce) {
+    .fade-in, .skeleton { animation: none !important; }
+    [style*="animation:slideIn"], [style*="animation: slideIn"] { animation: none !important; }
+  }
 `;
 document.head.appendChild(styleTag);
