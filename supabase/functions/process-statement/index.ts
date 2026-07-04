@@ -25,14 +25,14 @@ CÓMO DECIDIR ingreso o egreso (crítico, no te equivoques):
 - Guíate por la COLUMNA (cargo vs abono), no solo por la palabra.
 
 ⚠️ SI ES ESTADO DE TARJETA DE CRÉDITO (detéctalo si ves "tarjeta de crédito", "TDC", límite de crédito, pago mínimo, fecha de corte):
-- Los PAGOS que se hacen A la tarjeta son INGRESO (reducen el saldo). Detéctalos por textos como: "PAGO", "SU PAGO", "GRACIAS POR SU PAGO", "BMOVIL PAGO", "BMOBILE PAGO", "PAGO TDC", "PAGO TARJETA", "PAGO RECIBIDO", "PAGO SPEI", "ABONO". Ponles categoría "Transferencia".
+- Los PAGOS que se hacen A la tarjeta son INGRESO (reducen el saldo). Detéctalos por textos como: "PAGO", "SU PAGO", "GRACIAS POR SU PAGO", "BMOVIL PAGO", "BMOBILE PAGO", "PAGO TDC", "PAGO TARJETA", "PAGO RECIBIDO", "PAGO SPEI", "ABONO". Ponles categoría "Pago TDC".
 - Las COMPRAS, CARGOS, DISPOSICIONES DE EFECTIVO, INTERESES y COMISIONES son EGRESO.
 - Es MUY común equivocarse aquí: un "BMOBILE PAGO TDC" NO es un gasto, es un INGRESO (el pago que abona a la tarjeta).
 
 CÓMO elegir la categoría — USA TU CONOCIMIENTO DEL MUNDO. Tú conoces la mayoría de los comercios, plataformas y servicios que aparecen en un estado de cuenta; identifícalos y clasifícalos aunque el texto venga abreviado. "Otros" es el ÚLTIMO recurso, solo para descripciones verdaderamente irreconocibles.
 
 Categorías permitidas:
-Ventas, Proveedores, Mercancía (compra de producto para el negocio), Nómina, Publicidad, Software, Papelería, Renta, Contabilidad, Servicios (luz/agua/internet/teléfono), Envíos (paquetería y logística), Honorarios, Comisiones (cargos bancarios), Comida (restaurantes/café), Supermercado, Farmacia, Salud, Entretenimiento (SOLO ocio claro: cine, streaming, bar), Ropa, Transporte (gasolina/casetas/Uber), Viajes (hoteles/vuelos/hospedaje), SAT/Impuestos, Transferencia (SPEI y traspasos entre cuentas), Inversiones, Educación, Otros.
+Ventas, Proveedores, Mercancía (compra de producto para el negocio), Nómina, Publicidad, Software, Papelería, Renta, Contabilidad, Servicios (luz/agua/internet/teléfono), Envíos (paquetería y logística), Honorarios, Comisiones (cargos bancarios), Comida (restaurantes/café), Supermercado, Farmacia, Salud, Entretenimiento (SOLO ocio claro: cine, streaming, bar), Ropa, Transporte (gasolina/casetas/Uber), Viajes (hoteles/vuelos/hospedaje), SAT/Impuestos, Transferencia (SPEI y traspasos entre cuentas), Pago TDC (pagos a tarjetas de crédito, propias o de terceros), Inversiones, Educación, Otros.
 
 Ejemplos de cómo aplicar tu conocimiento (mismo criterio para comercios similares):
 - ALIBABA, ALIEXPRESS, TEMU, SHEIN, AMAZON compra → Mercancía
@@ -99,7 +99,7 @@ async function callClaude(apiKey: string, messageContent: unknown, maxRetries = 
   throw new Error('La IA está saturada en este momento (' + lastErr + '). Intenta de nuevo en unos segundos.')
 }
 
-const CATS = ['Ventas','Proveedores','Mercancía','Nómina','Publicidad','Software','Papelería','Renta','Contabilidad','Servicios','Envíos','Honorarios','Comisiones','Comida','Café','Supermercado','Farmacia','Salud','Entretenimiento','Ropa','Transporte','Viajes','SAT/Impuestos','Transferencia','Inversiones','Educación','Otros']
+const CATS = ['Ventas','Proveedores','Mercancía','Nómina','Publicidad','Software','Papelería','Renta','Contabilidad','Servicios','Envíos','Honorarios','Comisiones','Comida','Café','Supermercado','Farmacia','Salud','Entretenimiento','Ropa','Transporte','Viajes','SAT/Impuestos','Transferencia','Pago TDC','Inversiones','Educación','Otros']
 
 // Parsea el formato compacto (líneas separadas por |) a la estructura que espera el frontend.
 function parseCompact(text: string) {

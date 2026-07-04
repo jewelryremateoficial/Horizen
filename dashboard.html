@@ -3236,7 +3236,7 @@ const EDGE_PROCESS = 'https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/proc
 let _estadoFile = null, _estadoTxs = [], _estadoMeta = {}, _customCats = [];
 let _stmtView = null; // {id, name} cuando se está viendo un estado YA guardado (edición en vivo)
 
-const _PREDEFINED_CATS = ['Ventas','Proveedores','Mercancía','Nómina','Publicidad','Software','Papelería','Renta','Contabilidad','Servicios','Envíos','Honorarios','Comisiones','Comida','Café','Supermercado','Farmacia','Salud','Entretenimiento','Ropa','Transporte','Viajes','SAT/Impuestos','Transferencia','Inversiones','Educación','Otros'];
+const _PREDEFINED_CATS = ['Ventas','Proveedores','Mercancía','Nómina','Publicidad','Software','Papelería','Renta','Contabilidad','Servicios','Envíos','Honorarios','Comisiones','Comida','Café','Supermercado','Farmacia','Salud','Entretenimiento','Ropa','Transporte','Viajes','SAT/Impuestos','Transferencia','Pago TDC','Inversiones','Educación','Otros'];
 
 const _CAT_GROUPS = {
   'Ventas':'Negocios','Proveedores':'Negocios','Mercancía':'Negocios',
@@ -3245,7 +3245,7 @@ const _CAT_GROUPS = {
   'Comida':'Comida','Café':'Comida',
   'Supermercado':'Hogar','Farmacia':'Hogar',
   'Salud':'Personal','Entretenimiento':'Personal','Ropa':'Personal','Transporte':'Personal','Educación':'Personal','Viajes':'Negocios',
-  'SAT/Impuestos':'Finanzas','Transferencia':'Finanzas','Inversiones':'Finanzas','Comisiones':'Finanzas',
+  'SAT/Impuestos':'Finanzas','Transferencia':'Finanzas','Pago TDC':'Finanzas','Inversiones':'Finanzas','Comisiones':'Finanzas',
   'Otros':'Otros'
 };
 
@@ -3385,6 +3385,8 @@ async function procesarEstado() {
     let txList = data.transactions || [];
     const { data: rules } = await db.from('category_rules').select('keyword,category,tx_type').eq('user_id', _user.id);
     if (rules && rules.length > 0) {
+      // La regla más específica (keyword más largo) gana sobre las genéricas
+      rules.sort((a, b) => (b.keyword || '').length - (a.keyword || '').length);
       txList = txList.map(tx => {
         const descUp = (tx.description || '').toUpperCase();
         const match = rules.find(r => descUp.includes(r.keyword.toUpperCase()));
@@ -3656,11 +3658,10 @@ function toggleErTxs() {
 }
 
 function extractKeyword(desc) {
-  const words = (desc || '').trim().split(/\s+/);
-  const first = words[0] || '';
-  if (first.length >= 4) return first.toUpperCase();
-  if (words.length > 1) return (first + ' ' + words[1]).toUpperCase().trim();
-  return desc.slice(0, 15).toUpperCase().trim();
+  // Descripción COMPLETA normalizada (mayúsculas, espacios colapsados).
+  // Antes se usaba solo la primera palabra y "PAGO TDC" jalaba también
+  // "PAGO A TERCEROS" — ahora solo agrupa descripciones idénticas.
+  return (desc || '').trim().toUpperCase().replace(/\s+/g, ' ').slice(0, 120);
 }
 
 function showCatEdit(id) {
@@ -3766,9 +3767,10 @@ async function setCatLearn(id, value) {
       .then(({ error }) => { if (error) console.warn('No se pudo guardar la regla:', error.message); });
   }
   renderEstadosTxs();
+  const kwLbl = kw.length > 34 ? kw.slice(0, 34) + '…' : kw;
   toast(applied > 1
-    ? `✓ Apliqué "${value}" a ${applied} movimientos de ${kw} y lo recordaré`
-    : `✓ "${kw}" → ${value}. Lo recordaré para el próximo estado`, 'success');
+    ? `✓ Apliqué "${value}" a ${applied} movimientos idénticos a "${kwLbl}" y lo recordaré`
+    : `✓ "${kwLbl}" → ${value}. Lo recordaré para el próximo estado`, 'success');
 }
 
 // Cambiar el TIPO (ingreso/egreso) de una transacción se aplica a TODAS las del
@@ -3803,9 +3805,10 @@ async function setTypeLearn(id, value) {
   }
   renderEstadosTxs();
   const lbl = value === 'ingreso' ? 'Ingreso' : value === 'egreso' ? 'Egreso' : 'Transferencia';
+  const kwLbl2 = kw.length > 34 ? kw.slice(0, 34) + '…' : kw;
   toast(applied > 1
-    ? `✓ Marqué como ${lbl} ${applied} movimientos de ${kw} y lo recordaré`
-    : `✓ "${kw}" → ${lbl}. Lo recordaré para el próximo estado`, 'success');
+    ? `✓ Marqué como ${lbl} ${applied} movimientos idénticos a "${kwLbl2}" y lo recordaré`
+    : `✓ "${kwLbl2}" → ${lbl}. Lo recordaré para el próximo estado`, 'success');
 }
 
 async function saveCategRule(id) {
