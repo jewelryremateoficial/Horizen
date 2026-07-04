@@ -14,10 +14,18 @@ Responde ÚNICAMENTE en texto plano, SIN markdown, SIN comentarios, SIN encabeza
 Formato EXACTO, campos separados por | (barra vertical):
 
 Primera línea (metadatos):
-#META|<banco>|<period_start YYYY-MM-DD>|<period_end YYYY-MM-DD>|<moneda>
+#META|<banco>|<period_start YYYY-MM-DD>|<period_end YYYY-MM-DD>|<moneda>|<total_depositos>|<num_depositos>|<total_retiros>|<num_retiros>
+Los últimos 4 campos salen del RESUMEN impreso del propio estado (la tabla "Depósitos/Abonos" y "Retiros/Cargos" con sus totales). Montos sin signo ni comas. Si el documento no trae ese resumen, deja esos campos vacíos.
 
 Una línea por transacción:
-<YYYY-MM-DD>|<descripción sin barras, máx 60 caracteres>|<monto positivo sin signo>|<ingreso o egreso>|<categoría>
+<YYYY-MM-DD>|<descripción sin barras, máx 100 caracteres>|<monto positivo sin signo>|<ingreso o egreso>|<categoría>
+
+CONCEPTO (crítico para el usuario):
+- En transferencias, SPEI y pagos, la descripción DEBE incluir el beneficiario Y el concepto/referencia que escribió quien envió el dinero (ej: "SPEI A JUAN PEREZ · NOMINA SEMANA 22", "TRANSFERENCIA · COMPRA MERCANCIA MAYO"). Dos transferencias del mismo monto deben poder distinguirse por su concepto.
+- Si el movimiento trae leyenda o referencia adicional en una segunda línea del PDF, inclúyela en la descripción.
+
+CONCILIACIÓN (antes de terminar):
+- Si el estado imprime cuántos depósitos y retiros tiene y sus totales, tu lista DEBE coincidir en número y suma. Si no coincide, revisa qué movimiento te faltó o duplicaste.
 
 CÓMO DECIDIR ingreso o egreso (crítico, no te equivoques):
 - "ingreso" = el dinero ENTRA a la cuenta: depósitos, abonos, SPEI/transferencia RECIBIDA, devoluciones, intereses a favor. En el estado suele venir en la columna de ABONOS o con (+).
@@ -51,9 +59,9 @@ Reglas finales:
 - No agregues ninguna línea que no sea #META o una transacción.
 
 Ejemplo:
-#META|BBVA|2026-04-22|2026-05-21|MXN
+#META|BBVA|2026-04-22|2026-05-21|MXN|55000.00|3|48120.00|12
 2026-04-23|OXXO SUCURSAL 123|120.00|egreso|Comida
-2026-04-25|SPEI RECIBIDO JUAN PEREZ|5000.00|ingreso|Transferencia`
+2026-04-25|SPEI RECIBIDO JUAN PEREZ · ANTICIPO PEDIDO 44|5000.00|ingreso|Transferencia`
 
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = ''
@@ -105,6 +113,7 @@ const CATS = ['Ventas','Proveedores','Mercancía','Nómina','Publicidad','Softwa
 function parseCompact(text: string) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
   let bank = 'Desconocido', period_start: string | null = null, period_end: string | null = null, currency = 'MXN'
+  let summary: Record<string, number | null> | null = null
   const transactions: Array<Record<string, unknown>> = []
   for (const line of lines) {
     if (line.startsWith('#META')) {
@@ -113,6 +122,10 @@ function parseCompact(text: string) {
       if (p[2] && /\d{4}-\d{2}-\d{2}/.test(p[2])) period_start = p[2].trim()
       if (p[3] && /\d{4}-\d{2}-\d{2}/.test(p[3])) period_end = p[3].trim()
       if (p[4]) currency = p[4].trim()
+      // Resumen impreso del estado (para conciliar contra lo extraído)
+      const num = (v?: string) => { const n = parseFloat(String(v || '').replace(/[^0-9.]/g, '')); return isFinite(n) && n > 0 ? n : null }
+      const depTotal = num(p[5]), depCount = num(p[6]), retTotal = num(p[7]), retCount = num(p[8])
+      if (depTotal || retTotal) summary = { dep_total: depTotal, dep_count: depCount, ret_total: retTotal, ret_count: retCount }
       continue
     }
     if (line.startsWith('```') || line.startsWith('#')) continue
@@ -124,9 +137,9 @@ function parseCompact(text: string) {
     const type = (p[3] || '').toLowerCase().includes('ingreso') ? 'ingreso' : 'egreso'
     let category = (p[4] || 'Otros').trim()
     if (!CATS.includes(category)) category = 'Otros'
-    transactions.push({ date: date.slice(0, 10), description: (p[1] || 'Movimiento').trim().slice(0, 80), amount, type, category })
+    transactions.push({ date: date.slice(0, 10), description: (p[1] || 'Movimiento').trim().slice(0, 140), amount, type, category })
   }
-  return { bank, period_start, period_end, currency, transactions }
+  return { bank, period_start, period_end, currency, transactions, summary }
 }
 
 serve(async (req) => {
@@ -185,14 +198,14 @@ serve(async (req) => {
     const rawText = anthropicData.content?.[0]?.text || ''
 
     // Soporta tanto el formato compacto nuevo como JSON (por si el modelo responde en JSON)
-    let parsed: { bank: string; period_start: string | null; period_end: string | null; currency: string; transactions: Array<Record<string, unknown>> }
+    let parsed: { bank: string; period_start: string | null; period_end: string | null; currency: string; transactions: Array<Record<string, unknown>>; summary?: Record<string, number | null> | null }
     if (rawText.includes('#META') || rawText.includes('|')) {
       parsed = parseCompact(rawText)
     } else {
       try {
         const cleaned = rawText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
         const j = JSON.parse(cleaned)
-        parsed = { bank: j.bank || 'Desconocido', period_start: j.period_start || null, period_end: j.period_end || null, currency: j.currency || 'MXN', transactions: j.transactions || [] }
+        parsed = { bank: j.bank || 'Desconocido', period_start: j.period_start || null, period_end: j.period_end || null, currency: j.currency || 'MXN', transactions: j.transactions || [], summary: j.summary || null }
       } catch (_e) {
         parsed = parseCompact(rawText)
       }

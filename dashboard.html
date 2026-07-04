@@ -3379,7 +3379,7 @@ async function procesarEstado() {
       data = await llamarIA();
     }
 
-    _estadoMeta = { bank: data.bank, period_start: data.period_start, period_end: data.period_end, currency: data.currency };
+    _estadoMeta = { bank: data.bank, period_start: data.period_start, period_end: data.period_end, currency: data.currency, summary: data.summary || null };
 
     // Aplicar reglas guardadas por el usuario (categoría Y tipo ingreso/egreso)
     let txList = data.transactions || [];
@@ -3490,10 +3490,38 @@ function renderEstadosTxs() {
       const k = (t.date||'') + '|' + (t.amount||0) + '|' + (t.description||'').trim().toLowerCase();
       if (seen[k]) dups.push(t); else seen[k] = true;
     });
-    let html = `<div style="background:var(--bg3);border:1px solid var(--line);border-radius:var(--r-md);padding:.7rem .9rem;font-size:.875rem;line-height:1.55;color:var(--slate);display:flex;gap:.6rem;align-items:flex-start">
-      <span style="color:var(--muted)">${icon('check')}</span>
-      <div>Encontramos <b style="color:var(--ink)">${visible.length}</b> movimientos: entró <b style="color:var(--ink)">${fmt(totalIn)}</b> y salió <b style="color:var(--ink)">${fmt(totalOut)}</b>. Compara contra tu estado de cuenta: si los totales coinciden, dale Guardar.</div>
-    </div>`;
+    // Conciliación automática contra el resumen impreso del propio estado de cuenta
+    const _sum = _estadoMeta.summary;
+    const _nIn  = visible.filter(t => t.type === 'ingreso').length;
+    const _nOut = visible.filter(t => t.type === 'egreso').length;
+    let html;
+    if (_sum && (_sum.dep_total || _sum.ret_total)) {
+      const okInAmt  = _sum.dep_total == null || Math.abs(totalIn  - _sum.dep_total) < 1;
+      const okOutAmt = _sum.ret_total == null || Math.abs(totalOut - _sum.ret_total) < 1;
+      const okInCnt  = _sum.dep_count == null || _nIn  === _sum.dep_count;
+      const okOutCnt = _sum.ret_count == null || _nOut === _sum.ret_count;
+      if (okInAmt && okOutAmt && okInCnt && okOutCnt) {
+        html = `<div style="background:var(--pos-bg);border:1px solid var(--line);border-radius:var(--r-md);padding:.7rem .9rem;font-size:.875rem;line-height:1.55;color:var(--slate);display:flex;gap:.6rem;align-items:flex-start">
+          <span style="color:var(--pos-text)">${icon('check')}</span>
+          <div><b style="color:var(--ink)">Cuadra con tu estado de cuenta.</b> El documento reporta ${_sum.dep_count != null ? `<b style="color:var(--ink)">${_sum.dep_count}</b> depósitos por ` : 'depósitos por '}<b style="color:var(--ink)">${fmt(_sum.dep_total || totalIn)}</b> y ${_sum.ret_count != null ? `<b style="color:var(--ink)">${_sum.ret_count}</b> retiros por ` : 'retiros por '}<b style="color:var(--ink)">${fmt(_sum.ret_total || totalOut)}</b> — igual que lo extraído. Puedes guardar con confianza.</div>
+        </div>`;
+      } else {
+        const _difs = [];
+        if (!okInAmt)  _difs.push(`depósitos: el documento dice <b style="color:var(--ink)">${fmt(_sum.dep_total)}</b> y la lista suma <b style="color:var(--ink)">${fmt(totalIn)}</b>`);
+        if (!okInCnt)  _difs.push(`número de depósitos: documento <b style="color:var(--ink)">${_sum.dep_count}</b> vs lista <b style="color:var(--ink)">${_nIn}</b>`);
+        if (!okOutAmt) _difs.push(`retiros: el documento dice <b style="color:var(--ink)">${fmt(_sum.ret_total)}</b> y la lista suma <b style="color:var(--ink)">${fmt(totalOut)}</b>`);
+        if (!okOutCnt) _difs.push(`número de retiros: documento <b style="color:var(--ink)">${_sum.ret_count}</b> vs lista <b style="color:var(--ink)">${_nOut}</b>`);
+        html = `<div style="background:var(--state-warn-bg);border:1px solid var(--state-warn-border);border-radius:var(--r-md);padding:.7rem .9rem;font-size:.875rem;line-height:1.55;color:var(--slate);display:flex;gap:.6rem;align-items:flex-start">
+          <span style="color:var(--state-warn)">${icon('alerta')}</span>
+          <div><b style="color:var(--ink)">No cuadra con el resumen del estado de cuenta.</b> Diferencias: ${_difs.join(' · ')}. Puede faltar un movimiento, sobrar un duplicado o haber un tipo (ingreso/egreso) equivocado. Nota: los movimientos marcados como Transferencia no cuentan en estos totales.</div>
+        </div>`;
+      }
+    } else {
+      html = `<div style="background:var(--bg3);border:1px solid var(--line);border-radius:var(--r-md);padding:.7rem .9rem;font-size:.875rem;line-height:1.55;color:var(--slate);display:flex;gap:.6rem;align-items:flex-start">
+        <span style="color:var(--muted)">${icon('check')}</span>
+        <div>Encontramos <b style="color:var(--ink)">${visible.length}</b> movimientos: entró <b style="color:var(--ink)">${fmt(totalIn)}</b> y salió <b style="color:var(--ink)">${fmt(totalOut)}</b>. Compara contra tu estado de cuenta: si los totales coinciden, dale Guardar.</div>
+      </div>`;
+    }
     html += periodWarn;
     if (dups.length) {
       html += `<div style="background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:var(--r-md);padding:.7rem .9rem;font-size:.875rem;line-height:1.55;color:var(--slate);display:flex;gap:.6rem;align-items:flex-start;margin-top:.5rem">
