@@ -1177,6 +1177,12 @@ select.mod-inp{cursor:pointer}
         </div>
       </div>
 
+      <!-- Ingresos por categoría -->
+      <div class="card" style="margin-bottom:24px">
+        <div class="card-ttl" style="margin-bottom:.9rem">Ingresos por categoría <span style="font-size:.68rem;color:var(--muted);font-weight:400">(clic para ver detalle)</span></div>
+        <div id="erTopIngresos">—</div>
+      </div>
+
       <!-- NOVA insights -->
       <div class="card er-nova">
         <div class="er-nova-ttl"><span class="er-nova-chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>NOVA · Lo importante de este estado</div>
@@ -3506,44 +3512,50 @@ function renderEstadosTxs() {
   // Gráfica por categoría
   renderERChart(visible);
 
-  // Desglose por categoría (expandible)
-  const byCatFull = {};
-  egresos.forEach(t => { if (!byCatFull[t.category]) byCatFull[t.category] = []; byCatFull[t.category].push(t); });
-  const sortedCats = Object.entries(byCatFull).sort((a,b) =>
-    b[1].reduce((s,t)=>s+t.amount,0) - a[1].reduce((s,t)=>s+t.amount,0));
-  document.getElementById('erTopGastos').innerHTML = sortedCats.length ? sortedCats.map(([cat, catTxs], i) => {
-    const total = catTxs.reduce((s,t)=>s+t.amount,0);
-    const inner = catTxs.sort((a,b)=>b.amount-a.amount).map(t =>
-      `<div style="border-bottom:1px solid rgba(10,37,64,.04)">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.32rem .6rem">
-          <div style="min-width:0">
-            <div style="font-size:.875rem;color:var(--ink);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</div>
-            <div class="t-meta" style="margin-top:.05rem">${t.date ? fmtDate(t.date + 'T12:00:00') : 'Sin fecha'}</div>
+  // Desglose por categoría (expandible) — mismo formato para egresos e ingresos
+  const _desgloseHTML = (lista, prefix, amtColor, signo, vacio) => {
+    const porCat = {};
+    lista.forEach(t => { if (!porCat[t.category]) porCat[t.category] = []; porCat[t.category].push(t); });
+    const ordenadas = Object.entries(porCat).sort((a,b) =>
+      b[1].reduce((s,t)=>s+t.amount,0) - a[1].reduce((s,t)=>s+t.amount,0));
+    return ordenadas.length ? ordenadas.map(([cat, catTxs], i) => {
+      const total = catTxs.reduce((s,t)=>s+t.amount,0);
+      const inner = catTxs.sort((a,b)=>b.amount-a.amount).map(t =>
+        `<div style="border-bottom:1px solid rgba(10,37,64,.04)">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:.32rem .6rem">
+            <div style="min-width:0">
+              <div style="font-size:.875rem;color:var(--ink);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</div>
+              <div class="t-meta" style="margin-top:.05rem">${t.date ? fmtDate(t.date + 'T12:00:00') : 'Sin fecha'}</div>
+            </div>
+            <div style="display:flex;gap:.4rem;align-items:center;flex-shrink:0;margin-left:.5rem">
+              <span class="t-num-sm" style="color:${amtColor}">${signo}${fmt(t.amount)}</span>
+              <button onclick="showCatEdit(${t._id})" style="background:none;border:1px solid var(--line);border-radius:var(--r-sm);color:var(--muted);cursor:pointer;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;padding:0" title="Cambiar categoría">${icon('editar')}</button>
+            </div>
           </div>
-          <div style="display:flex;gap:.4rem;align-items:center;flex-shrink:0;margin-left:.5rem">
-            <span class="t-num-sm" style="color:var(--ink)">${fmt(t.amount)}</span>
-            <button onclick="showCatEdit(${t._id})" style="background:none;border:1px solid var(--line);border-radius:var(--r-sm);color:var(--muted);cursor:pointer;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;padding:0" title="Cambiar categoría">${icon('editar')}</button>
+          <div id="catedit${t._id}" style="display:none;padding:.4rem .6rem .5rem;background:var(--bg3);margin:.1rem .4rem .3rem;border-radius:var(--r-sm)">
+            <div class="t-meta" style="margin-bottom:.3rem">Mover a categoría y enseñarle a NOVA:</div>
+            <div style="display:flex;gap:.4rem;align-items:center">
+              <select id="catsel${t._id}" class="rev-inp" style="flex:1">
+                ${getAllCats().map(c => `<option ${c===t.category?'selected':''}>${c}</option>`).join('')}
+              </select>
+              <button onclick="saveCategRule(${t._id})" class="tb-btn tb-primary" style="white-space:nowrap">${icon('check')}Aplicar</button>
+              <button onclick="document.getElementById('catedit${t._id}').style.display='none'" class="tb-btn tb-ghost">${icon('cerrar')}</button>
+            </div>
           </div>
+        </div>`).join('');
+      return `<div style="border-bottom:1px solid var(--line)">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.42rem 0;cursor:pointer" onclick="var d=document.getElementById('cd${prefix}${i}');d.style.display=d.style.display==='none'?'block':'none'">
+          <div class="t-num-sm" style="color:var(--ink)">${cat} <span class="t-meta" style="font-weight:400">(${catTxs.length})</span></div>
+          <div class="t-num-sm" style="color:${amtColor}">${signo}${fmt(total)} ▾</div>
         </div>
-        <div id="catedit${t._id}" style="display:none;padding:.4rem .6rem .5rem;background:var(--bg3);margin:.1rem .4rem .3rem;border-radius:var(--r-sm)">
-          <div class="t-meta" style="margin-bottom:.3rem">Mover a categoría y enseñarle a NOVA:</div>
-          <div style="display:flex;gap:.4rem;align-items:center">
-            <select id="catsel${t._id}" class="rev-inp" style="flex:1">
-              ${getAllCats().map(c => `<option ${c===t.category?'selected':''}>${c}</option>`).join('')}
-            </select>
-            <button onclick="saveCategRule(${t._id})" class="tb-btn tb-primary" style="white-space:nowrap">${icon('check')}Aplicar</button>
-            <button onclick="document.getElementById('catedit${t._id}').style.display='none'" class="tb-btn tb-ghost">${icon('cerrar')}</button>
-          </div>
-        </div>
-      </div>`).join('');
-    return `<div style="border-bottom:1px solid var(--line)">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:.42rem 0;cursor:pointer" onclick="var d=document.getElementById('cd${i}');d.style.display=d.style.display==='none'?'block':'none'">
-        <div class="t-num-sm" style="color:var(--ink)">${cat} <span class="t-meta" style="font-weight:400">(${catTxs.length})</span></div>
-        <div class="t-num-sm" style="color:var(--ink)">${fmt(total)} ▾</div>
-      </div>
-      <div id="cd${i}" style="display:none;background:var(--bg3);border-radius:var(--r-sm);margin-bottom:.4rem">${inner}</div>
-    </div>`;
-  }).join('') : '<div class="t-meta">Sin egresos</div>';
+        <div id="cd${prefix}${i}" style="display:none;background:var(--bg3);border-radius:var(--r-sm);margin-bottom:.4rem">${inner}</div>
+      </div>`;
+    }).join('') : `<div class="t-meta">${vacio}</div>`;
+  };
+  document.getElementById('erTopGastos').innerHTML = _desgloseHTML(egresos, 'E', 'var(--ink)', '', 'Sin egresos');
+  const _ingresosList = visible.filter(t => t.type === 'ingreso');
+  const _elIng = document.getElementById('erTopIngresos');
+  if (_elIng) _elIng.innerHTML = _desgloseHTML(_ingresosList, 'I', 'var(--money-in)', '+', 'Sin ingresos');
 
   // NOVA insights
   document.getElementById('erInsights').innerHTML = generateNovaInsights(visible, totalIn, totalOut, neto, ahorro);
