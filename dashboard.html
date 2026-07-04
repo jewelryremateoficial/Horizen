@@ -3375,14 +3375,19 @@ async function procesarEstado() {
 
     _estadoMeta = { bank: data.bank, period_start: data.period_start, period_end: data.period_end, currency: data.currency };
 
-    // Aplicar reglas de categorías guardadas por el usuario
+    // Aplicar reglas guardadas por el usuario (categoría Y tipo ingreso/egreso)
     let txList = data.transactions || [];
-    const { data: rules } = await db.from('category_rules').select('keyword,category').eq('user_id', _user.id);
+    const { data: rules } = await db.from('category_rules').select('keyword,category,tx_type').eq('user_id', _user.id);
     if (rules && rules.length > 0) {
       txList = txList.map(tx => {
         const descUp = (tx.description || '').toUpperCase();
         const match = rules.find(r => descUp.includes(r.keyword.toUpperCase()));
-        return match ? { ...tx, category: match.category } : tx;
+        if (!match) return tx;
+        return {
+          ...tx,
+          category: match.category || tx.category,
+          type: match.tx_type || tx.type,
+        };
       });
     }
     _estadoTxs = txList.map((tx, i) => ({ ...tx, _id: i, _remove: false }));
@@ -3552,7 +3557,7 @@ function renderEstadosTxs() {
       <select class="rev-inp" onchange="setCatLearn(${tx._id}, this.value)">
         ${getAllCats().map(c => `<option ${c===tx.category?'selected':''}>${c}</option>`).join('')}
       </select>
-      <select class="rev-inp" onchange="updEstadoTx(${tx._id},'type',this.value)">
+      <select class="rev-inp" onchange="setTypeLearn(${tx._id}, this.value)">
         <option ${tx.type==='ingreso'?'selected':''} value="ingreso">Ingreso</option>
         <option ${tx.type==='egreso'?'selected':''} value="egreso">Egreso</option>
         ${tx.type==='transferencia'?'<option selected value="transferencia">Transferencia</option>':''}
@@ -3752,6 +3757,43 @@ async function setCatLearn(id, value) {
   toast(applied > 1
     ? `✓ Apliqué "${value}" a ${applied} movimientos de ${kw} y lo recordaré`
     : `✓ "${kw}" → ${value}. Lo recordaré para el próximo estado`, 'success');
+}
+
+// Cambiar el TIPO (ingreso/egreso) de una transacción se aplica a TODAS las del
+// mismo comercio (misma palabra clave) y se recuerda para futuros estados —
+// mismo comportamiento que las categorías.
+async function setTypeLearn(id, value) {
+  const tx = _estadoTxs.find(t => t._id === id);
+  if (!tx) return;
+  const kw = extractKeyword(tx.description);
+  let applied = 0;
+  const afectadas = [];
+  _estadoTxs.forEach(t => {
+    if (!t._remove && extractKeyword(t.description) === kw) { t.type = value; applied++; if (t.dbId) afectadas.push(t); }
+  });
+  // Persistir en BD si el estado ya está guardado (el signo del monto depende del tipo)
+  if (_stmtView && afectadas.length) {
+    Promise.all(afectadas.map(t => {
+      const amt = Math.abs(parseFloat(t.amount) || 0);
+      return db.from('transactions')
+        .update({ type: value, amount: value === 'egreso' ? -amt : amt })
+        .eq('id', t.dbId).eq('user_id', _user.id);
+    })).then(rs => {
+      const bad = rs.find(r => r.error);
+      if (bad) toast('No se pudo guardar el tipo: ' + bad.error.message, 'error');
+    });
+  }
+  // Recordar la regla para futuros estados de cuenta
+  if (_user) {
+    db.from('category_rules')
+      .upsert({ user_id: _user.id, keyword: kw, tx_type: value }, { onConflict: 'user_id,keyword' })
+      .then(({ error }) => { if (error) console.warn('No se pudo guardar la regla de tipo:', error.message); });
+  }
+  renderEstadosTxs();
+  const lbl = value === 'ingreso' ? 'Ingreso' : value === 'egreso' ? 'Egreso' : 'Transferencia';
+  toast(applied > 1
+    ? `✓ Marqué como ${lbl} ${applied} movimientos de ${kw} y lo recordaré`
+    : `✓ "${kw}" → ${lbl}. Lo recordaré para el próximo estado`, 'success');
 }
 
 async function saveCategRule(id) {
