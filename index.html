@@ -49,6 +49,27 @@
 .insight p{font-size:.8rem;color:var(--slate);line-height:1.5}
 .insight b{color:var(--ink)}
 
+.hero-shot{display:block;width:100%;height:auto;max-width:100%}
+
+/* Screenshot con marco flotante (secciones) */
+.shot-frame{border-radius:14px;overflow:hidden;border:1px solid var(--line);box-shadow:0 24px 60px -18px rgba(23,26,54,.28),0 6px 18px rgba(23,26,54,.08);background:#fff}
+.shot-frame img{display:block;width:100%;height:auto}
+
+/* Sección personas (estilo PayPal) */
+.people-grid{display:grid;grid-template-columns:1fr 1.05fr;gap:3.5rem;align-items:center}
+.people-media{position:relative}
+.people-media > img{display:block;width:100%;height:auto;max-width:100%;border-radius:var(--r-xl,22px);box-shadow:0 28px 60px -20px rgba(23,26,54,.35);aspect-ratio:4/5;object-fit:cover}
+.people-chip{position:absolute;right:-14px;bottom:26px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:.8rem 1rem;box-shadow:0 14px 34px rgba(23,26,54,.18);min-width:190px}
+.people-chip .cl{font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.people-chip .cv{font-size:1.35rem;font-weight:800;letter-spacing:-.02em;color:var(--ok)}
+.people-chip .cs{font-size:.72rem;color:var(--ok);font-weight:700}
+.people-faces{display:flex;gap:.9rem;margin-top:1.6rem}
+.people-faces img{width:112px;height:84px;object-fit:cover;border-radius:12px;border:1px solid var(--line);box-shadow:var(--shadow-sm)}
+@media(max-width:860px){
+  .people-grid{grid-template-columns:1fr;gap:2rem}
+  .people-chip{right:8px}
+}
+
 /* Logos / bancos */
 .logos{padding:2.5rem 0 1rem}
 .logos p{text-align:center;font-size:.8rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-bottom:1.5rem}
@@ -161,33 +182,14 @@
       <span><span class="ck">✓</span> Datos 100% seguros</span>
     </div>
 
-    <!-- MOCKUP -->
+    <!-- PRODUCTO REAL -->
     <div class="hero-mockup reveal" data-delay="4">
       <div class="window">
         <div class="window-bar">
           <i class="wd-r"></i><i class="wd-y"></i><i class="wd-g"></i>
-          <span class="window-title">Horizen — Estado de Resultados · BBVA · Jun 2025</span>
+          <span class="window-title">Horizen — Resumen · Jun 2026</span>
         </div>
-        <div class="dash">
-          <div class="dash-grid">
-            <div class="kpi"><div class="lbl">Ingresos</div><div class="val g">$148,500</div></div>
-            <div class="kpi"><div class="lbl">Egresos</div><div class="val r">$89,320</div></div>
-            <div class="kpi"><div class="lbl">Utilidad neta</div><div class="val i">$59,180</div></div>
-            <div class="kpi"><div class="lbl">Margen</div><div class="val">39.8%</div></div>
-          </div>
-          <div class="dash-low">
-            <div class="chart">
-              <div class="bar" style="height:55%"></div><div class="bar" style="height:72%"></div>
-              <div class="bar" style="height:48%"></div><div class="bar" style="height:88%"></div>
-              <div class="bar" style="height:63%"></div><div class="bar" style="height:78%"></div>
-              <div class="bar" style="height:95%"></div>
-            </div>
-            <div class="insight">
-              <div class="ai">✦ NOVA IA</div>
-              <p>Tu mayor gasto es <b>Nómina ($31,200)</b> — el 35% de tus egresos. Con tu ritmo actual cierras el trimestre con <b>$240k de utilidad</b>.</p>
-            </div>
-          </div>
-        </div>
+        <img class="hero-shot" src="/assets/marketing/shot-resumen.png" width="1600" height="847" fetchpriority="high" alt="Pantalla real de Horizen: resumen del mes con utilidad de +$84,300, gráfica de tendencia al alza, comparativa de lo que entró contra lo que salió y análisis de NOVA, el copiloto de IA">
       </div>
     </div>
   </div>
@@ -224,6 +226,37 @@
         <div class="step-n">3</div>
         <h3>Tus reportes aparecen al instante</h3>
         <p>Estado de Resultados, Balance General, Flujo de Efectivo, alertas de liquidez y recomendaciones listas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCTO: ANÁLISIS REAL -->
+<section class="section" id="analisis" style="padding-top:0">
+  <div class="container">
+    <div style="text-align:center;max-width:640px;margin:0 auto 3rem">
+      <div class="eyebrow reveal">Pantalla real del producto</div>
+      <h2 class="reveal" data-delay="1">Así se ve tu dinero ordenado</h2>
+      <p class="lead reveal" data-delay="2">Esto es exactamente lo que ves al subir tu estado de cuenta: tus gastos agrupados, con porcentajes y desglose por categoría.</p>
+    </div>
+    <div class="shot-frame reveal" data-delay="2" style="max-width:1040px;margin:0 auto">
+      <img src="/assets/marketing/shot-analisis.png" width="1600" height="847" loading="lazy" alt="Pantalla real de Horizen: análisis de un estado de cuenta Santander con grupos de gasto (Comida, Personal, Finanzas, Otros), totales de entradas y salidas, margen y desglose por categoría">
+    </div>
+    <div class="steps" style="margin-top:2.5rem">
+      <div class="step reveal" data-delay="1">
+        <div class="step-n">🗂</div>
+        <h3>Grupos que se explican solos</h3>
+        <p>Comida, Personal, Finanzas, Otros… cada grupo con su monto y el % de tus egresos, para ver de un vistazo a dónde se va tu dinero.</p>
+      </div>
+      <div class="step reveal" data-delay="2">
+        <div class="step-n">🔍</div>
+        <h3>Desglose por categoría</h3>
+        <p>Transferencias, viajes, transporte, ropa… cada categoría con su total y sus movimientos. Un clic y ves el detalle completo.</p>
+      </div>
+      <div class="step reveal" data-delay="3">
+        <div class="step-n">✏️</div>
+        <h3>Corriges y aprende</h3>
+        <p>¿NOVA clasificó algo mal? Lo cambias en un clic, se guarda automáticamente y la IA aprende para el siguiente mes.</p>
       </div>
     </div>
   </div>
@@ -309,6 +342,40 @@
       <div class="stat reveal"><div class="num"><span data-count="30" data-suffix=" seg"></span></div><div class="lbl">De subir tu estado de cuenta a tener tus reportes completos</div></div>
       <div class="stat reveal" data-delay="1"><div class="num"><span data-count="100" data-suffix="%"></span></div><div class="lbl">Automático — la IA categoriza y analiza sin que hagas nada</div></div>
       <div class="stat reveal" data-delay="2"><div class="num">MXN</div><div class="lbl">Hecho para México: pesos, SAT, bancos y lenguaje empresarial local</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PERSONAS REALES -->
+<!-- Fotos: Pexels (licencia libre Pexels) — persona-1: pexels.com/photo/16837409 (dueña de dulcería, CDMX) · persona-2: pexels.com/photo/12326636 (abarrotes, cuentas a mano) · persona-3: pexels.com/photo/37759653 (vendedora de mercado, Guanajuato) -->
+<section class="section surface-soft" id="personas">
+  <div class="container">
+    <div class="people-grid">
+      <div class="people-media reveal">
+        <img src="/assets/marketing/persona-1.jpg" width="1080" height="1620" loading="lazy" alt="Dueña de una dulcería en la Ciudad de México sonriendo con los brazos cruzados frente a su mostrador">
+        <div class="people-chip" aria-hidden="true">
+          <div class="cl">Utilidad de junio</div>
+          <div class="cv">+$84,300</div>
+          <div class="cs">↗ mejor que en mayo</div>
+        </div>
+      </div>
+      <div class="people-text reveal" data-delay="1">
+        <div class="eyebrow">Personas reales</div>
+        <h2 style="margin-bottom:.8rem">Hecho para negocios y personas reales de México</h2>
+        <p class="lead" style="font-size:1.02rem">De la dulcería del mercado al despacho de contadores: Horizen habla tu idioma, entiende tus bancos y convierte los números en decisiones — sin Excel y sin hacer cuentas a mano en la libreta.</p>
+        <ul class="feat-list">
+          <li>Funciona con tu estado de cuenta de cualquier banco mexicano</li>
+          <li>En pesos, con IVA, SAT y el lenguaje de tu negocio</li>
+          <li>Lo entiendes aunque nunca hayas usado un sistema contable</li>
+        </ul>
+        <div style="margin-top:1.75rem;display:flex;gap:.9rem;align-items:center;flex-wrap:wrap">
+          <a href="/signup.html" class="btn btn-primary btn-lg">Probar 14 días gratis <span class="arrow">→</span></a>
+        </div>
+        <div class="people-faces" aria-hidden="true">
+          <img src="/assets/marketing/persona-2.jpg" loading="lazy" alt="">
+          <img src="/assets/marketing/persona-3.jpg" loading="lazy" alt="">
+        </div>
+      </div>
     </div>
   </div>
 </section>
