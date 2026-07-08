@@ -59,6 +59,11 @@
 .people-grid{display:grid;grid-template-columns:1fr 1.05fr;gap:3.5rem;align-items:center}
 .people-media{position:relative}
 .people-media > img{display:block;width:100%;height:auto;max-width:100%;border-radius:var(--r-xl,22px);box-shadow:0 28px 60px -20px rgba(23,26,54,.35);aspect-ratio:4/5;object-fit:cover}
+/* Foto del fundador en círculo */
+.people-media-round{display:flex;justify-content:center}
+.people-media > img.founder-round{aspect-ratio:1/1;border-radius:50%;max-width:min(440px,88%);border:8px solid #fff;box-shadow:0 0 0 1px var(--line),0 30px 70px -22px rgba(99,91,255,.38),0 10px 28px rgba(23,26,54,.16)}
+.people-media-round .people-chip{right:4%;bottom:10%}
+@media(max-width:860px){.people-media-round .people-chip{right:2%}}
 .people-chip{position:absolute;right:-14px;bottom:26px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:.8rem 1rem;box-shadow:0 14px 34px rgba(23,26,54,.18);min-width:190px}
 .people-chip .cl{font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
 .people-chip .cv{font-size:1.35rem;font-weight:800;letter-spacing:-.02em;color:var(--ok)}
@@ -235,8 +240,8 @@
 <section class="section surface-soft" id="personas">
   <div class="container">
     <div class="people-grid">
-      <div class="people-media reveal">
-        <img src="/assets/marketing/nueva-gen-1.jpg" width="1080" height="1620" loading="lazy" alt="Emprendedora joven sonriendo en el estudio de su marca, con laptop y muestras de producto sobre el escritorio">
+      <div class="people-media people-media-round reveal">
+        <img class="founder-round" src="/assets/marketing/fundador.jpg" width="640" height="640" loading="lazy" alt="Fundador joven revisando las finanzas de su negocio desde la playa, celular en mano">
         <div class="people-chip" aria-hidden="true">
           <div class="cl">Utilidad de junio</div>
           <div class="cv">+$84,300</div>
