@@ -21,6 +21,7 @@
 | **C** | Estado de Resultados (página nueva, banco + efectivo, PDF) | Necesita A (ventas en efectivo) para que los números cuadren, y se beneficia de B (fijos confirmados). Es el entregable "wow" para el dueño y su contador. |
 | **D** | Clientes (ficha mínima + WhatsApp + cotización + notas) | Primera tabla de PERSONAS. Los abonos del cliente se registran con el modal de efectivo de A (reuso directo). Base obligatoria para E. |
 | **E** | Citas tipo Calendly (disponibilidad + página pública + reservas) | La más riesgosa técnicamente (endpoint público, anti-doble-reserva) — va al final, cuando ya hay clientes (D) y registro de ingresos (A) con qué conectarla. |
+| **F** | Equipo: invitar empleados con rol capturista (multi-usuario) | Requiere A en producción (foto de nota + modal de efectivo se reusan tal cual en la pantalla del empleado). Toca RLS de `transactions` — se hace con Supabase Pro pagado y flujo dev→verificar→liberar. Justifica el plan Enterprise. |
 
 **Regla transversal:** cada fase se libera COMPLETA (SQL → frontend → deploy Hostinger → checklist) antes de empezar la siguiente. dashboard.html lo edita un solo desarrollador a la vez.
 
@@ -834,6 +835,203 @@ Standalone, cliente Supabase con anon key (misma config de `assets/app.js` pero 
 
 ---
 
+# FASE F — EQUIPO (multi-usuario con roles)
+
+**Promesa:** "Invita a tus empleados a registrar gastos y ventas SIN darles acceso a tus números." El empleado entra con su propio correo, ve una sola pantalla de captura, y todo lo que registra cae en la cuenta del dueño con sello de quién lo capturó.
+
+## F.0 Decisión de arquitectura (LEER ANTES DE TOCAR NADA)
+
+Dos opciones evaluadas:
+
+- **Opción A — Organizaciones completas:** tabla `organizations` + columna `org_id` en TODAS las tablas + migrar cada fila existente + reescribir todas las policies. Es "lo correcto" a 5 años, pero exige migrar datos vivos de clientes reales → riesgo alto, y Eduardo pidió explícitamente que NADA de la información se mueva.
+- **Opción B — Cuenta-dueño (ELEGIDA):** los datos siguen amarrados a `user_id` del dueño, que pasa a significar "la empresa". El empleado es un usuario normal de Auth ligado al dueño vía una tabla nueva `team_members`. Cuando captura, el INSERT lleva `user_id = dueño` y `created_by = empleado`. **Cero migración de datos, cero cambio a lo existente; solo se AGREGAN una columna con DEFAULT, 2 tablas y policies ADICIONALES.** Las policies actuales del dueño no se tocan (las policies en Postgres son aditivas/OR: agregar una nueva no altera la anterior).
+
+**Regla de oro de la fase:** ningún `ALTER` destructivo, ningún `UPDATE` masivo, ningún cambio a policies existentes. Todo es `ADD COLUMN ... DEFAULT`, `CREATE TABLE`, `CREATE POLICY` nuevas.
+
+## F.1 PASO 1 — SQL (Supabase → SQL Editor)
+
+```sql
+-- ============================================================
+-- FASE F: EQUIPO — v1 rol único 'capturista'
+-- 100% aditivo: no modifica tablas, filas ni policies existentes.
+-- ============================================================
+
+-- F1.1 Sello de autoría en transactions (histórico queda NULL = lo capturó el dueño)
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS created_by uuid DEFAULT auth.uid();
+
+-- F1.2 Miembros del equipo
+CREATE TABLE IF NOT EXISTS public.team_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  member_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  member_email text NOT NULL,
+  role text NOT NULL DEFAULT 'capturista' CHECK (role IN ('capturista')),
+  status text NOT NULL DEFAULT 'activo' CHECK (status IN ('activo','suspendido')),
+  created_at timestamptz DEFAULT now(),
+  UNIQUE (owner_id, member_id),
+  CHECK (owner_id <> member_id)
+);
+CREATE INDEX IF NOT EXISTS idx_team_members_owner ON public.team_members(owner_id);
+CREATE INDEX IF NOT EXISTS idx_team_members_member ON public.team_members(member_id);
+ALTER TABLE public.team_members ENABLE ROW LEVEL SECURITY;
+
+-- El dueño administra su equipo; el miembro puede VERSE a sí mismo (para el routing al entrar)
+CREATE POLICY "team_owner_all" ON public.team_members FOR ALL
+  USING (auth.uid() = owner_id) WITH CHECK (auth.uid() = owner_id);
+CREATE POLICY "team_member_self" ON public.team_members FOR SELECT
+  USING (auth.uid() = member_id);
+
+-- F1.3 Invitaciones (por link copiable; sin correo automático en v1)
+CREATE TABLE IF NOT EXISTS public.team_invites (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role text NOT NULL DEFAULT 'capturista' CHECK (role IN ('capturista')),
+  token text NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(24),'hex'),
+  status text NOT NULL DEFAULT 'pendiente' CHECK (status IN ('pendiente','aceptada','cancelada')),
+  label text,                        -- "Juan - mostrador" (para que el dueño sepa a quién era)
+  expires_at timestamptz NOT NULL DEFAULT now() + interval '7 days',
+  created_at timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_team_invites_owner ON public.team_invites(owner_id);
+ALTER TABLE public.team_invites ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "invites_owner_all" ON public.team_invites FOR ALL
+  USING (auth.uid() = owner_id) WITH CHECK (auth.uid() = owner_id);
+-- NOTA: el invitado NO puede leer team_invites; el token se valida dentro del RPC (SECURITY DEFINER).
+
+-- F1.4 RPC: aceptar invitación (la llama el empleado ya autenticado, desde equipo.html)
+CREATE OR REPLACE FUNCTION public.accept_team_invite(p_token text)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_inv team_invites%ROWTYPE; v_email text;
+BEGIN
+  SELECT * INTO v_inv FROM team_invites
+   WHERE token = p_token AND status = 'pendiente' AND expires_at > now()
+   FOR UPDATE;
+  IF NOT FOUND THEN RETURN jsonb_build_object('ok',false,'error','invalida_o_vencida'); END IF;
+  IF v_inv.owner_id = auth.uid() THEN RETURN jsonb_build_object('ok',false,'error','eres_el_dueno'); END IF;
+  SELECT email INTO v_email FROM auth.users WHERE id = auth.uid();
+  INSERT INTO team_members(owner_id, member_id, member_email, role)
+  VALUES (v_inv.owner_id, auth.uid(), coalesce(v_email,''), v_inv.role)
+  ON CONFLICT (owner_id, member_id) DO UPDATE SET status='activo', role=EXCLUDED.role;
+  UPDATE team_invites SET status='aceptada' WHERE id = v_inv.id;
+  RETURN jsonb_build_object('ok',true,'owner_id',v_inv.owner_id);
+END $$;
+REVOKE ALL ON FUNCTION public.accept_team_invite(text) FROM anon;
+
+-- F1.5 RPC: contexto del empleado al entrar (¿de qué equipo soy y cómo se llama el negocio?)
+CREATE OR REPLACE FUNCTION public.get_my_team_context()
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path = public STABLE AS $$
+  SELECT coalesce(jsonb_agg(jsonb_build_object(
+    'owner_id', tm.owner_id, 'role', tm.role, 'status', tm.status,
+    'business', coalesce(p.company, p.full_name, 'Mi negocio')
+  )), '[]'::jsonb)
+  FROM team_members tm LEFT JOIN profiles p ON p.id = tm.owner_id
+  WHERE tm.member_id = auth.uid() AND tm.status = 'activo';
+$$;
+REVOKE ALL ON FUNCTION public.get_my_team_context() FROM anon;
+
+-- F1.6 Helper para policies: ¿auth.uid() es capturista activo de p_owner?
+CREATE OR REPLACE FUNCTION public.is_capturista_of(p_owner uuid)
+RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path = public STABLE AS $$
+  SELECT EXISTS (SELECT 1 FROM team_members
+    WHERE owner_id = p_owner AND member_id = auth.uid()
+      AND role = 'capturista' AND status = 'activo');
+$$;
+
+-- F1.7 Policies ADICIONALES en transactions (las del dueño quedan intactas)
+-- El capturista inserta A NOMBRE del dueño: solo efectivo/manual, siempre is_fiscal=false, sellado con su uid
+CREATE POLICY "tx_capturista_insert" ON public.transactions FOR INSERT
+  WITH CHECK (
+    is_capturista_of(user_id)
+    AND created_by = auth.uid()
+    AND source IN ('efectivo','manual')
+    AND coalesce(is_fiscal,false) = false
+  );
+-- Solo puede LEER lo que él mismo capturó (jamás el resto de los movimientos del dueño)
+CREATE POLICY "tx_capturista_select_own" ON public.transactions FOR SELECT
+  USING (created_by = auth.uid() AND is_capturista_of(user_id));
+-- Puede corregir/borrar SOLO sus registros del mismo día (typos), después queda inmutable para él
+CREATE POLICY "tx_capturista_update_today" ON public.transactions FOR UPDATE
+  USING (created_by = auth.uid() AND is_capturista_of(user_id) AND created_at::date = now()::date)
+  WITH CHECK (created_by = auth.uid() AND source IN ('efectivo','manual') AND coalesce(is_fiscal,false) = false);
+CREATE POLICY "tx_capturista_delete_today" ON public.transactions FOR DELETE
+  USING (created_by = auth.uid() AND is_capturista_of(user_id) AND created_at::date = now()::date);
+
+-- F1.8 Storage: el capturista sube fotos de nota A LA CARPETA DEL DUEÑO
+-- (bucket 'comprobantes' creado en Fase A; estas policies son adicionales)
+CREATE POLICY "comprobantes_capturista_insert" ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'comprobantes'
+    AND is_capturista_of(((storage.foldername(name))[1])::uuid));
+
+NOTIFY pgrst, 'reload schema';
+```
+
+**Advertencia conocida:** `profiles.company` — verificar el nombre real de la columna del nombre de negocio en `profiles` antes de correr F1.5 (si no existe, usar solo `full_name`).
+
+## F.2 Flujo de invitación (v1 sin correos: link por WhatsApp)
+
+1. Dueño: Configuración → **Mi equipo** → "+ Invitar" → escribe etiqueta ("Juan mostrador") → se crea `team_invites` → modal muestra el link `https://horizen.com.mx/equipo.html?invite={token}` con botones **Copiar** y **Enviar por WhatsApp** (`wa.me/?text=...`).
+2. Empleado abre el link: `equipo.html` detecta `?invite=`; si no hay sesión → guarda el token en `sessionStorage` y manda a `login.html?next=equipo` (Google o correo; el registro normal de signup.html funciona tal cual — empresa/RFC ya son opcionales).
+3. De vuelta en `equipo.html` con sesión: llama `accept_team_invite(token)` → toast "¡Listo! Ya eres parte del equipo de {negocio}" → modo captura.
+4. Dueño ve al miembro en su lista al instante (Realtime opcional en v2; v1 = al recargar).
+
+## F.3 PASO 3 — Frontend (2 piezas)
+
+**Pieza 1 — `equipo.html` (página NUEVA e independiente; NO se toca el dashboard core):**
+- Móvil-primero (el empleado captura desde el celular en el mostrador).
+- Header mínimo: logo + "Registras para: **{negocio}**" + botón salir. SIN sidebar, SIN totales, SIN acceso a nada más.
+- Form de captura (reusa el patrón visual del cashModal de Fase A): toggle **Gasto / Entrada**, monto (teclado numérico, font gigante tabular), categoría (subset: Mercancía, Insumos, Transporte, Comida, Servicios, Venta, Otro), concepto (texto corto), **foto de la nota** (reusa `comprimirImagen()` + subida al bucket `comprobantes/{owner_id}/...`), botón "Guardar registro".
+- INSERT directo con el cliente Supabase autenticado: `{user_id: OWNER_ID, created_by: session.user.id, source:'efectivo', is_fiscal:false, amount: ±monto, ...}` — el RLS de F1.7 es el guardián real; el front solo acomoda los datos.
+- Lista "Tus registros de hoy" (SELECT que el RLS limita a lo suyo) con editar/borrar solo hoy.
+- Si `get_my_team_context()` regresa vacío y no hay `?invite=` → mensaje "No perteneces a ningún equipo" + link a horizen.com.mx.
+
+**Pieza 2 — dashboard.html, sección "Mi equipo" en Configuración (dueño):**
+- Card nueva en page-configuracion: lista de miembros (`member_email`, etiqueta del invite, estado, fecha) + invitaciones pendientes (con "Cancelar" y "Copiar link de nuevo").
+- Acciones por miembro: **Suspender/Reactivar** (`status`), **Quitar** (DELETE row; sus registros históricos QUEDAN — llevan `created_by`, no dependen de la membresía).
+- En Transacciones y en el desglose del Corte del día: badge sutil "Capturó {email-corto}" cuando `created_by` no es null y ≠ dueño (tooltip con email completo). NO cambiar columnas ni sumas: solo el badge.
+- Routing al entrar (`app.js` — punto único post-login): si el usuario tiene equipo(s) como miembro y NO tiene datos propios (0 transactions y 0 accounts) → redirect `equipo.html`. Si tiene ambos → mini-selector "¿Cómo quieres entrar hoy?" (Mi cuenta / Equipo de {negocio}).
+
+## F.4 Pruebas de seguridad OBLIGATORIAS (con curl, antes de liberar)
+
+Con el token de sesión del CAPTURISTA (no del dueño):
+1. `GET /rest/v1/transactions?user_id=eq.{owner}` → debe regresar SOLO sus propias capturas, jamás los movimientos del PDF del dueño.
+2. `GET /rest/v1/rpc/get_liquidity_metrics` del dueño → vacío/error (no es su data).
+3. INSERT con `source='pdf_ocr'` o `is_fiscal=true` o `created_by` ajeno → rechazado por policy.
+4. UPDATE de un registro de ayer → rechazado. DELETE de un registro de hoy → permitido.
+5. `GET /rest/v1/team_invites` → 0 filas (solo el dueño las ve).
+6. Storage: PUT a `comprobantes/{otro_uuid_cualquiera}/x.jpg` → rechazado; a la carpeta de su dueño → permitido.
+
+## F.5 Microcopy
+
+- Configuración: "Mi equipo" / "Invita a tu gente a registrar gastos y ventas. Solo ven lo que ellos capturan — tus números son tuyos." / "+ Invitar"
+- Modal invitar: "¿Para quién es? (ej. Juan - mostrador)" / "Mándale este link por WhatsApp. Sirve 7 días."
+- equipo.html: "Registras para: {negocio}" / "¿Qué se movió?" / "Guardar registro" / "Tus registros de hoy" / vacío: "Aún no registras nada hoy."
+- Aceptación: "¡Listo! Ya eres parte del equipo de {negocio}."
+- Badge dueño: "Capturó Juan" / corte del día: "3 registros de tu equipo hoy".
+
+## F.6 Qué NO hacer en v1 (Fase F)
+
+- ❌ Roles contador/admin (F2: contador = solo-lectura de Reportes y Estado de Resultados; admin = todo menos equipo y facturación).
+- ❌ Correo automático de invitación (v1 = link por WhatsApp; v2 = Resend desde Edge Function).
+- ❌ Aprobación previa de capturas por el dueño (v1: entra directo con badge; si hay abuso, suspende al miembro).
+- ❌ Que el capturista vea totales, semana o mes (SOLO su lista de hoy).
+- ❌ Permisos granulares por categoría/monto máximo, múltiples negocios por dueño en la UI, editar el rol de un miembro.
+- ❌ Tocar `procesarEstado`/`confirmarEstado`, el RPC de liquidez o CUALQUIER policy existente.
+
+## F.7 Checklist de verificación (todo en el flujo dev, antes de liberar)
+
+1. SQL F.1 corre completo sin errores en Supabase (Pro ya activo). `NOTIFY` incluido.
+2. Cuenta dueño: crear invitación, copiar link, verla como "pendiente".
+3. En incógnito: abrir link sin sesión → login con cuenta nueva de Google → regresa → acepta → "Ya eres parte del equipo".
+4. Capturista registra: gasto $150 Insumos con foto + entrada $500 Venta. Ambos aparecen en su "hoy".
+5. Cuenta dueño: los 2 registros aparecen en Transacciones y en el corte del día con badge "Capturó …"; el Estado de Resultados del mes los incluye; la foto de la nota abre bien.
+6. Capturista NO ve: resumen, transacciones del dueño, reportes (verificar navegando a dashboard.html directo → el routing lo regresa a equipo.html).
+7. Las 6 pruebas curl de F.4 pasan.
+8. Suspender al miembro → su siguiente INSERT falla con mensaje claro; reactivar → vuelve a funcionar.
+9. Quitar al miembro → sus registros históricos siguen en la cuenta del dueño intactos.
+10. El dueño sigue pudiendo TODO lo de antes (regresión: subir un PDF completo y confirmar que nada cambió).
+
+---
+
 # CIERRE — Secuencia de entrega y dependencias
 
 ```
@@ -841,6 +1039,8 @@ A (efectivo) ──► C (estado de resultados necesita ventas en efectivo)
 B (gastos fijos) ──► C (línea de gastos más completa)        [B es independiente de A]
 A + D (clientes: los abonos usan el cashModal de A)
 D ──► E (citas se ligan a clientes; plantillas WhatsApp compartidas)
+A ──► F (equipo: la captura del empleado reusa foto de nota y el patrón del cashModal)
+F requiere: Supabase Pro activo + flujo dev→verificar→liberar (cambia RLS de transactions)
 ```
 
 - **Deploy por fase:** SQL en Supabase → editar dashboard.html (un solo agente a la vez) → subir a Hostinger → correr el checklist completo → commit → siguiente fase.
