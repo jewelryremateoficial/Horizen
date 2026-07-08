@@ -565,6 +565,7 @@ select.mod-inp{cursor:pointer}
     <button class="ni" onclick="showPage('taxes')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg></span>SAT / Fiscal</button>
 
     <div class="nav-lbl">Inteligencia</div>
+    <button class="ni" onclick="showPage('resultados')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18v-1"/><path d="M12 18v-6"/><path d="M16 18v-3"/></svg></span>Estado de Resultados</button>
     <button class="ni" onclick="showPage('finplan')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>Plan Financiero</button>
 
     <div class="nav-lbl">Cuenta</div>
@@ -751,6 +752,48 @@ select.mod-inp{cursor:pointer}
       </div>
     </div>
     <div id="repBody"><div class="rep-empty">Cargando tus datos…</div></div>
+  </div>
+
+  <!-- ══ PAGE: Estado de Resultados (Fase C — base efectivo) ══ -->
+  <div class="page" id="page-resultados">
+    <style>
+    #page-resultados .pnl-hdr{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin:1rem 0 1.25rem}
+    #page-resultados .pnl-month{font-size:.95rem;font-weight:700;min-width:150px;text-align:center;color:var(--ink);font-variant-numeric:tabular-nums}
+    #page-resultados .pnl-toggle{display:inline-flex;align-items:center;gap:.45rem;font-size:.82rem;font-weight:600;color:var(--muted);cursor:pointer;user-select:none}
+    #page-resultados .pnl-card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-md);padding:20px;margin-bottom:16px;box-shadow:var(--shadow-1)}
+    #page-resultados .pnl-card h3{font-size:.875rem;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:.5rem;margin-bottom:.2rem}
+    #page-resultados .pnl-card h3 .frm{color:var(--muted);font-weight:500}
+    #page-resultados .pnl-sub{font-size:.75rem;color:var(--muted);margin-bottom:.75rem}
+    #page-resultados .pnl-row{display:grid;grid-template-columns:1fr 112px 64px;gap:.6rem;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.875rem}
+    #page-resultados .pnl-row.cmp{grid-template-columns:1fr 112px 64px 112px 76px}
+    #page-resultados .pnl-row .lbl{display:flex;align-items:center;gap:.5rem;min-width:0;color:var(--ink);flex-wrap:wrap}
+    #page-resultados .pnl-row .num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink);white-space:nowrap}
+    #page-resultados .pnl-row .pct{text-align:right;font-variant-numeric:tabular-nums;font-size:.78rem;color:var(--muted);white-space:nowrap}
+    #page-resultados .pnl-row .dlt{text-align:right;font-variant-numeric:tabular-nums;font-size:.78rem;font-weight:600;white-space:nowrap}
+    #page-resultados .pnl-row.tot{background:var(--p-soft);border-radius:var(--r-sm);padding:.6rem .7rem;margin-top:.35rem;border-bottom:none}
+    #page-resultados .pnl-row.tot .lbl{font-weight:700;text-transform:uppercase;font-size:.78rem;letter-spacing:.04em}
+    #page-resultados .pnl-row.tot .num{font-weight:700;font-size:.95rem}
+    #page-resultados .pnl-row.hd{border-bottom:1px solid var(--line);padding:.3rem 0}
+    #page-resultados .pnl-row.hd span{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;text-align:right}
+    #page-resultados .pnl-move{font-family:inherit;font-size:.7rem;color:var(--muted);background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:.15rem .3rem;max-width:140px;cursor:pointer}
+    #page-resultados .pnl-fijo{display:inline-block;font-size:.68rem;font-weight:600;color:var(--p);background:var(--p-soft);border-radius:50px;padding:.05rem .45rem;flex-shrink:0}
+    #page-resultados .pnl-note{font-size:.78rem;color:var(--muted);margin-top:.6rem}
+    #page-resultados .pnl-frase{font-size:.9rem;font-weight:600;color:var(--ink);margin-top:.75rem}
+    #page-resultados .pnl-chip{display:inline-block;font-size:.72rem;font-weight:700;border-radius:50px;padding:.15rem .55rem;margin-left:.5rem}
+    #page-resultados .pnl-empty{padding:2rem;text-align:center;color:var(--muted)}
+    #page-resultados .pnl-warn{display:flex;gap:.6rem;align-items:flex-start;background:var(--state-warn-bg);border:1px solid var(--state-warn-border);color:var(--state-warn);font-size:.85rem;font-weight:600;padding:.85rem 1.1rem;border-radius:var(--r-md);margin-bottom:16px}
+    #page-resultados details summary{cursor:pointer;font-size:.78rem;font-weight:600;color:var(--muted);margin:.25rem 0 .4rem;user-select:none}
+    @media(max-width:700px){#page-resultados .pnl-row.cmp{grid-template-columns:1fr 100px 56px}#page-resultados .pnl-row.cmp .c-prev,#page-resultados .pnl-row.cmp .c-dlt{display:none}#page-resultados .pnl-hdr .btn{margin-left:0!important}}
+    </style>
+    <div><div class="t-page">Estado de resultados</div><div class="t-sub" style="margin-top:.25rem">Estado de resultados (base efectivo) — reporte gerencial</div></div>
+    <div class="pnl-hdr">
+      <button class="cal-nav-btn" onclick="navPnlMes(-1)">← Anterior</button>
+      <div class="pnl-month" id="pnlMesLbl">—</div>
+      <button class="cal-nav-btn" onclick="navPnlMes(1)">Siguiente →</button>
+      <label class="pnl-toggle"><input type="checkbox" id="pnlCompareChk" onchange="pnlToggleCompare(this.checked)">Comparar con mes anterior</label>
+      <button class="btn btn-primary" id="pnlBtnPDF" style="margin-left:auto" onclick="pnlDownloadPDF()">Descargar PDF</button>
+    </div>
+    <div id="pnlBody"><div class="pnl-empty">Cargando tu estado de resultados…</div></div>
   </div>
 
   <!-- ══ PAGE: Referidos (Mi red) ══════════════════════════ -->
@@ -1632,7 +1675,8 @@ const ICONS = {
   billete:      '<rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01"/><path d="M18 12h.01"/>',                                                                                                 // 💵
   info:         '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',                                                                                                                                                  // ℹ️
   camara:       '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',                                                                                       // camara (Fase A efectivo)
-  imagen:       '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>'                                                                                    // imagen / foto adjunta
+  imagen:       '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',                                                                                   // imagen / foto adjunta
+  resultados:   '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18v-1"/><path d="M12 18v-6"/><path d="M16 18v-3"/>'                                                       // file-chart-column (Estado de Resultados, Fase C)
 };
 function icon(name, cls = 'ic') {
   return `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
@@ -1723,6 +1767,7 @@ function showPage(id) {
     calendario:   ['Calendario',       '— Flujo diario de ingresos y egresos'],
     estados:      ['Subir estado de cuenta', '— Tus números listos en un minuto'],
     reportes:     ['Reportes',         '— Por mes y banco · descarga para tu contador'],
+    resultados:   ['Estado de resultados', '— Base efectivo · reporte gerencial'],
     referidos:    ['Mi red · Referidos', '— Invita y gana cada mes']
   };
   const t = titles[id] || [id, ''];
@@ -1740,6 +1785,7 @@ function showPage(id) {
   if (id === 'alerts')       loadAlerts();
   if (id === 'estados')      loadSavedStatements();
   if (id === 'reportes')     loadReportes();
+  if (id === 'resultados')   loadResultados();
   if (id === 'overview')     renderInicio();
   if (id === 'referidos')    loadReferidos();
 }
@@ -4642,6 +4688,353 @@ async function repDownloadPDF() {
     if (r.cats.length) doc.autoTable({ startY: doc.lastAutoTable.finalY + 6, head: [['Gasto por categoría', 'Monto']], body: r.cats.map(c => [c.cat, _repMoney(c.amt)]), headStyles: { fillColor: [99, 91, 255] } });
     doc.autoTable({ startY: doc.lastAutoTable.finalY + 6, head: [['Fecha', 'Descripción', 'Categoría', 'Tipo', 'Monto']], body: rows.map(t => [t.date, (t.description || '').slice(0, 40), t.category || 'Otros', t.type, _repMoney(parseFloat(t.amount) || 0)]), headStyles: { fillColor: [99, 91, 255] }, styles: { fontSize: 8 } });
     doc.save(_repFileName('pdf'));
+  } catch (e) { toast('Error al generar PDF: ' + (e.message || e), 'error'); }
+  finally { btn.disabled = false; btn.textContent = old; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ===== ESTADO DE RESULTADOS ===== (Fase C — base efectivo, gerencial)
+// Todo se calcula en el navegador desde transactions (banco + efectivo + manual).
+// Esqueleto NIF B-3 "por función", etiquetado honesto: NO es contabilidad fiscal.
+// ══════════════════════════════════════════════════════════════
+
+// Mapeo por defecto categoría → línea del estado (plan C.2).
+// El mapa del usuario (tabla category_pnl_map) tiene prioridad; lo no mapeado
+// hereda por grupo de _customCats; lo desconocido cae en gasto_operativo.
+const PNL_MAP_DEFAULT = {
+  'Ventas': 'ventas',
+  'Mercancía': 'costo', 'Proveedores': 'costo',
+  'Nómina': 'gasto_operativo', 'Renta': 'gasto_operativo', 'Publicidad': 'gasto_operativo',
+  'Software': 'gasto_operativo', 'Papelería': 'gasto_operativo', 'Contabilidad': 'gasto_operativo',
+  'Servicios': 'gasto_operativo', 'Honorarios': 'gasto_operativo', 'Envíos': 'gasto_operativo', 'Viajes': 'gasto_operativo',
+  'Comisiones': 'financiero',
+  'SAT/Impuestos': 'impuestos',
+  // SIEMPRE excluidos: movimientos entre cuentas — incluirlos duplica o distorsiona
+  'Transferencia': 'excluir', 'Pago TDC': 'excluir', 'Inversiones': 'excluir',
+  // Personal: informativo, fuera del cálculo del negocio
+  'Comida': 'personal', 'Café': 'personal', 'Supermercado': 'personal', 'Farmacia': 'personal',
+  'Salud': 'personal', 'Entretenimiento': 'personal', 'Ropa': 'personal', 'Transporte': 'personal', 'Educación': 'personal'
+};
+const _PNL_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const _PNL_MOVE_OPTS = [
+  ['costo', 'Costo de ventas'], ['gasto_operativo', 'Gasto de operación'], ['financiero', 'Financieros'],
+  ['impuestos', 'Impuestos'], ['personal', 'Personal'], ['excluir', 'Excluir del estado']
+];
+
+let _pnlYear = new Date().getFullYear(), _pnlMonth = new Date().getMonth();
+let _pnlCompare = false, _pnlUserMap = {}, _pnlFixedNames = [], _pnlCur = null, _pnlPrev = null;
+
+const _pnlMoney = n => (n < 0 ? '−' : '') + '$' + Math.round(Math.abs(n)).toLocaleString('es-MX');
+function _pnlMonthStr(y, m) { return y + '-' + String(m + 1).padStart(2, '0'); }
+function _pnlPrevYM(y, m) { return m === 0 ? [y - 1, 11] : [y, m - 1]; }
+function _pnlFmtPct(p) { return (p == null || !isFinite(p)) ? '—' : (Math.round(p * 10) / 10).toLocaleString('es-MX') + '%'; }
+
+// Resuelve la línea del estado para una transacción:
+// mapa del usuario > PNL_MAP_DEFAULT > grupo de la categoría custom > gasto_operativo
+function getPnlLine(tx) {
+  const cat = tx.category || 'Otros';
+  if (_pnlUserMap[cat]) return _pnlUserMap[cat];
+  if (PNL_MAP_DEFAULT[cat]) return PNL_MAP_DEFAULT[cat];
+  if (tx.type === 'transferencia') return 'excluir';
+  const grp = (typeof getCatGroup === 'function') ? getCatGroup(cat) : 'Otros';
+  if (grp === 'Comida' || grp === 'Hogar' || grp === 'Personal') return 'personal';
+  if (grp === 'Finanzas') return 'financiero';
+  return 'gasto_operativo'; // 'Negocios', 'Otros' y desconocidas
+}
+
+// TODO (Fase B): sustituir este proxy por los gastos fijos DETECTADOS automáticamente
+// (recurrencia en transactions). v1: un egreso operativo cuenta como "fijo" si su
+// descripción o categoría coincide con un gasto registrado a mano en fixed_expenses.
+function _pnlEsFijo(t) {
+  if (!_pnlFixedNames.length) return false;
+  const d = ((t.description || '') + ' ' + (t.category || '')).toLowerCase();
+  const cat = (t.category || '').toLowerCase();
+  return _pnlFixedNames.some(n => d.includes(n) || (cat.length >= 4 && n.includes(cat)));
+}
+
+// Fórmulas exactas del plan C.3
+function computePnl(txs) {
+  const p = { ventasBanco: 0, ventasEfectivo: 0, ventas: 0, costo: 0, costoCats: {},
+              gastosOp: 0, gastosOpCats: {}, gastosFijos: 0, gastosOpFijoCats: {},
+              fin: 0, imp: 0, personal: 0, excluido: 0, count: (txs || []).length };
+  (txs || []).forEach(t => {
+    const amt = Math.abs(parseFloat(t.amount) || 0);
+    if (!amt) return;
+    const line = getPnlLine(t);
+    if (t.type === 'ingreso') {
+      if (line === 'excluir') { p.excluido += amt; return; }
+      // Ventas con sublíneas por fuente: efectivo (Fase A) vs banco (PDF/manual)
+      if ((t.source || '') === 'efectivo') p.ventasEfectivo += amt; else p.ventasBanco += amt;
+      return;
+    }
+    if (t.type === 'transferencia') { p.excluido += amt; return; }
+    const cat = t.category || 'Otros';
+    switch (line) {
+      case 'excluir':    p.excluido += amt; break;
+      case 'costo':      p.costo += amt; p.costoCats[cat] = (p.costoCats[cat] || 0) + amt; break;
+      case 'financiero': p.fin += amt; break;
+      case 'impuestos':  p.imp += amt; break;
+      case 'personal':   p.personal += amt; break;
+      default:
+        p.gastosOp += amt;
+        p.gastosOpCats[cat] = (p.gastosOpCats[cat] || 0) + amt;
+        if (_pnlEsFijo(t)) { p.gastosFijos += amt; p.gastosOpFijoCats[cat] = (p.gastosOpFijoCats[cat] || 0) + amt; }
+    }
+  });
+  p.ventas = p.ventasBanco + p.ventasEfectivo;
+  p.ub = p.ventas - p.costo;                    // utilidad bruta
+  p.uo = p.ub - p.gastosOp;                     // utilidad de operación
+  p.un = p.uo - p.fin - p.imp;                  // utilidad neta
+  // Si ventas === 0: no dividir; los márgenes se muestran "—"
+  p.mb = p.ventas ? p.ub / p.ventas * 100 : null;
+  p.mo = p.ventas ? p.uo / p.ventas * 100 : null;
+  p.mn = p.ventas ? p.un / p.ventas * 100 : null;
+  return p;
+}
+
+// Loader del dispatcher: transactions del mes actual + anterior, mapa del usuario y fijos
+async function loadResultados() {
+  const body = document.getElementById('pnlBody'); if (!body) return;
+  const lbl = document.getElementById('pnlMesLbl');
+  if (lbl) lbl.textContent = _PNL_MESES[_pnlMonth] + ' ' + _pnlYear;
+  body.innerHTML = '<div class="pnl-empty">Calculando tu estado de resultados…</div>';
+  try {
+    const [py, pm] = _pnlPrevYM(_pnlYear, _pnlMonth);
+    const desde   = _pnlMonthStr(py, pm) + '-01';
+    const hastaEx = (_pnlMonth === 11 ? (_pnlYear + 1) + '-01' : _pnlMonthStr(_pnlYear, _pnlMonth + 1)) + '-01';
+    const [txRes, mapRes, feRes] = await Promise.all([
+      db.from('transactions').select('date,type,amount,category,source,description')
+        .eq('user_id', _user.id).gte('date', desde).lt('date', hastaEx),
+      db.from('category_pnl_map').select('category,pnl_line').eq('user_id', _user.id),
+      db.from('fixed_expenses').select('name').eq('user_id', _user.id).eq('is_active', true)
+    ]);
+    if (txRes.error) throw txRes.error;
+    _pnlUserMap = {};
+    if (!mapRes.error) (mapRes.data || []).forEach(r => { _pnlUserMap[r.category] = r.pnl_line; });
+    _pnlFixedNames = (feRes.error ? [] : (feRes.data || []))
+      .map(f => String(f.name || '').toLowerCase().trim()).filter(n => n.length >= 4);
+    const mesCur = _pnlMonthStr(_pnlYear, _pnlMonth), mesPrev = _pnlMonthStr(py, pm);
+    const txs = txRes.data || [];
+    _pnlCur  = computePnl(txs.filter(t => String(t.date || '').slice(0, 7) === mesCur));
+    _pnlPrev = computePnl(txs.filter(t => String(t.date || '').slice(0, 7) === mesPrev));
+    renderPnl(_pnlCur, _pnlCompare ? _pnlPrev : null);
+  } catch (e) {
+    body.innerHTML = `<div class="pnl-empty">No se pudo calcular tu estado de resultados: ${_escHtml(e.message || 'error')}</div>`;
+  }
+}
+
+function navPnlMes(dir) {
+  _pnlMonth += dir;
+  if (_pnlMonth < 0)  { _pnlMonth = 11; _pnlYear--; }
+  if (_pnlMonth > 11) { _pnlMonth = 0;  _pnlYear++; }
+  loadResultados();
+}
+
+function pnlToggleCompare(v) {
+  _pnlCompare = !!v;
+  if (_pnlCur) renderPnl(_pnlCur, _pnlCompare ? _pnlPrev : null); else loadResultados();
+}
+
+// Mueve una categoría a otra línea (caso "Envíos": ¿costo o gasto?) — upsert en category_pnl_map
+async function movePnlCategory(cat, linea) {
+  if (!cat || !linea) return;
+  try {
+    const { error } = await db.from('category_pnl_map')
+      .upsert({ user_id: _user.id, category: cat, pnl_line: linea }, { onConflict: 'user_id,category' });
+    if (error) throw error;
+    _pnlUserMap[cat] = linea;
+    toast('Categoría movida ✓', 'success');
+    loadResultados();
+  } catch (e) { toast('No se pudo guardar el cambio: ' + (e.message || e), 'error'); }
+}
+
+// Δ vs mes anterior. invert=true para gastos: gasto que sube = rojo (lógica invertida)
+function _pnlDelta(cur, prev, invert) {
+  if (!prev) return { txt: cur ? 'nuevo' : '—', color: 'var(--muted)' };
+  const d = (cur - prev) / Math.abs(prev) * 100;
+  if (Math.abs(d) < 0.5) return { txt: '=', color: 'var(--muted)' };
+  const up = d > 0, good = invert ? !up : up;
+  return { txt: (up ? '+' : '−') + Math.abs(Math.round(d)) + '%', color: good ? 'var(--trend-up)' : 'var(--trend-down)' };
+}
+
+// Una fila del estado: [concepto | monto | % de ventas | mes anterior | Δ%]
+function _pnlRowHTML(o) {
+  const pct = (o.ventasCur && o.cur != null) ? _pnlFmtPct(o.cur / o.ventasCur * 100) : '—';
+  let h = `<div class="pnl-row${o.cmp ? ' cmp' : ''}${o.tot ? ' tot' : ''}">`;
+  h += `<span class="lbl">${o.label}</span>`;
+  h += `<span class="num"${o.numColor ? ` style="color:${o.numColor}"` : ''}>${_pnlMoney(o.cur)}</span>`;
+  h += `<span class="pct">${pct}</span>`;
+  if (o.cmp) {
+    const d = _pnlDelta(o.cur, o.prev || 0, !!o.invert);
+    h += `<span class="num c-prev" style="font-weight:500;color:var(--muted)">${_pnlMoney(o.prev || 0)}</span>`;
+    h += `<span class="dlt c-dlt" style="color:${d.color}">${d.txt}</span>`;
+  }
+  return h + `</div>`;
+}
+
+// Desglose por categoría (solo con movimiento; <3% agrupadas en "Otros") + menú "Mover a…"
+function _pnlCatRows(cats, prevCats, ventasCur, cmp, line, fijoCats) {
+  const entries = Object.entries(cats || {}).sort((x, y) => y[1] - x[1]);
+  if (!entries.length) return `<div class="pnl-note" style="margin:.2rem 0 .4rem">Sin movimientos en esta línea este mes.</div>`;
+  const total = entries.reduce((s, e) => s + e[1], 0);
+  let otros = 0, otrosPrev = 0; const out = [];
+  entries.forEach(([cat, amt]) => {
+    if (entries.length > 4 && total && amt / total < 0.03) { otros += amt; otrosPrev += (prevCats || {})[cat] || 0; return; }
+    const fijo = (fijoCats && fijoCats[cat])
+      ? `<span class="pnl-fijo" title="Coincide con tus gastos fijos registrados (${_pnlMoney(fijoCats[cat])})">fijo</span>` : '';
+    const sel = `<select class="pnl-move" title="Mover esta categoría a otra línea del estado" data-cat="${_escHtml(cat)}" onchange="movePnlCategory(this.dataset.cat, this.value)">${_PNL_MOVE_OPTS.map(op => `<option value="${op[0]}"${op[0] === line ? ' selected' : ''}>${op[1]}</option>`).join('')}</select>`;
+    out.push(_pnlRowHTML({ label: `${_escHtml(cat)} ${fijo} ${sel}`, cur: amt, prev: (prevCats || {})[cat] || 0, ventasCur, cmp, invert: true }));
+  });
+  if (otros) out.push(_pnlRowHTML({ label: 'Otros (categorías menores al 3%)', cur: otros, prev: otrosPrev, ventasCur, cmp, invert: true }));
+  return out.join('');
+}
+
+// Pinta los 5 bloques del plan C.4 (+ comparativo)
+function renderPnl(a, b) {
+  const body = document.getElementById('pnlBody'); if (!body) return;
+  const cmp = !!b, vc = a ? a.ventas : 0;
+  const btn = document.getElementById('pnlBtnPDF');
+  const hasData = a && a.count > 0;
+  if (btn) btn.disabled = !hasData;
+  if (!hasData) {
+    body.innerHTML = `<div class="pnl-card"><div class="pnl-empty">Sube un estado de cuenta o registra tu efectivo para armar tu estado de resultados.<div style="margin-top:1.1rem;display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap"><button class="btn btn-primary" onclick="showPage('estados')">${icon('subir')}Subir estado de cuenta</button><button class="btn btn-ghost" onclick="openCashModal('entrada')">${icon('billete')}Registrar efectivo</button></div></div></div>`;
+    return;
+  }
+  const H = [];
+  if (!a.ventas && (a.costo + a.gastosOp + a.fin + a.imp) > 0) {
+    H.push(`<div class="pnl-warn">${icon('alerta')}<span>¿Vendiste en efectivo este mes? Regístralo para que tu estado no salga en pérdida. <button class="btn btn-ghost" style="margin-left:.4rem;padding:6px 12px" onclick="openCashModal('entrada')">Registrar efectivo</button></span></div>`);
+  }
+  const hd = cmp ? `<div class="pnl-row cmp hd"><span></span><span>Mes actual</span><span>% ventas</span><span class="c-prev">Mes anterior</span><span class="c-dlt">Δ</span></div>` : '';
+
+  // 1 — Lo que vendiste (Ventas)
+  H.push(`<div class="pnl-card">
+    <h3>${icon('moneda')}Lo que vendiste <span class="frm">· Ventas</span></h3>
+    <div class="pnl-sub">Ingresos cobrados en el mes — banco + efectivo</div>
+    ${hd}
+    ${_pnlRowHTML({ label: 'Banco', cur: a.ventasBanco, prev: b ? b.ventasBanco : 0, ventasCur: vc, cmp })}
+    ${_pnlRowHTML({ label: `Efectivo <span class="src-tag src-efectivo">Efectivo</span>`, cur: a.ventasEfectivo, prev: b ? b.ventasEfectivo : 0, ventasCur: vc, cmp })}
+    ${_pnlRowHTML({ label: 'Ventas netas', cur: a.ventas, prev: b ? b.ventas : 0, ventasCur: vc, cmp, tot: true })}
+  </div>`);
+
+  // 2 — Lo que te costó la mercancía → UTILIDAD BRUTA
+  H.push(`<div class="pnl-card">
+    <h3>${icon('tienda')}Lo que te costó la mercancía <span class="frm">· Costo de ventas</span></h3>
+    <div class="pnl-sub">Compras del mes (Mercancía y Proveedores) — base efectivo, sin inventarios</div>
+    ${hd}
+    ${_pnlCatRows(a.costoCats, b ? b.costoCats : {}, vc, cmp, 'costo', null)}
+    ${_pnlRowHTML({ label: 'Utilidad bruta', cur: a.ub, prev: b ? b.ub : 0, ventasCur: vc, cmp, tot: true, numColor: a.ub > 0 ? 'var(--pos)' : 'var(--ink)' })}
+    ${a.mb != null ? `<div class="pnl-frase">De cada $100 vendidos te quedan $${Math.round(a.mb)} después de la mercancía.</div>` : ''}
+  </div>`);
+
+  // 3 — Lo que cuesta operar → UTILIDAD DE OPERACIÓN
+  const fijoNote = a.gastosFijos > 0 ? `<div class="pnl-note">≈ ${_pnlMoney(a.gastosFijos)} de estos gastos coinciden con tus gastos fijos registrados.</div>` : '';
+  H.push(`<div class="pnl-card">
+    <h3>${icon('maletin')}Lo que cuesta operar <span class="frm">· Gastos de operación</span></h3>
+    <div class="pnl-sub">Nómina, renta, publicidad, software y demás gastos del negocio</div>
+    ${hd}
+    <details open><summary>Desglose por categoría</summary>
+    ${_pnlCatRows(a.gastosOpCats, b ? b.gastosOpCats : {}, vc, cmp, 'gasto_operativo', a.gastosOpFijoCats)}
+    </details>
+    ${fijoNote}
+    ${_pnlRowHTML({ label: 'Utilidad de operación', cur: a.uo, prev: b ? b.uo : 0, ventasCur: vc, cmp, tot: true, numColor: a.uo > 0 ? 'var(--pos)' : 'var(--ink)' })}
+  </div>`);
+
+  // 4 — Bancos e impuestos → UTILIDAD NETA
+  let saludChip = '';
+  if (a.mn != null) {
+    const s = a.mn < 5 ? ['var(--trend-down)', 'var(--trend-down-bg)', 'Margen bajo']
+            : a.mn <= 10 ? ['var(--state-warn)', 'var(--state-warn-bg)', 'Margen medio']
+            : ['var(--state-ok)', 'var(--state-ok-bg)', 'Margen sano'];
+    saludChip = `<span class="pnl-chip" style="color:${s[0]};background:${s[1]}">${s[2]} · ${_pnlFmtPct(a.mn)}</span>`;
+  }
+  const impRow = (a.imp > 0 || (b && b.imp > 0))
+    ? _pnlRowHTML({ label: `SAT / Impuestos pagados <span title="Los pagos de IVA no son gasto de tu negocio: es impuesto que cobras por cuenta del SAT." style="display:inline-flex;color:var(--muted);cursor:help">${icon('info')}</span>`, cur: a.imp, prev: b ? b.imp : 0, ventasCur: vc, cmp, invert: true })
+    : ''; // impuestos = 0: la línea se fusiona con la neta (plan C.8)
+  const finRow = (a.fin > 0 || (b && b.fin > 0))
+    ? _pnlRowHTML({ label: 'Comisiones e intereses bancarios', cur: a.fin, prev: b ? b.fin : 0, ventasCur: vc, cmp, invert: true })
+    : '';
+  const fraseNeta = a.mn == null ? ''
+    : a.mn >= 0 ? `<div class="pnl-frase">De cada $100 que vendiste, te quedaron $${Math.round(a.mn)}.${saludChip}</div>`
+    : `<div class="pnl-frase">De cada $100 que vendiste, perdiste $${Math.abs(Math.round(a.mn))}.${saludChip}</div>`;
+  H.push(`<div class="pnl-card">
+    <h3>${icon('recibo')}Bancos e impuestos <span class="frm">· Financieros e impuestos</span></h3>
+    <div class="pnl-sub">Lo que se llevan el banco y el SAT antes de tu utilidad final</div>
+    ${hd}
+    ${finRow}${impRow}
+    ${(!finRow && !impRow) ? `<div class="pnl-note" style="margin:.2rem 0 .4rem">Sin comisiones ni impuestos pagados este mes.</div>` : ''}
+    ${_pnlRowHTML({ label: 'Utilidad neta', cur: a.un, prev: b ? b.un : 0, ventasCur: vc, cmp, tot: true, numColor: a.un > 0 ? 'var(--pos)' : 'var(--ink)' })}
+    ${fraseNeta}
+    ${a.excluido > 0 ? `<div class="pnl-note">Transferencias y pagos TDC excluidos (${_pnlMoney(a.excluido)}): son movimientos entre tus cuentas, no resultado. Los "Pago TDC" están excluidos para no contar doble tus gastos de tarjeta.</div>` : ''}
+  </div>`);
+
+  // 5 — Retiros personales (informativo, NO resta en el estado)
+  if (a.personal > 0 || (b && b.personal > 0)) {
+    H.push(`<div class="pnl-card">
+      <h3>${icon('persona')}Retiros personales <span class="frm">· informativo</span></h3>
+      ${hd}
+      ${_pnlRowHTML({ label: 'Gastos personales pagados desde el negocio', cur: a.personal, prev: b ? b.personal : 0, ventasCur: vc, cmp, invert: true })}
+      <div class="pnl-note">${_pnlMoney(a.personal)} salieron para gastos personales. No cuentan como gasto del negocio.</div>
+    </div>`);
+  }
+
+  H.push(`<div class="pnl-note" style="text-align:center;margin-bottom:1rem">Reporte gerencial elaborado sobre base de flujo de efectivo. No sustituye la contabilidad fiscal ni estados financieros dictaminados.</div>`);
+  body.innerHTML = H.join('');
+}
+
+// Export PDF — términos formales + pie obligatorio (patrón repDownloadPDF)
+async function pnlDownloadPDF() {
+  if (!_pnlCur || !_pnlCur.count) { toast('No hay datos para exportar', 'error'); return; }
+  const btn = document.getElementById('pnlBtnPDF'); btn.disabled = true; const old = btn.textContent; btn.textContent = 'Generando…';
+  try {
+    if (!window.jspdf) await _repLoadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
+    if (!window.jspdf || !window.jspdf.jsPDF.API.autoTable) await _repLoadScript('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js');
+    const { jsPDF } = window.jspdf;
+    const a = _pnlCur, b = _pnlCompare ? _pnlPrev : null;
+    const doc = new jsPDF();
+    const label = _PNL_MESES[_pnlMonth] + ' ' + _pnlYear;
+    doc.setFillColor(99, 91, 255); doc.rect(0, 0, 210, 26, 'F');
+    doc.setTextColor(255); doc.setFontSize(18); doc.setFont(undefined, 'bold'); doc.text('Horizen', 14, 16);
+    doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.text('Estado de resultados', 196, 16, { align: 'right' });
+    doc.setTextColor(10, 37, 64); doc.setFontSize(13); doc.setFont(undefined, 'bold');
+    doc.text(`Estado de resultados  ·  ${label}`, 14, 38);
+    doc.setFontSize(9); doc.setFont(undefined, 'normal'); doc.setTextColor(105, 115, 134);
+    doc.text('Base de flujo de efectivo — reporte gerencial', 14, 44);
+    const P = n => (n < 0 ? '-' : '') + '$' + Math.round(Math.abs(n)).toLocaleString('es-MX');
+    const pc = n => a.ventas ? (Math.round(n / a.ventas * 1000) / 10) + '%' : '—';
+    const dl = (cur, prev) => !b ? null : (!prev ? (cur ? 'nuevo' : '—') : (((cur - prev) / Math.abs(prev) * 100) >= 0 ? '+' : '-') + Math.abs(Math.round((cur - prev) / Math.abs(prev) * 100)) + '%');
+    const row = (name, cur, prev) => b ? [name, P(cur), pc(cur), P(prev || 0), dl(cur, prev)] : [name, P(cur), pc(cur)];
+    const head = b ? [['Concepto', 'Mes actual', '% ventas', 'Mes anterior', 'Δ%']] : [['Concepto', 'Monto', '% ventas']];
+    const rows = [];
+    rows.push(row('Ventas netas', a.ventas, b && b.ventas));
+    rows.push(row('    Banco', a.ventasBanco, b && b.ventasBanco));
+    rows.push(row('    Efectivo', a.ventasEfectivo, b && b.ventasEfectivo));
+    rows.push(row('Costo de ventas', a.costo, b && b.costo));
+    rows.push(row('UTILIDAD BRUTA', a.ub, b && b.ub));
+    rows.push(row('Gastos de operación', a.gastosOp, b && b.gastosOp));
+    Object.entries(a.gastosOpCats).sort((x, y) => y[1] - x[1]).forEach(([cat, amt]) => {
+      rows.push(row('    ' + cat, amt, b ? (b.gastosOpCats[cat] || 0) : 0));
+    });
+    rows.push(row('UTILIDAD DE OPERACIÓN', a.uo, b && b.uo));
+    if (a.fin > 0 || (b && b.fin > 0)) rows.push(row('Gastos financieros (comisiones)', a.fin, b && b.fin));
+    if (a.imp > 0 || (b && b.imp > 0)) rows.push(row('Impuestos pagados', a.imp, b && b.imp));
+    rows.push(row('UTILIDAD NETA', a.un, b && b.un));
+    doc.autoTable({
+      startY: 50, head, body: rows, headStyles: { fillColor: [99, 91, 255] }, styles: { fontSize: 9 },
+      columnStyles: b ? { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' } } : { 1: { halign: 'right' }, 2: { halign: 'right' } },
+      didParseCell: d => { if (d.section === 'body' && /^UTILIDAD/.test(String(d.row.raw[0]))) d.cell.styles.fontStyle = 'bold'; }
+    });
+    let fy = doc.lastAutoTable.finalY + 8;
+    if (a.personal > 0) {
+      doc.setFontSize(9); doc.setTextColor(105, 115, 134);
+      doc.text(`Retiros personales (informativo, no restan en el estado): ${P(a.personal)}`, 14, fy); fy += 6;
+    }
+    if (a.excluido > 0) {
+      doc.setFontSize(9); doc.setTextColor(105, 115, 134);
+      doc.text(`Transferencias y pagos TDC excluidos: ${P(a.excluido)} (movimientos entre cuentas).`, 14, fy); fy += 6;
+    }
+    doc.setFontSize(8); doc.setTextColor(120, 120, 120);
+    doc.text('Reporte gerencial elaborado sobre base de flujo de efectivo. No sustituye la contabilidad fiscal ni estados financieros dictaminados.', 14, fy + 2, { maxWidth: 182 });
+    doc.save('horizen-estado-resultados-' + _pnlMonthStr(_pnlYear, _pnlMonth) + '.pdf');
   } catch (e) { toast('Error al generar PDF: ' + (e.message || e), 'error'); }
   finally { btn.disabled = false; btn.textContent = old; }
 }
