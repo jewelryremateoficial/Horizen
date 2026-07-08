@@ -124,21 +124,21 @@ p{color:var(--slate)}
 .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--indigo);box-shadow:0 0 0 0 rgba(99,91,255,.5);animation:pulse 2.2s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(99,91,255,.5)}70%{box-shadow:0 0 0 7px rgba(99,91,255,0)}100%{box-shadow:0 0 0 0 rgba(99,91,255,0)}}
 
-/* ── GRADIENTE HERO (slab diagonal estilo Stripe) ── */
-.gradient-hero{position:relative;overflow:hidden;isolation:isolate}
+/* ── GRADIENTE HERO (franja diagonal estilo Stripe sobre fondo blanco) ── */
+.gradient-hero{position:relative;overflow:hidden;isolation:isolate;background:#fff}
 .gradient-hero::before{
-  content:"";position:absolute;inset:-30% -10% auto -10%;height:150%;z-index:-2;
-  background:linear-gradient(105deg,#e6f7ff 0%,#eef0ff 28%,#efe9ff 55%,#f6ecff 78%,#fff 100%);
-  transform:skewY(-7deg);transform-origin:top left;
+  content:"";position:absolute;left:-10%;right:-10%;top:-16%;height:44%;z-index:-2;
+  background:linear-gradient(105deg,#d8f1ff 0%,#e2e6ff 28%,#e9dcff 55%,#ffe4f1 80%,#fff2e8 100%);
+  transform:skewY(-6deg);transform-origin:top left;
 }
 .gradient-hero::after{
-  content:"";position:absolute;inset:-40% -20% auto -20%;height:150%;z-index:-1;
+  content:"";position:absolute;left:-14%;right:-14%;top:-18%;height:46%;z-index:-1;
   background:
-    radial-gradient(40% 55% at 18% 20%,rgba(99,91,255,.30),transparent 60%),
-    radial-gradient(38% 50% at 80% 12%,rgba(0,212,255,.22),transparent 60%),
-    radial-gradient(42% 60% at 62% 48%,rgba(255,128,181,.18),transparent 62%);
-  transform:skewY(-7deg);transform-origin:top left;
-  filter:blur(8px);
+    radial-gradient(40% 55% at 18% 30%,rgba(99,91,255,.38),transparent 60%),
+    radial-gradient(38% 50% at 78% 22%,rgba(0,212,255,.30),transparent 60%),
+    radial-gradient(42% 60% at 58% 60%,rgba(255,128,181,.26),transparent 62%);
+  transform:skewY(-6deg);transform-origin:top left;
+  filter:blur(10px);
   background-size:200% 200%;
   animation:meshShift 16s ease-in-out infinite;
 }
