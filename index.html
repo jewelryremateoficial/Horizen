@@ -24,19 +24,41 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/horizen.css">
 <style>
-/* Estilos específicos de la landing */
-.hero{padding:9.5rem 0 5rem;text-align:center}
-.hero h1{max-width:14ch;margin:0 auto 1.5rem}
-.hero .lead{max-width:620px;margin:0 auto 2.25rem}
-.hero-btns{display:flex;gap:.9rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.6rem}
-.hero-trust{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+/* ══ HERO v3 — blanco + listón aurora animado (estilo Stripe) ══ */
+.hero-v3{position:relative;overflow:hidden;background:#fff}
+.aurora{position:absolute;inset:0;pointer-events:none;z-index:0}
+.beam{position:absolute;border-radius:999px;
+  -webkit-mask-image:radial-gradient(ellipse 56% 62% at 56% 50%,#000 52%,transparent 97%);
+  mask-image:radial-gradient(ellipse 56% 62% at 56% 50%,#000 52%,transparent 97%)}
+.beam-a{width:130%;height:clamp(200px,20vw,300px);top:-96px;right:-16%;transform:rotate(11deg)}
+.beam-a canvas{width:100%;height:100%;display:block;filter:blur(22px) saturate(1.5)}
+.beam-b{width:80%;height:120px;top:300px;right:-24%;transform:rotate(11deg);
+  background:linear-gradient(90deg,#ffc98a,#ff8fb4 32%,#b18cff 62%,#6fc6ff);
+  filter:blur(30px);opacity:.35}
+
+.hero{position:relative;z-index:1;padding:9rem 0 4.5rem;text-align:left}
+.hero-grid{display:grid;grid-template-columns:1fr .96fr;gap:3.25rem;align-items:center}
+.hero-copy{min-width:0}
+.hero h1{font-size:clamp(2.75rem,4.8vw,4.3rem);line-height:1.02;letter-spacing:-.045em;margin:1.15rem 0 1.35rem;max-width:13ch}
+.hero .lead{max-width:33rem;margin:0 0 2.1rem;font-size:1.13rem}
+.hero-btns{display:flex;gap:.9rem;flex-wrap:wrap;margin-bottom:1.5rem}
+.hero-trust{display:flex;gap:1.35rem;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
 .hero-trust span{display:inline-flex;align-items:center;gap:.4rem}
 .hero-trust .ck{color:var(--ok);font-weight:800}
 
-/* Mockup producto */
-.hero-mockup{max-width:940px;margin:3.5rem auto 0;position:relative}
+/* Visual del producto: sangra hacia la derecha como Stripe */
+.hero-visual{position:relative;min-width:0}
+.visual-stack{position:relative;width:117%;max-width:none}
+.visual-stack .window{box-shadow:0 34px 90px -26px rgba(23,26,54,.45),0 12px 30px rgba(23,26,54,.12)}
 /* Foto del fundador encimada en la esquina del dashboard */
-.founder-hero{position:absolute;right:-26px;bottom:-30px;width:168px;height:168px;border-radius:50%;object-fit:cover;border:6px solid #fff;box-shadow:0 0 0 1px var(--line),0 18px 44px -12px rgba(99,91,255,.4),0 8px 20px rgba(23,26,54,.18);z-index:2}
+.founder-hero{position:absolute;right:-24px;bottom:-28px;width:152px;height:152px;border-radius:50%;object-fit:cover;border:6px solid #fff;box-shadow:0 0 0 1px var(--line),0 18px 44px -12px rgba(99,91,255,.4),0 8px 20px rgba(23,26,54,.18);z-index:2}
+@media(max-width:1080px){
+  .hero-grid{grid-template-columns:1fr;gap:2.75rem}
+  .hero h1{max-width:15ch}
+  .visual-stack{width:100%}
+  .beam-a{height:clamp(200px,34vw,300px);top:-20vw;right:-38%;width:190%}
+  .beam-b{display:none}
+}
 @media(max-width:860px){.founder-hero{width:104px;height:104px;right:6px;bottom:-22px;border-width:4px}}
 .dash{padding:1.25rem}
 .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.85rem;margin-bottom:.85rem}
@@ -138,7 +160,7 @@
 
 /* Accesibilidad: sin movimiento si el sistema lo pide (Calma Premium B.2) */
 @media (prefers-reduced-motion: reduce) {
-  .cta-band::before, .auth-right::before, .gradient-hero {
+  .cta-band::before, .auth-right::before {
     animation: none !important;
     background-size: 100% 100%;
   }
@@ -170,31 +192,43 @@
 </nav>
 
 <!-- HERO -->
-<header class="gradient-hero">
-  <div class="container hero">
-    <div class="reveal"><span class="pill"><span class="dot"></span> IA financiera para personas y negocios</span></div>
-    <h1 class="reveal" data-delay="1">Entiende <span class="text-grad">tu dinero</span> en 1 minuto</h1>
-    <p class="lead reveal" data-delay="2">Sube el PDF de tu estado de cuenta y la IA te dice cuánto ganaste, cuánto gastaste y a dónde se fue cada peso — categorizado, con alertas y listo para tu contador.</p>
-    <div class="hero-btns reveal" data-delay="3">
-      <a href="/signup.html" class="btn btn-primary btn-lg">Probar 14 días gratis <span class="arrow">→</span></a>
-      <a href="#como-funciona" class="btn btn-ghost btn-lg">Ver cómo funciona</a>
-    </div>
-    <div class="hero-trust reveal" data-delay="3">
-      <span><span class="ck">✓</span> Sin tarjeta de crédito</span>
-      <span><span class="ck">✓</span> Listo en 30 segundos</span>
-      <span><span class="ck">✓</span> Datos 100% seguros</span>
-    </div>
+<header class="hero-v3">
+  <!-- Listón aurora animado (estilo Stripe) -->
+  <div class="aurora" aria-hidden="true">
+    <div class="beam beam-a"><canvas id="auroraCv"></canvas></div>
+    <div class="beam beam-b"></div>
+  </div>
 
-    <!-- PRODUCTO REAL -->
-    <div class="hero-mockup reveal" data-delay="4">
-      <div class="window">
-        <div class="window-bar">
-          <i class="wd-r"></i><i class="wd-y"></i><i class="wd-g"></i>
-          <span class="window-title">Horizen — Resumen · Jun 2026</span>
+  <div class="container hero">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="reveal"><span class="pill"><span class="dot"></span> IA financiera para personas y negocios</span></div>
+        <h1 class="reveal" data-delay="1">Entiende <span class="text-grad">tu dinero</span> en&nbsp;1&nbsp;minuto</h1>
+        <p class="lead reveal" data-delay="2">Sube el PDF de tu estado de cuenta y la IA te dice cuánto ganaste, cuánto gastaste y a dónde se fue cada peso — categorizado, con alertas y listo para tu contador.</p>
+        <div class="hero-btns reveal" data-delay="3">
+          <a href="/signup.html" class="btn btn-primary btn-lg">Probar 14 días gratis <span class="arrow">→</span></a>
+          <a href="#como-funciona" class="btn btn-ghost btn-lg">Ver cómo funciona</a>
         </div>
-        <img class="hero-shot" src="/assets/marketing/shot-resumen.png" width="1600" height="847" fetchpriority="high" alt="Pantalla real de Horizen: resumen del mes con utilidad de +$84,300, gráfica de tendencia al alza, comparativa de lo que entró contra lo que salió y análisis de NOVA, el copiloto de IA">
+        <div class="hero-trust reveal" data-delay="3">
+          <span><span class="ck">✓</span> Sin tarjeta de crédito</span>
+          <span><span class="ck">✓</span> Listo en 30 segundos</span>
+          <span><span class="ck">✓</span> Datos 100% seguros</span>
+        </div>
       </div>
-      <img class="founder-hero" src="/assets/marketing/fundador.jpg" width="640" height="640" loading="lazy" alt="Fundador de Horizen revisando su dashboard desde la playa, celular en mano">
+
+      <!-- PRODUCTO REAL -->
+      <div class="hero-visual reveal" data-delay="2">
+        <div class="visual-stack">
+          <div class="window">
+            <div class="window-bar">
+              <i class="wd-r"></i><i class="wd-y"></i><i class="wd-g"></i>
+              <span class="window-title">Horizen — Resumen · Jun 2026</span>
+            </div>
+            <img class="hero-shot" src="/assets/marketing/shot-resumen.png" width="1600" height="847" fetchpriority="high" alt="Pantalla real de Horizen: resumen del mes con utilidad de +$84,300, gráfica de tendencia al alza, comparativa de lo que entró contra lo que salió y análisis de NOVA, el copiloto de IA">
+          </div>
+          <img class="founder-hero" src="/assets/marketing/fundador.jpg" width="640" height="640" loading="lazy" alt="Fundador de Horizen revisando su dashboard desde la playa, celular en mano">
+        </div>
+      </div>
     </div>
   </div>
 
@@ -444,5 +478,42 @@
 </footer>
 
 <script src="/assets/horizen.js"></script>
+<script>
+/* Aurora del hero: listón de colores vivos en movimiento continuo (canvas 2D).
+   Se dibuja a baja resolución y se escala con blur CSS — suave y barato en GPU. */
+(function(){
+  var cv=document.getElementById('auroraCv');if(!cv)return;
+  var cx=cv.getContext('2d');
+  var W=cv.width=560,H=cv.height=200;
+  var blobs=[
+    {c:'#ff9021',x:.08,y:.35,r:.66,sx:.34,sy:.26,p:0.0},
+    {c:'#ff2e7e',x:.30,y:.65,r:.74,sx:.27,sy:.36,p:1.8},
+    {c:'#ff5fa8',x:.48,y:.28,r:.58,sx:.31,sy:.24,p:3.1},
+    {c:'#a04dff',x:.62,y:.62,r:.78,sx:.24,sy:.33,p:4.4},
+    {c:'#4d5bff',x:.80,y:.38,r:.70,sx:.30,sy:.27,p:2.4},
+    {c:'#00d4ff',x:.95,y:.62,r:.62,sx:.36,sy:.29,p:5.2},
+    {c:'#ffffff',x:.44,y:.50,r:.52,sx:.42,sy:.38,p:0.9,a:.5}
+  ];
+  function draw(t){
+    var g=cx.createLinearGradient(0,0,W,0);
+    g.addColorStop(0,'#ffb668');g.addColorStop(.26,'#ff6f9e');
+    g.addColorStop(.52,'#b47aff');g.addColorStop(.76,'#5f6bff');g.addColorStop(1,'#19c8ff');
+    cx.globalAlpha=1;cx.fillStyle=g;cx.fillRect(0,0,W,H);
+    for(var i=0;i<blobs.length;i++){
+      var b=blobs[i];
+      var x=(b.x+Math.sin(t*b.sx+b.p)*.15)*W;
+      var y=(b.y+Math.cos(t*b.sy+b.p*1.6)*.30)*H;
+      var r=Math.max(b.r*H*(1+.14*Math.sin(t*.2+b.p)),10);
+      var rg=cx.createRadialGradient(x,y,0,x,y,r);
+      rg.addColorStop(0,b.c);rg.addColorStop(1,b.c+'00');
+      cx.globalAlpha=(b.a||.85);cx.fillStyle=rg;
+      cx.fillRect(0,0,W,H);
+    }
+  }
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches){draw(2.5);return}
+  function loop(ts){draw(ts/1000);requestAnimationFrame(loop)}
+  requestAnimationFrame(loop);
+})();
+</script>
 </body>
 </html>
