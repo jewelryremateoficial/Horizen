@@ -1013,6 +1013,9 @@ select.mod-inp{cursor:pointer}
       <button class="tb-btn tb-primary" onclick="openModal('gastoModal')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Nuevo gasto fijo</button>
     </div>
 
+    <!-- Fase B: sugerencias de gastos fijos detectados -->
+    <div id="sugBanner" style="display:none"></div>
+
     <!-- Resumen financiero -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.2rem">
       <div class="card">
@@ -1549,6 +1552,25 @@ select.mod-inp{cursor:pointer}
     <div class="mod-footer">
       <button class="btn-cancel" onclick="closeModal('gastoModal');clearGastoForm()">Cancelar</button>
       <button class="btn-save" id="gastoSaveBtn" onclick="saveGasto()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fase B: modal de revisión de gastos fijos detectados -->
+<style>
+.sug-badge{display:inline-flex;align-items:center;font-size:.7rem;font-weight:700;padding:.18rem .55rem;border-radius:999px;background:var(--p-soft);color:var(--p)}
+.sug-badge.warn{background:var(--state-warn-bg,#fff7ed);color:var(--state-warn,#b45309)}
+</style>
+<div class="overlay" id="suggestionsModal">
+  <div class="mod" style="max-width:560px">
+    <div class="mod-hdr">
+      <div class="mod-ttl">Gastos fijos detectados</div>
+      <button class="mod-close" onclick="closeModal('suggestionsModal')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+    <div class="mod-body" style="max-height:64vh;overflow-y:auto" id="sugList"></div>
+    <div style="padding:.9rem 1.4rem;border-top:1px solid var(--line);font-size:.82rem;color:var(--muted)">
+      Estos son los fijos que vimos en tu banco. Si pagas renta o sueldos en efectivo,
+      <a href="#" onclick="closeModal('suggestionsModal');clearGastoForm();openModal('gastoModal');return false" style="color:var(--p);font-weight:600">agrégalos aquí →</a>
     </div>
   </div>
 </div>
@@ -3168,6 +3190,7 @@ async function loadGastos() {
   renderGastosResumen();
   renderGastosUpcoming();
   renderGastosCatBreakdown();
+  loadSuggestionsBanner();   // Fase B: sugerencias pendientes ya guardadas (no re-corre el detector)
 }
 
 // Ingreso mensual guardado en localStorage por usuario
@@ -3363,6 +3386,12 @@ async function saveGasto() {
   toast(id ? 'Gasto actualizado' : 'Gasto agregado', 'ok');
   closeModal('gastoModal');
   clearGastoForm();
+  // Fase B: si el gasto vino de "Editar" una sugerencia, marcarla confirmada
+  if (_sugEditingId) {
+    const sid = _sugEditingId; _sugEditingId = null;
+    db.from('recurring_suggestions').update({ status: 'confirmado' }).eq('id', sid).eq('user_id', _user.id)
+      .then(() => { _sugDone(sid); });
+  }
   loadGastos();
 }
 
@@ -3399,6 +3428,343 @@ function clearGastoForm() {
   });
   document.getElementById('gastoCat').value  = 'vivienda';
   document.getElementById('gastoFreq').value = 'mensual';
+}
+
+// ══════════════════════════════════════════════════════════════
+// DETECTOR DE GASTOS FIJOS (Fase B — corre en el navegador)
+// Propone, el usuario decide. Nada se activa sin confirmación.
+// ══════════════════════════════════════════════════════════════
+
+let _sugsData = [];
+let _sugEditingId = null;
+
+// 1. Normalizar descripción → "firma" de agrupación (calidad de datos > algoritmo)
+function normalizarDescripcion(desc) {
+  let s = (desc || '').toUpperCase();
+  // Prefijos bancarios mexicanos (BBVA/Banorte/Santander)
+  s = s.replace(/\b(SPEI (ENVIADO|RECIBIDO)|PAGO CUENTA DE TERCERO|TRANSF(ERENCIA)? INTERBANCARIA|DOMICILIACION|CARGO (RECURRENTE|AUTOMATICO)|COMPRA (EN|CON) (TARJETA|TDC|TDD)|PAGO INTERBANCARIO|RETIRO SIN TARJETA)\b/g, ' ');
+  s = s.replace(/\b\d{2}[\/\-]\d{2}([\/\-]\d{2,4})?\b/g, ' ');   // fechas embebidas
+  s = s.replace(/\b[A-Z]{3,4}\d{6}[A-Z0-9]{0,7}\b/g, ' ');       // RFC
+  s = s.replace(/\b\d{5,}\b/g, ' ');                              // folios, claves de rastreo
+  s = s.replace(/\b(REF|FOLIO|AUT|CLAVE|SUC|TER)\.?:?\s*\S+/g, ' ');
+  s = s.replace(/[^A-ZÑ ]/g, ' ').replace(/\s+/g, ' ').trim();
+  return s.split(' ').slice(0, 4).join(' ');                      // firma = primeras 4 palabras
+}
+
+// 2. Priors por categoría
+const CATS_CASI_SIEMPRE_FIJAS = ['renta','hipoteca','software','suscripciones','seguros','nomina','sueldos','internet','telefono','servicios','luz','agua','colegiaturas','streaming','gimnasio','contabilidad'];
+const CATS_CASI_NUNCA_FIJAS   = ['restaurantes','gasolina','transporte','supermercado','entretenimiento','viajes','compras','comida','cafe','mercancia','mercancía','farmacia','ropa'];
+
+// 3. Cadencias (quincenal y bimestral CFE como ciudadanos de primera clase)
+const CADENCIAS = [
+  { nombre: 'semanal',    dias: 7,   tol: 2 },
+  { nombre: 'quincenal',  dias: 15,  tol: 3 },
+  { nombre: 'mensual',    dias: 30,  tol: 4 },
+  { nombre: 'bimestral',  dias: 61,  tol: 6 },
+  { nombre: 'trimestral', dias: 91,  tol: 8 },
+  { nombre: 'anual',      dias: 365, tol: 15 },
+];
+const _medianaFijos = a => { const s = [...a].sort((x,y)=>x-y), m = s.length>>1; return s.length%2 ? s[m] : (s[m-1]+s[m])/2; };
+
+// 4. Detector principal. txs: egresos (amount<0) de los últimos 180 días, ya deduplicados.
+function detectarGastosFijos(txs) {
+  const grupos = {};
+  for (const t of txs) {
+    const k = normalizarDescripcion(t.description);
+    if (k.length < 3) continue;
+    (grupos[k] ||= []).push(t);
+  }
+  const sugerencias = [];
+
+  // Evalúa un conjunto de cargos de la misma firma; regresa sugerencia o null
+  function evaluarGrupo(firma, txsGrupo) {
+    const b = [...txsGrupo].sort((x,y) => Date.parse(x.date) - Date.parse(y.date));
+    if (b.length < 2) return null;
+    const fechas = b.map(t => Date.parse(t.date));
+    const intervalos = fechas.slice(1).map((f,i) => (f - fechas[i]) / 86400000);
+    const medInt = _medianaFijos(intervalos);
+
+    const cad = CADENCIAS.find(c => Math.abs(medInt - c.dias) <= c.tol);
+    if (!cad) return null;
+    const regularidad = intervalos.filter(i => Math.abs(i - cad.dias) <= cad.tol).length / intervalos.length;
+    if (regularidad < 0.6) return null;
+
+    // Estabilidad del monto (coeficiente de variación)
+    const montos = b.map(t => Math.abs(t.amount));
+    const prom = montos.reduce((a,x)=>a+x,0) / montos.length;
+    const cv = Math.sqrt(montos.reduce((a,x)=>a+(x-prom)**2,0)/montos.length) / prom;
+
+    const categoria = (b[b.length-1].category || '').toLowerCase();
+    const priorFija   = CATS_CASI_SIEMPRE_FIJAS.some(c => categoria.includes(c));
+    const priorNoFija = CATS_CASI_NUNCA_FIJAS.some(c => categoria.includes(c));
+
+    // Score 0-100
+    let score = 0;
+    score += Math.min(b.length, 6) * 10;
+    score += regularidad * 20;
+    score += cv <= 0.05 ? 20 : cv <= 0.15 ? 12 : cv <= 0.30 ? 5 : 0;
+    if (priorFija)  score += 15;
+    if (priorNoFija) score -= 20;
+    if (b.length === 2) score -= 15;
+
+    if (score < 45) return null;
+    if (cv > 0.30 && !priorFija) return null;
+
+    const ultima = fechas[fechas.length-1];
+    return {
+      firma,
+      nombre: firma.split(' ').map(w => w[0]+w.slice(1).toLowerCase()).join(' '),
+      montoTipico: Math.round(_medianaFijos(montos) * 100) / 100,
+      montoVariable: cv > 0.15,
+      frecuencia: cad.nombre,
+      diaTipico: Math.round(_medianaFijos(b.map(t => dateLocal(t.date).getDate()))),
+      proximoCargo: new Date(ultima + cad.dias * 86400000).toISOString().slice(0,10),
+      ocurrencias: b.length,
+      confianza: Math.min(Math.round(score), 100),
+      categoria: b[b.length-1].category,
+      evidencia: b.slice(-3).map(t => ({ id: t.id, date: t.date, amount: t.amount })),
+    };
+  }
+
+  for (const [firma, lista] of Object.entries(grupos)) {
+    if (lista.length < 2) continue;
+
+    // Sub-agrupar por banda de monto ±30% (mismo comercio, 2 suscripciones distintas).
+    // Se agrupa en orden de monto para que recibos variables (luz/agua) no se partan.
+    const bandas = [];
+    for (const t of [...lista].sort((a,b) => Math.abs(a.amount) - Math.abs(b.amount))) {
+      const m = Math.abs(t.amount);
+      const banda = bandas.find(x => Math.abs(m - x.montoMediano) / x.montoMediano <= 0.30);
+      if (banda) { banda.txs.push(t); banda.montoMediano = _medianaFijos(banda.txs.map(x=>Math.abs(x.amount))); }
+      else bandas.push({ montoMediano: m, txs: [t] });
+    }
+
+    let alguna = false;
+    for (const banda of bandas) {
+      const s = evaluarGrupo(firma, banda.txs);
+      if (s) { sugerencias.push(s); alguna = true; }
+    }
+    // Respaldo CFE: el monto varió tanto que las bandas no dieron nada →
+    // evaluar el grupo COMPLETO una sola vez, pero SOLO para categorías que casi
+    // siempre son fijas (luz/agua/servicios); sin ese prior, monto tan variable = no fijo.
+    if (!alguna && bandas.length > 1 && lista.length >= 3) {
+      const catGrupo = (lista[lista.length-1].category || '').toLowerCase();
+      if (CATS_CASI_SIEMPRE_FIJAS.some(c => catGrupo.includes(c))) {
+        const s = evaluarGrupo(firma, lista);
+        if (s) sugerencias.push(s);
+      }
+    }
+  }
+  return sugerencias.sort((a,b) => b.confianza - a.confianza);
+}
+
+// 5. Orquestador: corre tras confirmar un estado de cuenta (NO en cada carga de página)
+async function runFixedExpenseDetection() {
+  try {
+    if (!_user) return;
+    const desde = new Date(Date.now() - 180*86400000).toISOString().slice(0,10);
+    const { data: txs, error } = await db.from('transactions')
+      .select('id,date,description,amount,category')
+      .eq('user_id', _user.id).lt('amount', 0).gte('date', desde)
+      .order('date', { ascending: true });
+    if (error || !txs || txs.length < 2) return;
+
+    // Historial mínimo: 90 días entre el primer y último egreso
+    const span = (Date.parse(txs[txs.length-1].date) - Date.parse(txs[0].date)) / 86400000;
+    if (span < 90) return;   // el banner de page-gastos muestra el aviso de "sube otro estado"
+
+    // Dedup exacto firma+monto+fecha (el mismo cargo importado dos veces cuenta como uno)
+    const seen = new Set();
+    const dedup = txs.filter(t => {
+      const k = normalizarDescripcion(t.description) + '|' + Math.abs(t.amount) + '|' + t.date;
+      if (seen.has(k)) return false; seen.add(k); return true;
+    });
+
+    const sugs = detectarGastosFijos(dedup);
+    if (!sugs.length) return;
+
+    // No re-sugerir: contra sugerencias previas (cualquier status; 'rechazado' = lista negra)
+    // y contra gastos fijos ya capturados a mano
+    const [{ data: existentes }, { data: fijos }] = await Promise.all([
+      db.from('recurring_suggestions').select('firma,monto_tipico').eq('user_id', _user.id),
+      db.from('fixed_expenses').select('name').eq('user_id', _user.id).eq('is_active', true),
+    ]);
+    const exKeys = new Set((existentes || []).map(e => e.firma + '|' + Math.round(e.monto_tipico)));
+    const fijosNorm = (fijos || []).map(f => normalizarDescripcion(f.name)).filter(Boolean);
+    const nuevas = sugs.filter(s =>
+      !exKeys.has(s.firma + '|' + Math.round(s.montoTipico)) &&
+      !fijosNorm.some(fn => s.firma.includes(fn) || fn.includes(s.firma))
+    );
+    if (!nuevas.length) return;
+
+    const rows = nuevas.map(s => ({
+      user_id: _user.id, firma: s.firma, nombre: s.nombre,
+      monto_tipico: s.montoTipico, monto_variable: s.montoVariable,
+      frecuencia: s.frecuencia, dia_tipico: s.diaTipico, proximo_cargo: s.proximoCargo,
+      ocurrencias: s.ocurrencias, confianza: s.confianza,
+      categoria: s.categoria || null, status: 'pendiente', evidence: s.evidencia,
+    }));
+    const { error: insErr } = await db.from('recurring_suggestions')
+      .upsert(rows, { onConflict: 'user_id,firma,monto_tipico', ignoreDuplicates: true });
+    if (insErr) { console.error('detector fijos insert:', insErr); return; }
+
+    toast(`✨ Detectamos ${rows.length} gasto${rows.length===1?'':'s'} fijo${rows.length===1?'':'s'} — revísalo${rows.length===1?'':'s'} en Gastos fijos`, 'ok');
+    loadSuggestionsBanner();
+  } catch(e) { console.error('detector fijos:', e); }
+}
+
+// 6. Banner en page-gastos
+const _sugMXN = n => (n || 0).toLocaleString('es-MX', { style:'currency', currency:'MXN', minimumFractionDigits: 0 });
+const _sugMensual = s => {
+  const m = parseFloat(s.monto_tipico) || 0;
+  switch (s.frecuencia) {
+    case 'semanal': return m * 4.33;  case 'quincenal': return m * 2;
+    case 'bimestral': return m / 2;   case 'trimestral': return m / 3;
+    case 'anual': return m / 12;      default: return m;
+  }
+};
+const _sugFechaCorta = d => dateLocal(d).toLocaleDateString('es-MX', { day:'numeric', month:'short' });
+
+async function loadSuggestionsBanner() {
+  const box = document.getElementById('sugBanner');
+  if (!box || !_user) return;
+  const { data, error } = await db.from('recurring_suggestions').select('*')
+    .eq('user_id', _user.id).eq('status', 'pendiente')
+    .order('confianza', { ascending: false });
+  if (error) { console.error('loadSuggestionsBanner:', error); box.style.display = 'none'; return; }
+  _sugsData = data || [];
+
+  if (!_sugsData.length) {
+    // ¿Poco historial? → aviso amable en lugar de silencio
+    const { data: rango } = await db.from('transactions').select('date')
+      .eq('user_id', _user.id).lt('amount', 0).order('date', { ascending: true }).limit(1);
+    const { data: rangoF } = await db.from('transactions').select('date')
+      .eq('user_id', _user.id).lt('amount', 0).order('date', { ascending: false }).limit(1);
+    const span = (rango?.length && rangoF?.length)
+      ? (Date.parse(rangoF[0].date) - Date.parse(rango[0].date)) / 86400000 : -1;
+    if (span >= 0 && span < 90) {
+      box.innerHTML = `<div class="card" style="margin-bottom:1.2rem;display:flex;gap:.6rem;align-items:center;color:var(--muted);font-size:.85rem">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        Sube otro estado de cuenta para detectar tus gastos fijos automáticamente.</div>`;
+      box.style.display = '';
+    } else { box.style.display = 'none'; box.innerHTML = ''; }
+    return;
+  }
+
+  const totalMes = _sugsData.reduce((s, x) => s + _sugMensual(x), 0);
+  box.innerHTML = `<div class="card" style="border:1px solid var(--p-border);background:var(--p-soft);display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.2rem;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:.7rem">
+      <svg class="ic" style="color:var(--p)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+      <div>
+        <div style="font-weight:700;color:var(--ink)">Detectamos ${_sugsData.length} gasto${_sugsData.length===1?'':'s'} fijo${_sugsData.length===1?'':'s'} por ${_sugMXN(totalMes)}/mes</div>
+        <div class="t-meta">Revísalos en 1 minuto — tú decides cuáles son de verdad</div>
+      </div>
+    </div>
+    <button class="tb-btn tb-primary" onclick="openSuggestionsModal()">Revisar</button>
+  </div>`;
+  box.style.display = '';
+}
+
+// 7. Modal de revisión
+function _sugCardHTML(s) {
+  const freqLbl = { semanal:'Semanal', quincenal:'Quincenal', mensual:'Mensual', bimestral:'Bimestral', trimestral:'Trimestral', anual:'Anual' }[s.frecuencia] || s.frecuencia;
+  const badges = [`<span class="sug-badge">${freqLbl}${s.dia_tipico ? ' · ~día ' + s.dia_tipico : ''}</span>`];
+  if (s.monto_variable) badges.push(`<span class="sug-badge warn">El monto cambia (como luz o agua)</span>`);
+  if (s.ocurrencias === 2) badges.push(`<span class="sug-badge warn">Visto 2 veces — confírmalo tú</span>`);
+  const ev = (s.evidence || []);
+  const evTxt = ev.length
+    ? `Visto: ${ev.map(e => _sugFechaCorta(e.date)).join(' · ')} — ${ev.map(e => _sugMXN(Math.abs(e.amount))).join(' · ')}`
+    : `Visto ${s.ocurrencias} veces`;
+  return `<div class="card" id="sug-${s.id}" style="margin-bottom:.8rem">
+    <div style="display:flex;justify-content:space-between;gap:.8rem;align-items:flex-start;flex-wrap:wrap">
+      <div style="min-width:0">
+        <div style="font-weight:700;color:var(--ink)">${_escHtml(s.nombre)}</div>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.35rem">${badges.join('')}</div>
+      </div>
+      <div style="font-size:1.25rem;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums">${_sugMXN(s.monto_tipico)}</div>
+    </div>
+    <div class="t-meta" style="margin-top:.5rem">${_escHtml(evTxt)}</div>
+    <div style="display:flex;gap:.5rem;margin-top:.8rem;flex-wrap:wrap">
+      <button class="btn-save" onclick="confirmSuggestion('${s.id}')">Sí, es fijo</button>
+      <button class="btn-cancel" onclick="rejectSuggestion('${s.id}')">No es fijo</button>
+      <button class="btn-cancel" onclick="editSuggestion('${s.id}')">Editar</button>
+    </div>
+  </div>`;
+}
+
+function openSuggestionsModal() {
+  const list = document.getElementById('sugList');
+  list.innerHTML = _sugsData.length
+    ? _sugsData.map(_sugCardHTML).join('')
+    : `<div class="t-meta" style="padding:1rem 0">No hay sugerencias pendientes.</div>`;
+  openModal('suggestionsModal');
+}
+
+function _sugDone(id) {
+  _sugsData = _sugsData.filter(x => x.id !== id);
+  const el = document.getElementById('sug-' + id);
+  if (el) el.remove();
+  if (!_sugsData.length) {
+    const list = document.getElementById('sugList');
+    if (list) list.innerHTML = `<div style="padding:1.2rem 0;text-align:center;font-weight:700;color:var(--ink)">Listo ✓<div class="t-meta" style="font-weight:400;margin-top:.3rem">Tus gastos fijos y sus próximos cargos ya aparecen en esta página y en el calendario.</div></div>`;
+  }
+  loadSuggestionsBanner();
+}
+
+// Mapear la categoría de transacción → categoría del formulario de gastos fijos
+function _sugCatMap(c) {
+  c = (c || '').toLowerCase();
+  if (c.includes('renta') || c.includes('hipoteca')) return 'vivienda';
+  if (c.includes('servicio') || c.includes('internet') || c.includes('telefono') || c.includes('teléfono')) return 'servicios';
+  if (c.includes('software') || c.includes('streaming') || c.includes('suscrip') || c.includes('entreten')) return 'suscripciones';
+  if (c.includes('seguro')) return 'seguros';
+  if (c.includes('credito') || c.includes('crédito') || c.includes('pago tdc') || c.includes('inversion')) return 'creditos';
+  return 'otros';
+}
+
+async function confirmSuggestion(id) {
+  const s = _sugsData.find(x => x.id === id); if (!s) return;
+  // fixed_expenses.frequency solo admite mensual/quincenal/anual/semanal:
+  // bimestral/trimestral se guardan como mensual PRORRATEADO con nota explicativa.
+  const freqMap = { quincenal:'quincenal', anual:'anual', semanal:'semanal' };
+  const freq = freqMap[s.frecuencia] || 'mensual';
+  let amount = parseFloat(s.monto_tipico) || 0;
+  let notes = 'Detectado automáticamente por Horizen';
+  if (s.frecuencia === 'bimestral')  { amount = Math.round(amount/2*100)/100; notes = `Se cobra bimestral (~${_sugMXN(s.monto_tipico)} cada 2 meses); guardado como mensual prorrateado. ` + notes; }
+  if (s.frecuencia === 'trimestral') { amount = Math.round(amount/3*100)/100; notes = `Se cobra trimestral (~${_sugMXN(s.monto_tipico)} cada 3 meses); guardado como mensual prorrateado. ` + notes; }
+
+  const { error: insErr } = await db.from('fixed_expenses').insert({
+    user_id: _user.id, name: s.nombre, amount,
+    due_day: Math.min(Math.max(parseInt(s.dia_tipico) || 1, 1), 31),
+    category: _sugCatMap(s.categoria), frequency: freq,
+    notes, is_active: true,
+  });
+  if (insErr) { toast('Error: ' + insErr.message, 'error'); return; }
+
+  await db.from('recurring_suggestions').update({ status: 'confirmado' }).eq('id', id).eq('user_id', _user.id);
+  toast('Agregado a tus gastos fijos ✓', 'ok');
+  _sugDone(id);
+  loadGastos();
+}
+
+async function rejectSuggestion(id) {
+  const { error } = await db.from('recurring_suggestions')
+    .update({ status: 'rechazado' }).eq('id', id).eq('user_id', _user.id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  _sugDone(id);   // 'rechazado' queda como lista negra: no se vuelve a sugerir
+}
+
+function editSuggestion(id) {
+  const s = _sugsData.find(x => x.id === id); if (!s) return;
+  closeModal('suggestionsModal');
+  clearGastoForm();
+  document.getElementById('gastoName').value   = s.nombre || '';
+  document.getElementById('gastoAmount').value = Math.round(_sugMensual(s) * 100) / 100;
+  document.getElementById('gastoDueDay').value = Math.min(Math.max(parseInt(s.dia_tipico) || 1, 1), 31);
+  document.getElementById('gastoCat').value    = _sugCatMap(s.categoria);
+  document.getElementById('gastoFreq').value   = ({ quincenal:'quincenal', anual:'anual', semanal:'semanal' })[s.frecuencia] || 'mensual';
+  _sugEditingId = id;
+  openModal('gastoModal');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -4323,6 +4689,7 @@ async function confirmarEstado() {
     await Promise.all([loadMetrics(), loadRecentTx()]);
     resetEstados();
     loadSavedStatements();
+    runFixedExpenseDetection();   // Fase B: detectar gastos fijos con el historial nuevo (fire-and-forget)
     showPage('reportes');
 
   } catch(err) {
