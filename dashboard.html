@@ -565,6 +565,9 @@ select.mod-inp{cursor:pointer}
     <button class="ni" onclick="showPage('taxes')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg></span>SAT / Fiscal</button>
     <button class="ni" onclick="showPage('proveedores')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 9.4 7.55 4.24"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg></span>Proveedores</button>
 
+    <div class="nav-lbl">Operación</div>
+    <button class="ni" onclick="showPage('clientes')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Clientes</button>
+
     <div class="nav-lbl">Inteligencia</div>
     <button class="ni" onclick="showPage('resultados')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18v-1"/><path d="M12 18v-6"/><path d="M16 18v-3"/></svg></span>Estado de Resultados</button>
     <button class="ni" onclick="showPage('finplan')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg></span>Plan Financiero</button>
@@ -798,6 +801,61 @@ select.mod-inp{cursor:pointer}
   </div>
 
   <!-- ══ PAGE: Referidos (Mi red) ══════════════════════════ -->
+  <!-- ══ CLIENTES (Fase D) ══ -->
+  <div class="page" id="page-clientes">
+    <style>
+      #page-clientes .cli-chips{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+      #page-clientes .cli-chip{font-size:.8rem;font-weight:600;padding:.35rem .85rem;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
+      #page-clientes .cli-chip.on{background:var(--p-soft);border-color:var(--p-border);color:var(--p)}
+      #page-clientes .cli-row{display:flex;align-items:center;gap:.9rem;padding:.8rem 1rem;border-bottom:1px solid var(--line);cursor:pointer;border-radius:10px}
+      #page-clientes .cli-row:hover{background:#fbfcfe}
+      #page-clientes .cli-row:last-child{border-bottom:none}
+      #page-clientes .cli-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;flex-shrink:0;font-size:.95rem}
+      #page-clientes .cli-tag{display:inline-flex;font-size:.66rem;font-weight:700;padding:.14rem .5rem;border-radius:999px;margin-left:.4rem;vertical-align:middle}
+      #page-clientes .cli-tag.nuevo{background:#f4f5f8;color:var(--muted)}
+      #page-clientes .cli-tag.frecuente{background:var(--p-soft);color:var(--p)}
+      #page-clientes .cli-tag.vip{background:#fdf3e0;color:#9a6b15}
+      #page-clientes .cli-debe{color:#be3449;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+      #page-clientes .cli-wa{width:36px;height:36px;border-radius:50%;border:none;background:#25D366;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+      #page-clientes .cli-wa:hover{filter:brightness(1.06)}
+      #page-clientes .cli-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.2rem}
+      #page-clientes .q-card{border:1px solid var(--line);border-radius:12px;padding:.9rem 1rem;margin-bottom:.7rem}
+      #page-clientes .q-steps{display:flex;gap:.35rem;flex-wrap:wrap;margin:.5rem 0}
+      #page-clientes .q-step{font-size:.7rem;font-weight:700;padding:.2rem .6rem;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
+      #page-clientes .q-step.on{background:var(--p);border-color:var(--p);color:#fff}
+      #page-clientes .q-step.done{background:var(--p-soft);border-color:var(--p-border);color:var(--p)}
+      #page-clientes .cli-note{width:100%;min-height:84px;border:1px solid var(--line);border-radius:10px;padding:.7rem .8rem;font:inherit;font-size:.88rem;color:var(--ink);resize:vertical}
+      #page-clientes .cli-note:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px var(--p-soft)}
+      #page-clientes .tl-row{display:flex;justify-content:space-between;gap:.8rem;padding:.5rem 0;border-bottom:1px solid var(--line);font-size:.85rem}
+      #page-clientes .tl-row:last-child{border-bottom:none}
+      @media(max-width:860px){#page-clientes .cli-kpis{grid-template-columns:repeat(2,1fr)}}
+    </style>
+
+    <!-- Vista 1: lista -->
+    <div id="cliListaView">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;gap:1rem;flex-wrap:wrap">
+        <div>
+          <div class="t-page">Clientes</div>
+          <div class="t-sub" style="margin-top:.25rem">Tu libreta de clientes, con WhatsApp a un tap y la cuenta clara</div>
+        </div>
+        <button class="tb-btn tb-primary" onclick="openClienteModal()"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Cliente</button>
+      </div>
+      <input class="finp" id="cliSearch" placeholder="Buscar por nombre o teléfono..." oninput="renderClientes()" style="margin-bottom:.9rem;max-width:420px">
+      <div class="cli-chips">
+        <button class="cli-chip on" data-f="todos" onclick="setCliFiltro('todos')">Todos</button>
+        <button class="cli-chip" data-f="deben" onclick="setCliFiltro('deben')">Me deben</button>
+        <button class="cli-chip" data-f="inactivos" onclick="setCliFiltro('inactivos')">Sin venir 3+ meses</button>
+        <button class="cli-chip" data-f="vip" onclick="setCliFiltro('vip')">VIP</button>
+      </div>
+      <div class="card" style="padding:.4rem .6rem">
+        <div id="cliLista"><div class="sk" style="height:48px;border-radius:10px"></div></div>
+      </div>
+    </div>
+
+    <!-- Vista 2: ficha (se muestra/oculta con JS, sin tocar el router) -->
+    <div id="cliFichaView" style="display:none"></div>
+  </div>
+
   <!-- ══ PROVEEDORES (Fase G) ══ -->
   <div class="page" id="page-proveedores">
     <style>
@@ -1637,6 +1695,54 @@ select.mod-inp{cursor:pointer}
   </div>
 </div>
 
+<!-- Fase D: alta/edición de cliente -->
+<div class="overlay" id="clienteModal">
+  <div class="modal">
+    <div class="modal-ttl" id="clienteModalTtl">Nuevo cliente</div>
+    <input type="hidden" id="cliId">
+    <div class="fg"><label class="flbl">Nombre</label><input class="finp" id="cliName" placeholder="Ej. María López"></div>
+    <div class="fg"><label class="flbl">Celular (10 dígitos)</label><input class="finp" id="cliPhone" inputmode="numeric" maxlength="14" placeholder="5512345678"></div>
+    <button type="button" onclick="const m=document.getElementById('cliMas');m.style.display=m.style.display==='none'?'':'none'" style="background:none;border:none;color:var(--p);font-weight:600;font-size:.85rem;cursor:pointer;padding:0;margin-bottom:.8rem">Más datos ▾</button>
+    <div id="cliMas" style="display:none">
+      <div class="fg"><label class="flbl">Correo (opcional)</label><input class="finp" id="cliEmail" type="email" placeholder="maria@correo.com"></div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">Etiqueta</label>
+          <select class="fsel" id="cliTag"><option value="nuevo">Nuevo</option><option value="frecuente">Frecuente</option><option value="vip">VIP</option></select>
+        </div>
+      </div>
+      <div class="fg"><label class="flbl">Nota (opcional)</label><input class="finp" id="cliNotes" placeholder="Ej. anillo 14k talla 6, le gusta oro rosa"></div>
+    </div>
+    <div class="mod-footer">
+      <button class="btn-cancel" onclick="closeModal('clienteModal')">Cancelar</button>
+      <button class="btn-save" id="cliSaveBtn" onclick="saveCliente()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fase D: nueva cotización / apartado -->
+<div class="overlay" id="quoteModal">
+  <div class="modal">
+    <div class="modal-ttl">Nueva cotización</div>
+    <div class="fg"><label class="flbl">¿Qué es?</label><input class="finp" id="qDesc" placeholder="Ej. Anillo oro 14k talla 6"></div>
+    <div class="fg"><label class="flbl">Precio (MXN)</label><input class="finp" id="qAmount" type="number" min="0" step="any" placeholder="0.00"></div>
+    <div class="mod-footer">
+      <button class="btn-cancel" onclick="closeModal('quoteModal')">Cancelar</button>
+      <button class="btn-save" id="qSaveBtn" onclick="saveQuote()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fase D: menú de plantillas de WhatsApp -->
+<div class="overlay" id="waModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-ttl">Enviar WhatsApp</div>
+    <div id="waOpts" style="display:flex;flex-direction:column;gap:.5rem"></div>
+    <div class="mod-footer">
+      <button class="btn-cancel" onclick="closeModal('waModal')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Fase G v2: vincular pagos del banco a un proveedor -->
 <div class="overlay" id="provLinkModal">
   <div class="mod" style="max-width:620px">
@@ -1875,6 +1981,7 @@ function showPage(id) {
     reportes:     ['Reportes',         '— Por mes y banco · descarga para tu contador'],
     resultados:   ['Estado de resultados', '— Base efectivo · reporte gerencial'],
     proveedores:  ['Proveedores', '— Rentabilidad por proveedor'],
+    clientes:     ['Clientes', '— Tu libreta de clientes, con la cuenta clara'],
     referidos:    ['Mi red · Referidos', '— Invita y gana cada mes']
   };
   const t = titles[id] || [id, ''];
@@ -1894,6 +2001,7 @@ function showPage(id) {
   if (id === 'reportes')     loadReportes();
   if (id === 'resultados')   loadResultados();
   if (id === 'proveedores')  loadProveedores();
+  if (id === 'clientes')     loadClientes();
   if (id === 'overview')     renderInicio();
   if (id === 'referidos')    loadReferidos();
 }
@@ -2423,10 +2531,13 @@ let _cashTipo = 'entrada', _cashFoto = null;
 const _cashMoney = n => '$' + Math.round(n).toLocaleString('es-MX');
 const _cashHoy = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
-function openCashModal(tipo) {
+function openCashModal(tipo, prefill) {
+  // Fase D: prefill opcional {clientId, quoteId, concepto} — el abono de un cliente ES un ingreso en efectivo
+  _cashPrefill = (prefill && (prefill.clientId || prefill.quoteId))
+    ? { client_id: prefill.clientId || null, quote_id: prefill.quoteId || null } : null;
   setCashTipo(tipo === 'salida' ? 'salida' : 'entrada');
   document.getElementById('cashMonto').value = '';
-  document.getElementById('cashConcepto').value = '';
+  document.getElementById('cashConcepto').value = (prefill && prefill.concepto) || '';
   document.getElementById('cashFecha').value = _cashHoy();  // fecha local MX, no toISOString
   clearCashFoto();
   loadCashChips();
@@ -2555,6 +2666,11 @@ async function saveCashMovement() {
     is_fiscal:   false
     // receipt_path se llena DESPUÉS (UPDATE en background) para no requerir la columna en el INSERT
   };
+  // Fase D: si el movimiento es abono de un cliente, ligarlo
+  if (_cashPrefill) {
+    if (_cashPrefill.client_id) payload.client_id = _cashPrefill.client_id;
+    if (_cashPrefill.quote_id)  payload.quote_id  = _cashPrefill.quote_id;
+  }
   const { data, error } = await db.from('transactions').insert(payload).select('id').single();
   btn.disabled = false; btn.textContent = 'Guardar';
 
@@ -2596,6 +2712,11 @@ async function saveCashMovement() {
   try { await Promise.all([loadMetrics(), loadRecentTx()]); } catch (e) {}
   try { if (document.getElementById('page-calendario').classList.contains('active')) loadCalendario(); } catch (e) {}
   try { if (document.getElementById('page-transactions').classList.contains('active')) loadTx(); } catch (e) {}
+  // Fase D: si el abono venía de la ficha de un cliente, refrescarla con el saldo nuevo
+  if (_cashPrefill && _cashPrefill.client_id && _clienteActual && _clienteActual.id === _cashPrefill.client_id) {
+    try { await openClienteFicha(_clienteActual.id); } catch (e) {}
+  }
+  _cashPrefill = null;
 }
 
 // Tarjeta "Efectivo de hoy" en el resumen. Devuelve {entradas, salidas, neto}.
@@ -5146,6 +5267,357 @@ async function repDownloadPDF() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// ===== CLIENTES ===== (Fase D — libreta de clientes con cuenta clara)
+// Los números (gastado, debe, visitas) SIEMPRE se calculan; jamás se capturan.
+
+let _clientsData = [], _cliAgg = {}, _cliQuotesAll = [];
+let _clienteActual = null, _cliQuotes = [], _cliTxs = [];
+let _cliFiltro = 'todos', _cliNoteTimer = null;
+let _cashPrefill = null;   // enlace abono→cliente para el cashModal (Fase A)
+
+const WA_TEMPLATES = [
+  { k: 'cobro',  t: 'Recordar saldo pendiente', msg: d => `Hola ${d.nombre} 👋 Te recuerdo tu saldo pendiente de ${d.monto} por ${d.descripcion}. ¿Te queda bien pasar esta semana?` },
+  { k: 'listo',  t: 'Avisar que su pedido está listo', msg: d => `Hola ${d.nombre} 👋 ¡Tu ${d.descripcion} ya está listo! Te esperamos 😊` },
+  { k: 'gracias',t: 'Agradecer su compra', msg: d => `Hola ${d.nombre} 👋 ¡Gracias por tu compra! Cualquier cosa que necesites, aquí estamos.` },
+  { k: 'libre',  t: 'Mensaje libre (chat vacío)', msg: () => '' },
+];
+
+const _CLI_AV_COLORS = ['#635bff','#1e7a4f','#b45309','#be3449','#0e7490','#7c3aed','#4d7c0f','#a21caf'];
+const _cliAvColor = n => _CLI_AV_COLORS[[...String(n || '?')].reduce((a, c) => a + c.charCodeAt(0), 0) % _CLI_AV_COLORS.length];
+const _cliPhoneNorm = p => String(p || '').replace(/\D/g, '').slice(-10);
+
+function _relTiempo(d) {
+  if (!d) return 'sin visitas';
+  const dias = Math.floor((Date.now() - dateLocal(d).getTime()) / 86400000);
+  if (dias <= 0) return 'hoy';
+  if (dias === 1) return 'ayer';
+  if (dias < 31) return `hace ${dias} días`;
+  const meses = Math.floor(dias / 30.44);
+  return meses < 12 ? `hace ${meses} mes${meses === 1 ? '' : 'es'}` : `hace ${Math.floor(meses / 12)} año${meses >= 24 ? 's' : ''}`;
+}
+
+// Saldo de una cotización: precio − abonos ligados (solo cuenta como deuda en apartado/entregado)
+function _quoteSaldo(q, txs) {
+  const abonado = (txs || []).filter(t => t.quote_id === q.id && t.amount > 0)
+    .reduce((a, t) => a + parseFloat(t.amount), 0);
+  return { abonado, saldo: Math.max(parseFloat(q.amount) - abonado, 0) };
+}
+
+async function loadClientes() {
+  // Al entrar a la página siempre se cae en la lista
+  document.getElementById('cliFichaView').style.display = 'none';
+  document.getElementById('cliListaView').style.display = '';
+  const box = document.getElementById('cliLista'); if (!box || !_user) return;
+  try {
+    const [cliRes, txRes, qRes] = await Promise.all([
+      db.from('clients').select('*').eq('user_id', _user.id).eq('is_active', true).order('name'),
+      db.from('transactions').select('client_id,quote_id,amount,date').eq('user_id', _user.id).not('client_id', 'is', null),
+      db.from('quotes').select('id,client_id,description,amount,status').eq('user_id', _user.id),
+    ]);
+    if (cliRes.error) throw cliRes.error;
+    _clientsData = cliRes.data || [];
+    const txs = txRes.error ? [] : (txRes.data || []);
+    _cliQuotesAll = qRes.error ? [] : (qRes.data || []);
+
+    _cliAgg = {};
+    for (const c of _clientsData) {
+      const mias = txs.filter(t => t.client_id === c.id);
+      const ingresos = mias.filter(t => t.amount > 0);
+      const debe = _cliQuotesAll
+        .filter(q => q.client_id === c.id && (q.status === 'apartado' || q.status === 'entregado'))
+        .reduce((a, q) => a + _quoteSaldo(q, mias).saldo, 0);
+      _cliAgg[c.id] = {
+        total: ingresos.reduce((a, t) => a + parseFloat(t.amount), 0),
+        visitas: ingresos.length,
+        ultima: mias.length ? mias.map(t => t.date).sort().pop() : null,
+        debe,
+      };
+    }
+    renderClientes();
+  } catch (e) {
+    console.error('loadClientes:', e);
+    box.innerHTML = `<div class="t-meta" style="padding:1rem">No se pudieron cargar tus clientes: ${_escHtml(e.message || 'error')}</div>`;
+  }
+}
+
+function setCliFiltro(f) {
+  _cliFiltro = f;
+  document.querySelectorAll('#page-clientes .cli-chip').forEach(ch => ch.classList.toggle('on', ch.dataset.f === f));
+  renderClientes();
+}
+
+function renderClientes() {
+  const box = document.getElementById('cliLista'); if (!box) return;
+  const q = (document.getElementById('cliSearch').value || '').toLowerCase();
+  const hace90 = Date.now() - 90 * 86400000;
+  let lista = _clientsData.filter(c => {
+    if (q && !(c.name.toLowerCase().includes(q) || (c.phone || '').includes(q.replace(/\D/g, '') || q))) return false;
+    const a = _cliAgg[c.id] || {};
+    if (_cliFiltro === 'deben') return a.debe > 0;
+    if (_cliFiltro === 'vip') return c.tag === 'vip';
+    if (_cliFiltro === 'inactivos') return !a.ultima || dateLocal(a.ultima).getTime() < hace90;
+    return true;
+  });
+  if (_cliFiltro === 'inactivos') lista.sort((x, y) => String(_cliAgg[x.id]?.ultima || '0').localeCompare(String(_cliAgg[y.id]?.ultima || '0')));
+
+  if (!lista.length) {
+    box.innerHTML = `<div style="padding:2rem 1rem;text-align:center">
+      <div style="font-weight:700;color:var(--ink);margin-bottom:.35rem">${_clientsData.length ? 'Nadie coincide con ese filtro' : 'Aquí van tus clientes'}</div>
+      <div class="t-meta">${_clientsData.length ? 'Prueba con otro filtro o búsqueda.' : 'Empieza con los 5 que más te compran.'}</div>
+      ${_clientsData.length ? '' : '<button class="tb-btn tb-primary" style="margin-top:1rem" onclick="openClienteModal()">+ Cliente</button>'}
+    </div>`;
+    return;
+  }
+
+  box.innerHTML = lista.map(c => {
+    const a = _cliAgg[c.id] || {};
+    const tagLbl = { nuevo: 'Nuevo', frecuente: 'Frecuente', vip: 'VIP' }[c.tag] || '';
+    return `<div class="cli-row" onclick="openClienteFicha('${c.id}')">
+      <div class="cli-av" style="background:${_cliAvColor(c.name)}">${_escHtml(c.name.trim()[0].toUpperCase())}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_escHtml(c.name)}<span class="cli-tag ${c.tag}">${tagLbl}</span></div>
+        <div class="t-meta">${a.visitas ? a.visitas + ' compra' + (a.visitas === 1 ? '' : 's') + ' · ' : ''}${_relTiempo(a.ultima)}</div>
+      </div>
+      ${a.debe > 0 ? `<div class="cli-debe">Debe ${_sugMXN(a.debe)}</div>` : ''}
+      ${c.phone ? `<button class="cli-wa" title="WhatsApp" onclick="event.stopPropagation();window.open('https://wa.me/52${_cliPhoneNorm(c.phone)}','_blank')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── Alta / edición ──
+function openClienteModal(id) {
+  const c = id ? _clientsData.find(x => x.id === id) : null;
+  document.getElementById('clienteModalTtl').textContent = c ? 'Editar cliente' : 'Nuevo cliente';
+  document.getElementById('cliId').value = c ? c.id : '';
+  document.getElementById('cliName').value = c ? c.name : '';
+  document.getElementById('cliPhone').value = c ? (c.phone || '') : '';
+  document.getElementById('cliEmail').value = c ? (c.email || '') : '';
+  document.getElementById('cliTag').value = c ? (c.tag || 'nuevo') : 'nuevo';
+  document.getElementById('cliNotes').value = c ? (c.notes || '') : '';
+  document.getElementById('cliMas').style.display = (c && (c.email || c.notes || c.tag !== 'nuevo')) ? '' : 'none';
+  openModal('clienteModal');
+  setTimeout(() => { try { document.getElementById('cliName').focus(); } catch (e) {} }, 60);
+}
+
+async function saveCliente() {
+  const btn = document.getElementById('cliSaveBtn');
+  const id = document.getElementById('cliId').value;
+  const name = document.getElementById('cliName').value.trim();
+  const phone = _cliPhoneNorm(document.getElementById('cliPhone').value);
+  if (!name) { toast('Escribe el nombre del cliente', 'error'); return; }
+  if (document.getElementById('cliPhone').value.trim() && !/^\d{10}$/.test(phone)) {
+    toast('El celular debe tener 10 dígitos', 'error'); return;
+  }
+  // Anti-duplicados por teléfono
+  if (phone) {
+    const dup = _clientsData.find(c => c.id !== id && _cliPhoneNorm(c.phone) === phone);
+    if (dup) {
+      if (confirm(`Ya tienes a ${dup.name} con ese teléfono. ¿Abrir su ficha?`)) {
+        closeModal('clienteModal'); openClienteFicha(dup.id);
+      }
+      return;
+    }
+  }
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const payload = {
+    user_id: _user.id, name,
+    phone: phone || null,
+    email: document.getElementById('cliEmail').value.trim() || null,
+    tag: document.getElementById('cliTag').value,
+    notes: document.getElementById('cliNotes').value.trim() || null,
+  };
+  let error;
+  if (id) ({ error } = await db.from('clients').update(payload).eq('id', id).eq('user_id', _user.id));
+  else ({ error } = await db.from('clients').insert(payload));
+  btn.disabled = false; btn.textContent = 'Guardar';
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast(id ? 'Cliente actualizado ✓' : 'Cliente agregado ✓', 'ok');
+  closeModal('clienteModal');
+  if (id && _clienteActual && _clienteActual.id === id) { await loadClientes(); openClienteFicha(id); }
+  else loadClientes();
+}
+
+async function deleteCliente(id) {
+  const c = _clientsData.find(x => x.id === id); if (!c) return;
+  if (!confirm(`¿Eliminar a "${c.name}"? Sus movimientos históricos se conservan.`)) return;
+  const { error } = await db.from('clients').update({ is_active: false }).eq('id', id).eq('user_id', _user.id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Cliente eliminado', 'ok');
+  loadClientes();
+}
+
+// ── Ficha ──
+async function openClienteFicha(id) {
+  const c = _clientsData.find(x => x.id === id); if (!c) return;
+  _clienteActual = c;
+  document.getElementById('cliListaView').style.display = 'none';
+  const v = document.getElementById('cliFichaView');
+  v.style.display = '';
+  v.innerHTML = '<div class="sk" style="height:120px;border-radius:12px"></div>';
+  try {
+    const [qRes, tRes] = await Promise.all([
+      db.from('quotes').select('*').eq('user_id', _user.id).eq('client_id', id).neq('status', 'cancelado').order('created_at', { ascending: false }),
+      db.from('transactions').select('id,date,description,amount,quote_id').eq('user_id', _user.id).eq('client_id', id).order('date', { ascending: false }).limit(100),
+    ]);
+    _cliQuotes = qRes.error ? [] : (qRes.data || []);
+    _cliTxs = tRes.error ? [] : (tRes.data || []);
+    renderFicha();
+  } catch (e) {
+    v.innerHTML = `<div class="t-meta" style="padding:1rem">Error al cargar la ficha: ${_escHtml(e.message || 'error')}</div>`;
+  }
+}
+
+function renderFicha() {
+  const c = _clienteActual; if (!c) return;
+  const v = document.getElementById('cliFichaView');
+  const ingresos = _cliTxs.filter(t => t.amount > 0);
+  const total = ingresos.reduce((a, t) => a + parseFloat(t.amount), 0);
+  const debe = _cliQuotes.filter(q => q.status === 'apartado' || q.status === 'entregado')
+    .reduce((a, q) => a + _quoteSaldo(q, _cliTxs).saldo, 0);
+  const ultima = _cliTxs.length ? _cliTxs.map(t => t.date).sort().pop() : null;
+  const tagLbl = { nuevo: 'Nuevo', frecuente: 'Frecuente', vip: 'VIP' };
+
+  const PASOS = ['cotizado', 'apartado', 'entregado', 'pagado'];
+  const PASO_LBL = { cotizado: 'Cotizado', apartado: 'Apartado', entregado: 'Entregado', pagado: 'Pagado' };
+  const quotesHTML = _cliQuotes.length ? _cliQuotes.map(q => {
+    const { abonado, saldo } = _quoteSaldo(q, _cliTxs);
+    const idx = PASOS.indexOf(q.status);
+    const steps = PASOS.map((p, i) =>
+      `<button class="q-step ${i === idx ? 'on' : i < idx ? 'done' : ''}" onclick="setQuoteStatus('${q.id}','${p}')">${PASO_LBL[p]}</button>`).join('');
+    return `<div class="q-card">
+      <div style="display:flex;justify-content:space-between;gap:.8rem;flex-wrap:wrap">
+        <div style="font-weight:600;color:var(--ink)">${_escHtml(q.description)}</div>
+        <div style="font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums">${_sugMXN(q.amount)}</div>
+      </div>
+      <div class="q-steps">${steps}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap">
+        <div class="t-meta">Abonado ${_sugMXN(abonado)}${saldo > 0 ? ` · <span style="color:#be3449;font-weight:700">Resta ${_sugMXN(saldo)}</span>` : ' · Liquidado ✓'}</div>
+        <div style="display:flex;gap:.5rem">
+          ${q.status !== 'pagado' ? `<button class="tb-btn tb-primary" onclick="openCashModal('entrada',{clientId:'${c.id}',quoteId:'${q.id}',concepto:'Abono ${_escHtml(q.description).replace(/'/g, '')} — ${_escHtml(c.name).replace(/'/g, '')}'})">+ Abono</button>` : ''}
+          <button class="prov-x" title="Cancelar cotización" onclick="cancelQuote('${q.id}')">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('') : '<div class="t-meta" style="padding:.5rem 0 1rem">Sin cotizaciones. Crea la primera para llevar la cuenta de apartados y abonos.</div>';
+
+  const timeline = [
+    ..._cliQuotes.map(q => ({ d: String(q.created_at).slice(0, 10), txt: `Cotización: ${q.description}`, amt: null })),
+    ..._cliTxs.map(t => ({ d: t.date, txt: t.description || 'Movimiento', amt: t.amount })),
+  ].sort((a, b) => String(b.d).localeCompare(String(a.d))).slice(0, 25);
+
+  v.innerHTML = `
+    <button onclick="loadClientes()" style="background:none;border:none;color:var(--p);font-weight:600;cursor:pointer;padding:0;margin-bottom:1rem;font-size:.9rem">← Clientes</button>
+    <div class="card" style="margin-bottom:1.2rem">
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div class="cli-av" style="background:${_cliAvColor(c.name)};width:52px;height:52px;font-size:1.3rem">${_escHtml(c.name.trim()[0].toUpperCase())}</div>
+        <div style="flex:1;min-width:180px">
+          <div style="font-size:1.15rem;font-weight:800;color:var(--ink)">${_escHtml(c.name)}<span class="cli-tag ${c.tag}">${tagLbl[c.tag] || ''}</span></div>
+          <div class="t-meta">${c.phone ? _escHtml(c.phone) : 'sin teléfono'}${c.email ? ' · ' + _escHtml(c.email) : ''}</div>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          ${c.phone ? `<button class="tb-btn" style="background:#25D366;color:#fff;border-color:#25D366" onclick="openWaMenu()"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>WhatsApp</button>
+          <a class="tb-btn" href="tel:${_cliPhoneNorm(c.phone)}" style="text-decoration:none">Llamar</a>` : ''}
+          <button class="tb-btn" onclick="openClienteModal('${c.id}')">Editar</button>
+          <button class="prov-x" title="Eliminar cliente" onclick="deleteCliente('${c.id}')">✕</button>
+        </div>
+      </div>
+    </div>
+    <div class="cli-kpis">
+      <div class="card"><div class="t-cap" style="margin-bottom:.4rem">Ha gastado</div><div class="t-num" style="color:var(--ink)">${_sugMXN(total)}</div></div>
+      <div class="card"><div class="t-cap" style="margin-bottom:.4rem">Te debe</div><div class="t-num" style="color:${debe > 0 ? '#be3449' : 'var(--ink)'}">${_sugMXN(debe)}</div></div>
+      <div class="card"><div class="t-cap" style="margin-bottom:.4rem">Compras</div><div class="t-num" style="color:var(--ink)">${ingresos.length}</div></div>
+      <div class="card"><div class="t-cap" style="margin-bottom:.4rem">Última visita</div><div class="t-num" style="color:var(--ink);font-size:1.05rem">${_relTiempo(ultima)}</div></div>
+    </div>
+    <div class="card" style="margin-bottom:1.2rem">
+      <div class="card-hdr"><div class="card-ttl">Cotizaciones y apartados</div>
+        <button class="tb-btn tb-primary" onclick="openModal('quoteModal');document.getElementById('qDesc').value='';document.getElementById('qAmount').value=''">+ Cotización</button>
+      </div>
+      ${quotesHTML}
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-ttl">Nota</div><div class="t-meta" id="cliNoteHint"></div></div>
+      <textarea class="cli-note" id="cliNoteArea" placeholder="Ej. anillo 14k talla 6, le gusta oro rosa..." oninput="saveClienteNote()">${_escHtml(c.notes || '')}</textarea>
+      <div class="card-hdr" style="margin-top:1.2rem"><div class="card-ttl">Historial</div></div>
+      ${timeline.length ? timeline.map(r => `<div class="tl-row">
+        <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)">${_escHtml(r.txt)}</span>
+        <span style="white-space:nowrap;color:var(--muted)">${r.amt !== null ? `<b style="color:${r.amt > 0 ? '#1e7a4f' : 'var(--ink)'}">${r.amt > 0 ? '+' : '−'}${_sugMXN(Math.abs(r.amt))}</b> · ` : ''}${fmtDate(r.d)}</span>
+      </div>`).join('') : '<div class="t-meta">Aún sin movimientos.</div>'}
+    </div>`;
+}
+
+// ── Cotizaciones ──
+async function saveQuote() {
+  const c = _clienteActual; if (!c) return;
+  const desc = document.getElementById('qDesc').value.trim();
+  const amt = parseFloat(document.getElementById('qAmount').value);
+  if (!desc) { toast('Describe qué le estás cotizando', 'error'); return; }
+  if (isNaN(amt) || amt <= 0) { toast('Ponle precio a la cotización', 'error'); return; }
+  const btn = document.getElementById('qSaveBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const { error } = await db.from('quotes').insert({ user_id: _user.id, client_id: c.id, description: desc, amount: amt });
+  btn.disabled = false; btn.textContent = 'Guardar';
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Cotización guardada ✓', 'ok');
+  closeModal('quoteModal');
+  openClienteFicha(c.id);
+}
+
+async function setQuoteStatus(id, status) {
+  const { error } = await db.from('quotes').update({ status, updated_at: new Date().toISOString() })
+    .eq('id', id).eq('user_id', _user.id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  if (_clienteActual) openClienteFicha(_clienteActual.id);
+}
+
+async function cancelQuote(id) {
+  if (!confirm('¿Cancelar esta cotización? Los abonos registrados se conservan en el historial.')) return;
+  const { error } = await db.from('quotes').update({ status: 'cancelado', updated_at: new Date().toISOString() })
+    .eq('id', id).eq('user_id', _user.id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  if (_clienteActual) openClienteFicha(_clienteActual.id);
+}
+
+// ── Nota con autosave (debounce 800ms) ──
+function saveClienteNote() {
+  const c = _clienteActual; if (!c) return;
+  const hint = document.getElementById('cliNoteHint');
+  if (hint) hint.textContent = 'Escribiendo…';
+  clearTimeout(_cliNoteTimer);
+  _cliNoteTimer = setTimeout(async () => {
+    const notes = document.getElementById('cliNoteArea').value.trim() || null;
+    const { error } = await db.from('clients').update({ notes }).eq('id', c.id).eq('user_id', _user.id);
+    if (hint) hint.textContent = error ? 'No se guardó — reintenta' : 'Guardado ✓';
+    if (!error) c.notes = notes;
+  }, 800);
+}
+
+// ── WhatsApp ──
+function openWaMenu() {
+  const c = _clienteActual; if (!c || !c.phone) return;
+  const pend = _cliQuotes.find(q => (q.status === 'apartado' || q.status === 'entregado') && _quoteSaldo(q, _cliTxs).saldo > 0);
+  const debe = _cliQuotes.filter(q => q.status === 'apartado' || q.status === 'entregado')
+    .reduce((a, q) => a + _quoteSaldo(q, _cliTxs).saldo, 0);
+  const datos = {
+    nombre: c.name.split(' ')[0],
+    monto: _sugMXN(debe || 0),
+    descripcion: pend ? pend.description : 'tu apartado',
+  };
+  document.getElementById('waOpts').innerHTML = WA_TEMPLATES.map((t, i) => {
+    if (t.k === 'cobro' && !(debe > 0)) return '';
+    if (t.k === 'listo' && !pend) return '';
+    return `<button class="btn-google" style="justify-content:flex-start;text-align:left" onclick="waSend(${i})">${t.t}</button>`;
+  }).join('');
+  window._waDatos = datos;
+  openModal('waModal');
+}
+
+function waSend(i) {
+  const c = _clienteActual; if (!c) return;
+  const msg = WA_TEMPLATES[i].msg(window._waDatos || {});
+  closeModal('waModal');
+  window.open('https://wa.me/52' + _cliPhoneNorm(c.phone) + (msg ? '?text=' + encodeURIComponent(msg) : ''), '_blank');
+}
+
 // ===== PROVEEDORES ===== (Fase G — rentabilidad por proveedor)
 // Solo 3 números se capturan; ganancia/margen/por-artículo/rentable SIEMPRE se derivan en vivo.
 
