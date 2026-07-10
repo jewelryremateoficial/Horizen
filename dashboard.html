@@ -1637,6 +1637,28 @@ select.mod-inp{cursor:pointer}
   </div>
 </div>
 
+<!-- Fase G v2: vincular pagos del banco a un proveedor -->
+<div class="overlay" id="provLinkModal">
+  <div class="mod" style="max-width:620px">
+    <div class="mod-hdr">
+      <div class="mod-ttl" id="provLinkTtl">Vincular pagos del banco</div>
+      <button class="mod-close" onclick="closeModal('provLinkModal')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+    <div style="padding:.9rem 1.4rem 0">
+      <input class="finp" id="provLinkSearch" placeholder="Buscar movimiento (ej. alibaba, spei...)" oninput="renderProvLinkList()">
+      <div class="t-meta" style="margin-top:.4rem">Marca los pagos que fueron a este proveedor. Así Horizen compara tu inversión capturada contra lo que salió del banco.</div>
+    </div>
+    <div class="mod-body" style="max-height:52vh;overflow-y:auto" id="provLinkList"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.9rem 1.4rem;border-top:1px solid var(--line);flex-wrap:wrap">
+      <div class="t-meta" id="provLinkSum">—</div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn-cancel" onclick="closeModal('provLinkModal')">Cancelar</button>
+        <button class="btn-save" id="provLinkSaveBtn" onclick="saveProvLinks()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="catModal">
   <div class="mod" style="max-width:640px">
     <div class="mod-hdr">
@@ -5129,8 +5151,18 @@ async function repDownloadPDF() {
 
 let _provList = [];          // suppliers activos
 let _provData = {};          // supplier_id -> {items_sold, net_sales, investment} del periodo visible
+let _provBanco = {};         // supplier_id -> suma de egresos del banco vinculados (v2)
 let _provYear = null, _provMonth = null, _provAnual = false;
 let _provMargenMin = 30, _provMargenLoaded = false;
+let _provLinkSup = null, _provLinkTxs = [], _provLinkSel = {};   // estado del modal de vinculación
+
+// Rango de fechas del periodo visible: [desde, hastaExclusivo)
+function _provRango() {
+  if (_provAnual) return [_provYear + '-01-01', (_provYear + 1) + '-01-01'];
+  const desde = _pnlMonthStr(_provYear, _provMonth) + '-01';
+  const hastaEx = (_provMonth === 11 ? (_provYear + 1) + '-01' : _pnlMonthStr(_provYear, _provMonth + 1)) + '-01';
+  return [desde, hastaEx];
+}
 
 function _provInitMes() {
   if (_provYear !== null) return;
@@ -5173,13 +5205,17 @@ async function loadProveedores() {
     if (inp) inp.value = _provMargenMin;
 
     const mesStr = _pnlMonthStr(_provYear, _provMonth);
-    const [supRes, perRes] = await Promise.all([
+    const [desde, hastaEx] = _provRango();
+    const [supRes, perRes, bcoRes] = await Promise.all([
       db.from('suppliers').select('id,name,notes').eq('user_id', _user.id).eq('is_active', true).order('name'),
       _provAnual
         ? db.from('supplier_periods').select('supplier_id,items_sold,net_sales,investment')
             .eq('user_id', _user.id).gte('period', _provYear + '-01').lte('period', _provYear + '-12')
         : db.from('supplier_periods').select('supplier_id,items_sold,net_sales,investment')
-            .eq('user_id', _user.id).eq('period', mesStr)
+            .eq('user_id', _user.id).eq('period', mesStr),
+      db.from('transactions').select('supplier_id,amount')
+        .eq('user_id', _user.id).not('supplier_id', 'is', null).lt('amount', 0)
+        .gte('date', desde).lt('date', hastaEx)
     ]);
     if (supRes.error) throw supRes.error;
     if (perRes.error) throw perRes.error;
@@ -5190,6 +5226,10 @@ async function loadProveedores() {
       acc.items_sold += r.items_sold || 0;
       acc.net_sales  += parseFloat(r.net_sales)  || 0;
       acc.investment += parseFloat(r.investment) || 0;
+    });
+    _provBanco = {};
+    if (!bcoRes.error) (bcoRes.data || []).forEach(t => {
+      _provBanco[t.supplier_id] = (_provBanco[t.supplier_id] || 0) + Math.abs(parseFloat(t.amount) || 0);
     });
     renderProvTable();
   } catch (e) {
@@ -5219,11 +5259,23 @@ function renderProvTable() {
   });
 
   const filas = rows.map(({ s, d, c }) => {
-    const captura = f => _provAnual
-      ? `<td class="calc">${f === 'items_sold' ? d[f] : _sugMXN(d[f])}</td>`
-      : `<td><input class="prov-inp" type="number" min="0" step="any" placeholder="0"
+    // v2: comparación contra los pagos vinculados del banco (en la celda Inversión)
+    const bancoLine = () => {
+      const b = _provBanco[s.id];
+      const btn = `<button class="prov-x" title="Vincular pagos del banco" onclick="openProvLink('${s.id}')"><svg class="ic" style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>`;
+      if (b === undefined) return `<div class="t-meta" style="margin-top:.25rem;text-align:right">Banco: — ${btn}</div>`;
+      const diff = Math.abs(d.investment - b);
+      const ok = diff <= Math.max(50, 0.05 * Math.max(d.investment, b));
+      return `<div class="t-meta" style="margin-top:.25rem;text-align:right${ok ? '' : ';color:#b45309;font-weight:600'}">Banco: ${_sugMXN(b)} ${ok ? '✓' : '· difiere ' + _sugMXN(diff)} ${btn}</div>`;
+    };
+    const captura = f => {
+      const extra = f === 'investment' ? bancoLine() : '';
+      return _provAnual
+        ? `<td class="calc">${f === 'items_sold' ? d[f] : _sugMXN(d[f])}${extra}</td>`
+        : `<td><input class="prov-inp" type="number" min="0" step="any" placeholder="0"
             value="${d.items_sold || d.net_sales || d.investment ? d[f] : ''}"
-            onchange="provCellSave('${s.id}','${f}',this.value)"></td>`;
+            onchange="provCellSave('${s.id}','${f}',this.value)">${extra}</td>`;
+    };
     return `<tr>
       <td>${_escHtml(s.name)}
         <button class="prov-x" title="Renombrar" onclick="renameProveedor('${s.id}')">✎</button>
@@ -5344,6 +5396,87 @@ function navProvMes(dir) {
 function provToggleAnual(v) {
   _provAnual = !!v;
   loadProveedores();
+}
+
+// ── v2: vincular pagos del banco a un proveedor ──
+async function openProvLink(supplierId) {
+  const s = _provList.find(x => x.id === supplierId); if (!s) return;
+  _provLinkSup = supplierId;
+  document.getElementById('provLinkTtl').textContent = 'Pagos del banco — ' + s.name;
+  document.getElementById('provLinkSearch').value = '';
+  document.getElementById('provLinkList').innerHTML = '<div class="t-meta" style="padding:1rem 1.4rem">Cargando movimientos…</div>';
+  openModal('provLinkModal');
+  const [desde, hastaEx] = _provRango();
+  const { data, error } = await db.from('transactions')
+    .select('id,date,description,amount,supplier_id')
+    .eq('user_id', _user.id).lt('amount', 0)
+    .gte('date', desde).lt('date', hastaEx)
+    .order('date', { ascending: false }).limit(500);
+  if (error) {
+    document.getElementById('provLinkList').innerHTML = `<div class="t-meta" style="padding:1rem 1.4rem">Error: ${_escHtml(error.message)}</div>`;
+    return;
+  }
+  _provLinkTxs = data || [];
+  _provLinkSel = {};
+  _provLinkTxs.forEach(t => { _provLinkSel[t.id] = t.supplier_id === supplierId; });
+  renderProvLinkList();
+}
+
+function renderProvLinkList() {
+  const list = document.getElementById('provLinkList'); if (!list) return;
+  const q = (document.getElementById('provLinkSearch').value || '').toLowerCase();
+  const txs = _provLinkTxs.filter(t => !q || (t.description || '').toLowerCase().includes(q));
+  if (!txs.length) {
+    list.innerHTML = `<div class="t-meta" style="padding:1rem 1.4rem">${_provLinkTxs.length ? 'Nada coincide con la búsqueda.' : 'No hay egresos del banco en este periodo. Sube un estado de cuenta o registra gastos.'}</div>`;
+  } else {
+    list.innerHTML = txs.map(t => {
+      const otro = t.supplier_id && t.supplier_id !== _provLinkSup
+        ? ((_provList.find(x => x.id === t.supplier_id) || {}).name || 'otro proveedor') : null;
+      return `<label style="display:flex;align-items:center;gap:.7rem;padding:.55rem 1.4rem;border-bottom:1px solid var(--line);cursor:pointer">
+        <input type="checkbox" ${_provLinkSel[t.id] ? 'checked' : ''} onchange="_provLinkSel['${t.id}']=this.checked;updProvLinkSum()">
+        <span style="flex:1;min-width:0">
+          <span style="display:block;font-size:.85rem;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_escHtml((t.description || 'Sin descripción').slice(0, 70))}</span>
+          <span class="t-meta">${fmtDate(t.date)}${otro ? ' · vinculado a ' + _escHtml(otro) : ''}</span>
+        </span>
+        <span style="font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink);white-space:nowrap">${_sugMXN(Math.abs(t.amount))}</span>
+      </label>`;
+    }).join('');
+  }
+  updProvLinkSum();
+}
+
+function updProvLinkSum() {
+  const el = document.getElementById('provLinkSum'); if (!el) return;
+  const sel = _provLinkTxs.filter(t => _provLinkSel[t.id]);
+  const total = sel.reduce((a, t) => a + Math.abs(parseFloat(t.amount) || 0), 0);
+  el.textContent = sel.length
+    ? `${sel.length} pago${sel.length === 1 ? '' : 's'} vinculado${sel.length === 1 ? '' : 's'} · ${_sugMXN(total)}`
+    : 'Ningún pago vinculado';
+}
+
+async function saveProvLinks() {
+  const btn = document.getElementById('provLinkSaveBtn');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    const cambios = _provLinkTxs.filter(t => _provLinkSel[t.id] !== (t.supplier_id === _provLinkSup));
+    const setIds  = cambios.filter(t => _provLinkSel[t.id]).map(t => t.id);
+    const nullIds = cambios.filter(t => !_provLinkSel[t.id]).map(t => t.id);
+    if (setIds.length) {
+      const { error } = await db.from('transactions').update({ supplier_id: _provLinkSup }).in('id', setIds).eq('user_id', _user.id);
+      if (error) throw error;
+    }
+    if (nullIds.length) {
+      const { error } = await db.from('transactions').update({ supplier_id: null }).in('id', nullIds).eq('user_id', _user.id);
+      if (error) throw error;
+    }
+    toast(cambios.length ? 'Pagos vinculados ✓' : 'Sin cambios', 'ok');
+    closeModal('provLinkModal');
+    loadProveedores();
+  } catch (e) {
+    toast('Error: ' + (e.message || 'no se pudo guardar'), 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Guardar';
+  }
 }
 
 // ===== ESTADO DE RESULTADOS ===== (Fase C — base efectivo, gerencial)
