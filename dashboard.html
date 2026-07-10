@@ -563,6 +563,7 @@ select.mod-inp{cursor:pointer}
       <span class="badge" id="debtBadge" style="display:none"></span>
     </button>
     <button class="ni" onclick="showPage('taxes')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg></span>SAT / Fiscal</button>
+    <button class="ni" onclick="showPage('proveedores')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 9.4 7.55 4.24"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg></span>Proveedores</button>
 
     <div class="nav-lbl">Inteligencia</div>
     <button class="ni" onclick="showPage('resultados')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18v-1"/><path d="M12 18v-6"/><path d="M16 18v-3"/></svg></span>Estado de Resultados</button>
@@ -797,6 +798,67 @@ select.mod-inp{cursor:pointer}
   </div>
 
   <!-- ══ PAGE: Referidos (Mi red) ══════════════════════════ -->
+  <!-- ══ PROVEEDORES (Fase G) ══ -->
+  <div class="page" id="page-proveedores">
+    <style>
+      #page-proveedores .prov-hdr{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin-bottom:1.2rem}
+      #page-proveedores .prov-month{font-size:.95rem;font-weight:700;min-width:150px;text-align:center;color:var(--ink);font-variant-numeric:tabular-nums}
+      #page-proveedores .prov-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.2rem}
+      #page-proveedores .prov-wrap{overflow-x:auto}
+      #page-proveedores table.prov{width:100%;border-collapse:collapse;min-width:940px;font-size:.875rem}
+      #page-proveedores table.prov th{font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:right;padding:.55rem .6rem;border-bottom:1px solid var(--line);white-space:nowrap}
+      #page-proveedores table.prov th:first-child{text-align:left}
+      #page-proveedores table.prov td{padding:.45rem .6rem;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink)}
+      #page-proveedores table.prov td:first-child{text-align:left;font-weight:600}
+      #page-proveedores table.prov td.calc{color:var(--muted);font-weight:600}
+      #page-proveedores .prov-inp{width:104px;text-align:right;background:#fff;border:1px solid var(--line);border-radius:8px;padding:.35rem .5rem;font:inherit;font-variant-numeric:tabular-nums;color:var(--ink)}
+      #page-proveedores .prov-inp:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px var(--p-soft)}
+      #page-proveedores tr.total td{font-weight:800;border-top:2px solid var(--ink);border-bottom:none}
+      #page-proveedores .prov-badge{display:inline-flex;font-size:.7rem;font-weight:700;padding:.18rem .55rem;border-radius:999px}
+      #page-proveedores .prov-badge.ok{background:rgba(30,122,79,.1);color:#1e7a4f}
+      #page-proveedores .prov-badge.low{background:#fff7ed;color:#b45309}
+      #page-proveedores .prov-badge.bad{background:rgba(190,52,73,.08);color:#be3449}
+      #page-proveedores .prov-badge.na{background:#f4f5f8;color:var(--muted)}
+      #page-proveedores .prov-x{background:none;border:none;cursor:pointer;color:var(--muted);padding:.15rem .3rem;font-size:.85rem;border-radius:6px}
+      #page-proveedores .prov-x:hover{background:#f4f5f8;color:var(--ink)}
+      @media(max-width:860px){#page-proveedores .prov-cards{grid-template-columns:repeat(2,1fr)}}
+    </style>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;gap:1rem;flex-wrap:wrap">
+      <div>
+        <div class="t-page">Proveedores</div>
+        <div class="t-sub" style="margin-top:.25rem">Captura 3 números por proveedor — Horizen calcula el resto</div>
+      </div>
+      <button class="tb-btn tb-primary" onclick="addProveedor()"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Proveedor</button>
+    </div>
+
+    <div class="prov-hdr">
+      <button class="tb-btn" onclick="navProvMes(-1)" aria-label="Mes anterior">‹</button>
+      <div class="prov-month" id="provMesLbl">—</div>
+      <button class="tb-btn" onclick="navProvMes(1)" aria-label="Mes siguiente">›</button>
+      <label style="display:inline-flex;align-items:center;gap:.45rem;font-size:.82rem;font-weight:600;color:var(--muted);cursor:pointer;user-select:none">
+        <input type="checkbox" id="provAnual" onchange="provToggleAnual(this.checked)"> Ver año completo
+      </label>
+      <span style="flex:1"></span>
+      <label style="display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;color:var(--muted);font-weight:600" title="Un proveedor es rentable si su margen es igual o mayor a este porcentaje.">
+        Margen mínimo <input class="prov-inp" style="width:64px" id="provMargen" type="number" min="0" max="95" step="1" onchange="provSetMargen(this.value)"> %
+      </label>
+    </div>
+
+    <div class="prov-cards">
+      <div class="card"><div class="t-cap" style="margin-bottom:.4rem">Mejor proveedor</div><div class="t-num" style="color:var(--ink)" id="provTopName">—</div><div class="t-meta" style="margin-top:.3rem" id="provTopSub">por margen</div></div>
+      <div class="card"><div class="t-cap" style="margin-bottom:.4rem">Mayor ganancia</div><div class="t-num" style="color:var(--ink)" id="provGanName">—</div><div class="t-meta" style="margin-top:.3rem" id="provGanSub">&nbsp;</div></div>
+      <div class="card"><div class="t-cap" style="margin-bottom:.4rem">Inversión total</div><div class="t-num" style="color:var(--ink)" id="provInvTotal">—</div><div class="t-meta" style="margin-top:.3rem">del periodo</div></div>
+      <div class="card"><div class="t-cap" style="margin-bottom:.4rem">Margen promedio</div><div class="t-num" style="color:var(--ink)" id="provMargenProm">—</div><div class="t-meta" style="margin-top:.3rem">ponderado por ventas</div></div>
+    </div>
+
+    <div class="card">
+      <div class="prov-wrap" id="provTableWrap">
+        <div class="sk" style="height:48px;border-radius:10px"></div>
+      </div>
+    </div>
+    <div class="t-meta" style="margin-top:.8rem">Ganancia bruta sobre lo capturado. En la siguiente versión, Horizen cruzará la inversión contra tus movimientos del banco.</div>
+  </div>
+
   <div class="page" id="page-referidos">
     <style>
     #page-referidos .rf-card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;box-shadow:var(--shadow-1);margin-bottom:16px}
@@ -1790,6 +1852,7 @@ function showPage(id) {
     estados:      ['Subir estado de cuenta', '— Tus números listos en un minuto'],
     reportes:     ['Reportes',         '— Por mes y banco · descarga para tu contador'],
     resultados:   ['Estado de resultados', '— Base efectivo · reporte gerencial'],
+    proveedores:  ['Proveedores', '— Rentabilidad por proveedor'],
     referidos:    ['Mi red · Referidos', '— Invita y gana cada mes']
   };
   const t = titles[id] || [id, ''];
@@ -1808,6 +1871,7 @@ function showPage(id) {
   if (id === 'estados')      loadSavedStatements();
   if (id === 'reportes')     loadReportes();
   if (id === 'resultados')   loadResultados();
+  if (id === 'proveedores')  loadProveedores();
   if (id === 'overview')     renderInicio();
   if (id === 'referidos')    loadReferidos();
 }
@@ -5060,6 +5124,228 @@ async function repDownloadPDF() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// ===== PROVEEDORES ===== (Fase G — rentabilidad por proveedor)
+// Solo 3 números se capturan; ganancia/margen/por-artículo/rentable SIEMPRE se derivan en vivo.
+
+let _provList = [];          // suppliers activos
+let _provData = {};          // supplier_id -> {items_sold, net_sales, investment} del periodo visible
+let _provYear = null, _provMonth = null, _provAnual = false;
+let _provMargenMin = 30, _provMargenLoaded = false;
+
+function _provInitMes() {
+  if (_provYear !== null) return;
+  const now = new Date();
+  _provYear = now.getFullYear(); _provMonth = now.getMonth();
+}
+
+// Derivadas de una fila. División entre 0 → null (se pinta "—", jamás NaN/Infinity)
+function provCalc(items, ventas, inv) {
+  const gan = ventas - inv;
+  const margen  = ventas > 0 ? gan / ventas * 100 : null;
+  const ganArt  = items  > 0 ? gan / items  : null;
+  const ventaArt= items  > 0 ? ventas / items : null;
+  let tag = 'na';
+  if (items > 0 || ventas > 0 || inv > 0) {
+    if (gan < 0) tag = 'bad';
+    else if (margen !== null && margen >= _provMargenMin) tag = 'ok';
+    else tag = 'low';
+  }
+  return { gan, margen, ganArt, ventaArt, tag };
+}
+
+const _provPct = v => v === null ? '—' : (Math.round(v * 10) / 10) + '%';
+const _provMoney = v => v === null ? '—' : _sugMXN(v);
+
+async function loadProveedores() {
+  const wrap = document.getElementById('provTableWrap'); if (!wrap || !_user) return;
+  _provInitMes();
+  const lbl = document.getElementById('provMesLbl');
+  if (lbl) lbl.textContent = _provAnual ? ('Año ' + _provYear) : (_PNL_MESES[_provMonth] + ' ' + _provYear);
+  try {
+    // Umbral de margen del usuario (una sola vez por sesión)
+    if (!_provMargenLoaded) {
+      const { data: prof } = await db.from('profiles').select('supplier_margin_min').eq('id', _user.id).single();
+      const v = parseFloat(prof?.supplier_margin_min);
+      if (!isNaN(v)) _provMargenMin = v;
+      _provMargenLoaded = true;
+    }
+    const inp = document.getElementById('provMargen');
+    if (inp) inp.value = _provMargenMin;
+
+    const mesStr = _pnlMonthStr(_provYear, _provMonth);
+    const [supRes, perRes] = await Promise.all([
+      db.from('suppliers').select('id,name,notes').eq('user_id', _user.id).eq('is_active', true).order('name'),
+      _provAnual
+        ? db.from('supplier_periods').select('supplier_id,items_sold,net_sales,investment')
+            .eq('user_id', _user.id).gte('period', _provYear + '-01').lte('period', _provYear + '-12')
+        : db.from('supplier_periods').select('supplier_id,items_sold,net_sales,investment')
+            .eq('user_id', _user.id).eq('period', mesStr)
+    ]);
+    if (supRes.error) throw supRes.error;
+    if (perRes.error) throw perRes.error;
+    _provList = supRes.data || [];
+    _provData = {};
+    (perRes.data || []).forEach(r => {
+      const acc = _provData[r.supplier_id] ||= { items_sold: 0, net_sales: 0, investment: 0 };
+      acc.items_sold += r.items_sold || 0;
+      acc.net_sales  += parseFloat(r.net_sales)  || 0;
+      acc.investment += parseFloat(r.investment) || 0;
+    });
+    renderProvTable();
+  } catch (e) {
+    console.error('loadProveedores:', e);
+    wrap.innerHTML = `<div class="t-meta" style="padding:1rem">No se pudieron cargar tus proveedores: ${_escHtml(e.message || 'error')}</div>`;
+  }
+}
+
+function renderProvTable() {
+  const wrap = document.getElementById('provTableWrap'); if (!wrap) return;
+
+  if (!_provList.length) {
+    wrap.innerHTML = `<div style="padding:2rem 1rem;text-align:center">
+      <div style="font-weight:700;color:var(--ink);margin-bottom:.35rem">Agrega tu primer proveedor</div>
+      <div class="t-meta" style="margin-bottom:1rem">Captura 3 números — Horizen calcula ganancia, margen y rentabilidad.</div>
+      <button class="tb-btn tb-primary" onclick="addProveedor()">+ Proveedor</button>
+    </div>`;
+    _renderProvCards([]);
+    return;
+  }
+
+  const badgeLbl = { ok: 'Rentable', low: 'Margen bajo', bad: 'No rentable', na: _provAnual ? 'Sin datos' : 'Sin datos este mes' };
+  const rows = _provList.map(s => {
+    const d = _provData[s.id] || { items_sold: 0, net_sales: 0, investment: 0 };
+    const c = provCalc(d.items_sold, d.net_sales, d.investment);
+    return { s, d, c };
+  });
+
+  const filas = rows.map(({ s, d, c }) => {
+    const captura = f => _provAnual
+      ? `<td class="calc">${f === 'items_sold' ? d[f] : _sugMXN(d[f])}</td>`
+      : `<td><input class="prov-inp" type="number" min="0" step="any" placeholder="0"
+            value="${d.items_sold || d.net_sales || d.investment ? d[f] : ''}"
+            onchange="provCellSave('${s.id}','${f}',this.value)"></td>`;
+    return `<tr>
+      <td>${_escHtml(s.name)}
+        <button class="prov-x" title="Renombrar" onclick="renameProveedor('${s.id}')">✎</button>
+        <button class="prov-x" title="Eliminar" onclick="delProveedor('${s.id}')">✕</button>
+      </td>
+      ${captura('items_sold')}${captura('net_sales')}${captura('investment')}
+      <td class="calc" style="color:${c.gan < 0 ? '#be3449' : 'var(--ink)'}">${c.gan < 0 ? '−' + _sugMXN(Math.abs(c.gan)) : _sugMXN(c.gan)}</td>
+      <td class="calc">${_provPct(c.margen)}</td>
+      <td class="calc">${_provMoney(c.ganArt)}</td>
+      <td class="calc">${_provMoney(c.ventaArt)}</td>
+      <td><span class="prov-badge ${c.tag}">${badgeLbl[c.tag]}</span></td>
+    </tr>`;
+  }).join('');
+
+  const tItems = rows.reduce((a, r) => a + r.d.items_sold, 0);
+  const tVentas = rows.reduce((a, r) => a + r.d.net_sales, 0);
+  const tInv = rows.reduce((a, r) => a + r.d.investment, 0);
+  const tc = provCalc(tItems, tVentas, tInv);
+
+  wrap.innerHTML = `<table class="prov">
+    <thead><tr>
+      <th>Proveedor</th><th>Artículos</th><th>Ventas netas</th><th>Inversión</th>
+      <th>Ganancia</th><th>Margen</th><th>Gan./art.</th><th>Venta/art.</th><th>¿Rentable?</th>
+    </tr></thead>
+    <tbody>${filas}
+      <tr class="total"><td>Total</td><td style="text-align:right">${tItems}</td><td>${_sugMXN(tVentas)}</td><td>${_sugMXN(tInv)}</td>
+        <td style="color:${tc.gan < 0 ? '#be3449' : 'var(--ink)'}">${tc.gan < 0 ? '−' + _sugMXN(Math.abs(tc.gan)) : _sugMXN(tc.gan)}</td>
+        <td>${_provPct(tc.margen)}</td><td>${_provMoney(tc.ganArt)}</td><td>${_provMoney(tc.ventaArt)}</td><td></td></tr>
+    </tbody></table>`;
+
+  _renderProvCards(rows);
+}
+
+function _renderProvCards(rows) {
+  const conVentas = rows.filter(r => r.d.net_sales > 0);
+  const top = [...conVentas].sort((a, b) => (b.c.margen ?? -1e9) - (a.c.margen ?? -1e9))[0];
+  const topGan = [...rows].sort((a, b) => b.c.gan - a.c.gan).filter(r => r.c.gan > 0)[0];
+  const tInv = rows.reduce((a, r) => a + r.d.investment, 0);
+  const tVentas = rows.reduce((a, r) => a + r.d.net_sales, 0);
+  const tGan = rows.reduce((a, r) => a + r.c.gan, 0);
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('provTopName', top ? top.s.name : '—');
+  set('provTopSub', top ? 'margen de ' + _provPct(top.c.margen) : 'por margen');
+  set('provGanName', topGan ? topGan.s.name : '—');
+  set('provGanSub', topGan ? '+' + _sugMXN(topGan.c.gan) : ' ');
+  set('provInvTotal', rows.length ? _sugMXN(tInv) : '—');
+  set('provMargenProm', tVentas > 0 ? _provPct(tGan / tVentas * 100) : '—');
+}
+
+async function provCellSave(supplierId, campo, valor) {
+  let v = parseFloat(String(valor).replace(/,/g, ''));
+  if (isNaN(v) || v < 0) v = 0;
+  if (campo === 'items_sold') v = Math.round(v);
+  const d = _provData[supplierId] ||= { items_sold: 0, net_sales: 0, investment: 0 };
+  d[campo] = v;
+  const { error } = await db.from('supplier_periods').upsert({
+    user_id: _user.id, supplier_id: supplierId,
+    period: _pnlMonthStr(_provYear, _provMonth),
+    items_sold: d.items_sold, net_sales: d.net_sales, investment: d.investment,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,supplier_id,period' });
+  if (error) { toast('No se pudo guardar: ' + error.message, 'error'); return; }
+  renderProvTable();
+}
+
+async function addProveedor() {
+  const name = (prompt('Nombre del proveedor (ej. Alibaba — Joyería Lee):') || '').trim();
+  if (!name) return;
+  const { error } = await db.from('suppliers').insert({ user_id: _user.id, name });
+  if (error) {
+    toast(error.code === '23505' ? 'Ya tienes un proveedor con ese nombre' : 'Error: ' + error.message, 'error');
+    return;
+  }
+  toast('Proveedor agregado ✓', 'ok');
+  loadProveedores();
+}
+
+async function renameProveedor(id) {
+  const s = _provList.find(x => x.id === id); if (!s) return;
+  const name = (prompt('Nuevo nombre:', s.name) || '').trim();
+  if (!name || name === s.name) return;
+  const { error } = await db.from('suppliers').update({ name }).eq('id', id).eq('user_id', _user.id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  loadProveedores();
+}
+
+async function delProveedor(id) {
+  const s = _provList.find(x => x.id === id); if (!s) return;
+  if (!confirm(`¿Eliminar "${s.name}"? Su histórico se conserva.`)) return;
+  const { error } = await db.from('suppliers').update({ is_active: false }).eq('id', id).eq('user_id', _user.id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Proveedor eliminado', 'ok');
+  loadProveedores();
+}
+
+async function provSetMargen(v) {
+  let n = parseFloat(v);
+  if (isNaN(n)) n = 30;
+  n = Math.min(Math.max(n, 0), 95);
+  _provMargenMin = n;
+  const inp = document.getElementById('provMargen'); if (inp) inp.value = n;
+  renderProvTable();
+  const { error } = await db.from('profiles').update({ supplier_margin_min: n }).eq('id', _user.id);
+  if (error) console.error('provSetMargen:', error);
+}
+
+function navProvMes(dir) {
+  _provInitMes();
+  if (_provAnual) { _provYear += dir; }
+  else {
+    _provMonth += dir;
+    if (_provMonth < 0)  { _provMonth = 11; _provYear--; }
+    if (_provMonth > 11) { _provMonth = 0;  _provYear++; }
+  }
+  loadProveedores();
+}
+
+function provToggleAnual(v) {
+  _provAnual = !!v;
+  loadProveedores();
+}
+
 // ===== ESTADO DE RESULTADOS ===== (Fase C — base efectivo, gerencial)
 // Todo se calcula en el navegador desde transactions (banco + efectivo + manual).
 // Esqueleto NIF B-3 "por función", etiquetado honesto: NO es contabilidad fiscal.
