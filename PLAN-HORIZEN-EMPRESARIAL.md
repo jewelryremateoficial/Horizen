@@ -22,6 +22,7 @@
 | **D** | Clientes (ficha mínima + WhatsApp + cotización + notas) | Primera tabla de PERSONAS. Los abonos del cliente se registran con el modal de efectivo de A (reuso directo). Base obligatoria para E. |
 | **E** | Citas tipo Calendly (disponibilidad + página pública + reservas) | La más riesgosa técnicamente (endpoint público, anti-doble-reserva) — va al final, cuando ya hay clientes (D) y registro de ingresos (A) con qué conectarla. |
 | **F** | Equipo: invitar empleados con rol capturista (multi-usuario) | Requiere A en producción (foto de nota + modal de efectivo se reusan tal cual en la pantalla del empleado). Toca RLS de `transactions` — se hace con Supabase Pro pagado y flujo dev→verificar→liberar. Justifica el plan Enterprise. |
+| **G** | Proveedores: rentabilidad por proveedor (tabla editable + dashboard) | Captura mínima (3 números), todo lo demás calculado. Independiente de D-F; v2 se cruza con transacciones del banco (inversión real vs capturada). Decisiones de Eduardo (2026-07-09): por mes + acumulado, margen mínimo configurable, v1 manual primero. |
 
 **Regla transversal:** cada fase se libera COMPLETA (SQL → frontend → deploy Hostinger → checklist) antes de empezar la siguiente. dashboard.html lo edita un solo desarrollador a la vez.
 
@@ -1029,6 +1030,104 @@ Con el token de sesión del CAPTURISTA (no del dueño):
 8. Suspender al miembro → su siguiente INSERT falla con mensaje claro; reactivar → vuelve a funcionar.
 9. Quitar al miembro → sus registros históricos siguen en la cuenta del dueño intactos.
 10. El dueño sigue pudiendo TODO lo de antes (regresión: subir un PDF completo y confirmar que nada cambió).
+
+---
+
+# FASE G — PROVEEDORES (rentabilidad por proveedor)
+
+**Promesa:** "Captura 3 números por proveedor y Horizen te dice cuál te hace rico y cuál te está costando." Tabla editable estilo hoja de cálculo + dashboard automático. NO es un clon de Notion: columnas fijas bien diseñadas, cálculos derivados siempre en vivo.
+
+**Decisiones cerradas con Eduardo (2026-07-09):**
+1. Medición **por mes** con vista acumulada del año (consistente con el resto de Horizen).
+2. "Rentable" = margen ≥ **umbral configurable por el usuario** (default 30%): margen ≥ umbral → `Rentable`; 0 ≤ margen < umbral → `Margen bajo`; ganancia negativa → `No rentable`.
+3. **v1 manual primero**; v2 (cruce con banco) inmediatamente después de validar con uso real.
+
+## G.0 Principio de diseño
+
+De las 9 columnas pedidas, solo 3 se capturan; 6 se DERIVAN en el navegador y **nunca se guardan** (no pueden desincronizarse):
+`ganancia = ventas − inversión` · `margen = ganancia/ventas` · `ganancia_por_art = ganancia/artículos` · `venta_por_art = ventas/artículos` · `rentable = f(margen, umbral)`.
+
+## G.1 PASO 1 — SQL (100% aditivo)
+
+```sql
+CREATE TABLE IF NOT EXISTS public.suppliers (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  notes text,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz DEFAULT now(),
+  UNIQUE (user_id, name)
+);
+ALTER TABLE public.suppliers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "suppliers_all" ON public.suppliers
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE INDEX IF NOT EXISTS idx_suppliers_user ON public.suppliers(user_id);
+
+-- Números capturados POR MES (period = 'YYYY-MM')
+CREATE TABLE IF NOT EXISTS public.supplier_periods (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  supplier_id uuid NOT NULL REFERENCES public.suppliers(id) ON DELETE CASCADE,
+  period text NOT NULL CHECK (period ~ '^\d{4}-\d{2}$'),
+  items_sold int NOT NULL DEFAULT 0 CHECK (items_sold >= 0),
+  net_sales numeric(14,2) NOT NULL DEFAULT 0,
+  investment numeric(14,2) NOT NULL DEFAULT 0,
+  updated_at timestamptz DEFAULT now(),
+  UNIQUE (user_id, supplier_id, period)
+);
+ALTER TABLE public.supplier_periods ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "supplier_periods_all" ON public.supplier_periods
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE INDEX IF NOT EXISTS idx_supplier_periods_user ON public.supplier_periods(user_id, period);
+
+-- Umbral de margen del usuario (aditivo en profiles, default 30%)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS supplier_margin_min numeric DEFAULT 30;
+
+NOTIFY pgrst, 'reload schema';
+```
+
+## G.2 PASO 3 — Frontend (página nueva `page-proveedores`, 3 toques al router)
+
+- Sidebar grupo Finanzas, icono `package` · `titles['proveedores']='Proveedores'` · branch `loadProveedores()`.
+- **Header:** selector de mes (patrón navPnlMes de Fase C) + toggle `Mes | Año` + input "Margen mínimo: [30]%" (guarda en `profiles.supplier_margin_min`, recalcula etiquetas al vuelo) + botón "+ Proveedor".
+- **Dashboard (4 cards):** Mejor proveedor (mayor margen con ventas>0) · Mayor ganancia $ · Inversión total · Margen promedio ponderado (Σganancia/Σventas). Vacías → "—".
+- **Tabla editable** (contenedor `overflow-x:auto` para móvil): columnas Proveedor · Artículos · Ventas netas · Inversión · Ganancia · Margen · Gan./art. · Venta/art. · ¿Rentable?
+  - Las 3 columnas de captura son `<input>` inline (teclado numérico); al perder foco o Enter → UPSERT a `supplier_periods` del mes visible (onConflict `user_id,supplier_id,period`) + recálculo instantáneo de la fila y los cards. Sin botón "guardar".
+  - Derivadas en gris `tabular-nums`; división entre 0 → "—" (jamás NaN/Infinity).
+  - Etiqueta: `Rentable` (badge `--money-in`) · `Margen bajo` (badge warn) · `No rentable` (texto `--state-err`) — sin semáforos chillones (sistema Calma).
+  - Fila TOTAL al pie (sumas y margen ponderado global).
+  - Vista "Año": agrega los 12 meses por proveedor; celdas de captura se vuelven solo-lectura (se captura en la vista mensual).
+  - Menú por fila: Renombrar · Notas · Eliminar (soft: `is_active=false`; conserva histórico).
+- **Empty state:** "Agrega tu primer proveedor y captura 3 números — Horizen calcula el resto."
+- Funciones JS nuevas (bloque `// ===== PROVEEDORES =====`): `loadProveedores()`, `renderProvTable()`, `provCalc(row)`, `provCellSave(supplierId, campo, valor)`, `addProveedor()`, `renameProveedor(id)`, `delProveedor(id)`, `provSetMargen(v)`, `navProvMes(dir)`, `provToggleAnual()`.
+
+## G.3 Microcopy
+
+- Vacío: "Agrega tu primer proveedor y captura 3 números — Horizen calcula el resto."
+- Tooltip margen mínimo: "Un proveedor es rentable si su margen es igual o mayor a este porcentaje."
+- Badges: "Rentable" / "Margen bajo" / "No rentable" / sin datos del mes: "Sin datos este mes".
+- Nota al pie: "Ganancia bruta sobre lo capturado. En la siguiente versión, Horizen cruzará la inversión contra tus movimientos del banco."
+
+## G.4 Qué NO hacer en v1 (Fase G)
+
+- ❌ Cruce con transacciones del banco (v2: `transactions.supplier_id` + botón "Asignar proveedor" + comparación inversión capturada vs real).
+- ❌ Columnas personalizadas tipo Notion (v3, y solo si clientes lo piden: tipos acotados número/texto/sí-no).
+- ❌ Export PDF/Excel, fotos de productos, moneda extranjera, costos de importación/aranceles, inventario.
+- ❌ Guardar columnas calculadas en la BD.
+
+## G.5 Checklist de verificación
+
+1. SQL corre sin errores; tablas con RLS visibles.
+2. Crear 2 proveedores; capturar en junio: A = 20 art / $10,000 / $4,000 → ganancia $6,000, margen 60%, $300/art, $500/art, "Rentable". B = 5 art / $2,000 / $1,900 → margen 5% → "Margen bajo".
+3. Bajar el margen mínimo a 4% → B pasa a "Rentable" sin recargar.
+4. Proveedor con inversión > ventas → "No rentable" con ganancia negativa bien mostrada (formato `−$X` ink, no rojo semáforo).
+5. Artículos = 0 → por-artículo muestra "—" (no Infinity).
+6. Cambiar de mes → celdas vacías del mes nuevo; vista Año suma correcto.
+7. Editar una celda y recargar la página → el dato persiste (upsert correcto).
+8. Eliminar proveedor → desaparece de la tabla pero su histórico sigue en BD (`is_active=false`).
+9. Móvil: la tabla hace scroll horizontal dentro de su contenedor, la página no.
+10. Regresión: Resumen, Gastos fijos y Estado de Resultados intactos.
 
 ---
 
