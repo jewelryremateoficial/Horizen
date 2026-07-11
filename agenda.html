@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda tu cita</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--p:#635bff;--p-soft:rgba(99,91,255,.08);--p-border:rgba(99,91,255,.25);--ink:#171a36;--muted:#5b6172;--line:#e7e9f0;--err:#be3449;--ok:#1e7a4f}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;background:#f7f8fb;color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:1.2rem}
+  .top{width:100%;max-width:440px;height:6px;border-radius:999px;margin-bottom:1.2rem;background:linear-gradient(90deg,#ffb668,#ff6f9e 30%,#b47aff 60%,#5f6bff 85%,#19c8ff)}
+  .card{width:100%;max-width:440px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:1.6rem;box-shadow:0 10px 30px -12px rgba(23,26,54,.12)}
+  h1{font-size:1.25rem;letter-spacing:-.02em;margin-bottom:.25rem}
+  .sub{color:var(--muted);font-size:.9rem;margin-bottom:1.2rem}
+  .lbl{font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:1rem 0 .5rem}
+  .cal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem}
+  .cal-hdr b{font-size:.95rem}
+  .cal-nav{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:1rem;color:var(--ink)}
+  .cal-nav:disabled{opacity:.35;cursor:default}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+  .cal .dw{font-size:.68rem;font-weight:700;color:var(--muted);padding:.3rem 0}
+  .cal button{aspect-ratio:1;border-radius:10px;border:1px solid transparent;background:none;font:inherit;font-size:.88rem;color:var(--ink);cursor:pointer}
+  .cal button:not(:disabled):hover{background:var(--p-soft)}
+  .cal button.hab{background:var(--p-soft);border-color:var(--p-border);color:var(--p);font-weight:600}
+  .cal button.sel{background:var(--p);color:#fff;font-weight:700}
+  .cal button:disabled{color:#c3c8d4;cursor:default;background:none;border-color:transparent}
+  .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+  .slots button{padding:.65rem .4rem;border-radius:999px;border:1px solid var(--line);background:#fff;font:inherit;font-weight:600;font-size:.9rem;cursor:pointer;font-variant-numeric:tabular-nums}
+  .slots button:hover{border-color:var(--p);color:var(--p)}
+  .inp{width:100%;border:1px solid var(--line);border-radius:12px;padding:.85rem 1rem;font:inherit;font-size:1rem;margin-bottom:.8rem}
+  .inp:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px var(--p-soft)}
+  .btn{width:100%;padding:.95rem;border-radius:999px;border:none;background:var(--p);color:#fff;font:inherit;font-weight:700;font-size:1rem;cursor:pointer}
+  .btn:hover{filter:brightness(1.06)}
+  .btn:disabled{opacity:.6;cursor:default}
+  .btn-back{background:none;border:none;color:var(--p);font:inherit;font-weight:600;font-size:.88rem;cursor:pointer;padding:0;margin-bottom:1rem}
+  .aviso{font-size:.85rem;color:var(--muted);text-align:center;padding:1rem 0}
+  .error-msg{background:#fdf1f3;color:var(--err);border:1px solid rgba(190,52,73,.2);border-radius:12px;padding:.7rem 1rem;font-size:.86rem;margin-bottom:.8rem;display:none}
+  .done-ico{width:56px;height:56px;border-radius:50%;background:rgba(30,122,79,.1);color:var(--ok);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.6rem;font-weight:800}
+  .cancel-box{background:#f7f8fb;border:1px dashed var(--line);border-radius:12px;padding:.8rem;font-size:.78rem;color:var(--muted);word-break:break-all;margin-top:1rem}
+  footer{margin-top:1.4rem;font-size:.8rem;color:var(--muted)}
+  footer a{color:var(--p);font-weight:600;text-decoration:none}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="top"></div>
+
+<div class="card" id="scrLoad"><div class="aviso">Cargando agenda…</div></div>
+
+<div class="card hidden" id="scrErr">
+  <h1>Esta agenda no existe</h1>
+  <p class="sub">Revisa el link o pide uno nuevo al negocio.</p>
+</div>
+
+<div class="card hidden" id="scrCancel">
+  <h1>Cancelar tu cita</h1>
+  <p class="sub">¿Seguro que quieres cancelar tu cita?</p>
+  <button class="btn" id="btnCancelar" onclick="doCancel()">Sí, cancelar mi cita</button>
+  <div class="aviso hidden" id="cancelDone">Tu cita quedó cancelada. ¡Agenda otra cuando quieras!</div>
+</div>
+
+<div class="card hidden" id="scrBook">
+  <h1 id="bizName">—</h1>
+  <p class="sub" id="bizSub">Agenda tu cita en menos de un minuto</p>
+
+  <div id="stepDia">
+    <div class="lbl">Elige el día</div>
+    <div class="cal-hdr">
+      <button class="cal-nav" id="calPrev" onclick="navMes(-1)">‹</button>
+      <b id="calMesLbl">—</b>
+      <button class="cal-nav" id="calNext" onclick="navMes(1)">›</button>
+    </div>
+    <div class="cal" id="calGrid"></div>
+  </div>
+
+  <div id="stepHora" class="hidden">
+    <button class="btn-back" onclick="volverDia()">← Cambiar día</button>
+    <div class="lbl" id="horaLbl">Elige la hora</div>
+    <div class="error-msg" id="horaErr"></div>
+    <div class="slots" id="slotGrid"></div>
+    <div class="aviso hidden" id="sinSlots">No hay horarios este día — prueba otro.</div>
+  </div>
+
+  <div id="stepDatos" class="hidden">
+    <button class="btn-back" onclick="volverHora()">← Cambiar hora</button>
+    <div class="lbl" id="datosLbl">Tus datos</div>
+    <div class="error-msg" id="datosErr"></div>
+    <input class="inp" id="inpNombre" placeholder="¿A nombre de quién?" maxlength="60">
+    <input class="inp" id="inpCel" inputmode="numeric" maxlength="10" placeholder="Tu celular (10 dígitos)">
+    <button class="btn" id="btnConfirmar" onclick="submitBooking()">Confirmar cita</button>
+  </div>
+
+  <div id="stepDone" class="hidden">
+    <div class="done-ico">✓</div>
+    <h1 style="text-align:center" id="doneTtl">¡Listo!</h1>
+    <p class="sub" style="text-align:center" id="doneSub">—</p>
+    <div class="cancel-box">Si necesitas cancelar, guarda este link:<br><span id="cancelLink">—</span></div>
+    <button class="btn" style="margin-top:1rem;background:#fff;color:var(--p);border:1px solid var(--p-border)" onclick="copyCancel()">Copiar link de cancelación</button>
+  </div>
+</div>
+
+<footer>Agenda creada con <a href="https://horizen.com.mx" target="_blank" rel="noopener">Horizen</a> · horizen.com.mx</footer>
+
+<script>
+const SUPABASE_URL = 'https://upcbznfkpswtxiffgsgj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_2rL4lnWnN_6c3h2KMRt8TA_yz2Bb8yZ';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } });
+
+const TZ = 'America/Mexico_City';
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const params = new URLSearchParams(location.search);
+const SLUG = (params.get('u') || '').toLowerCase();
+const CANCEL_TOKEN = params.get('cancel');
+
+let _page = null, _calY, _calM, _selDate = null, _selSlot = null;
+
+// "Hoy" en zona horaria de México, sin importar dónde esté el visitante
+function hoyMX() {
+  const s = new Date().toLocaleDateString('en-CA', { timeZone: TZ });   // YYYY-MM-DD
+  return s;
+}
+const dstr = (y, m, d) => y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+const show = id => document.getElementById(id).classList.remove('hidden');
+const hide = id => document.getElementById(id).classList.add('hidden');
+
+async function initAgenda() {
+  if (CANCEL_TOKEN) { hide('scrLoad'); show('scrCancel'); return; }
+  if (!SLUG) { hide('scrLoad'); show('scrErr'); return; }
+  try {
+    const { data, error } = await db.rpc('get_public_page', { p_slug: SLUG });
+    if (error || !data) throw new Error('no_page');
+    _page = data;
+    document.getElementById('bizName').textContent = 'Agenda tu cita con ' + _page.business_name;
+    document.getElementById('bizSub').textContent = 'Citas de ' + _page.slot_minutes + ' minutos · elige día y hora';
+    const hoy = hoyMX().split('-').map(Number);
+    _calY = hoy[0]; _calM = hoy[1] - 1;
+    renderMiniCal();
+    hide('scrLoad'); show('scrBook');
+  } catch (e) { hide('scrLoad'); show('scrErr'); }
+}
+
+function renderMiniCal() {
+  document.getElementById('calMesLbl').textContent = MESES[_calM] + ' ' + _calY;
+  const hoy = hoyMX();
+  const [hy, hm] = hoy.split('-').map(Number);
+  const lim = new Date(new Date(hoy + 'T12:00:00').getTime() + _page.max_days_ahead * 86400000)
+    .toISOString().slice(0, 10);
+  document.getElementById('calPrev').disabled = (_calY < hy || (_calY === hy && _calM <= hm - 1));
+  document.getElementById('calNext').disabled = (dstr(_calY, _calM + 1, 1) > lim);
+
+  const dias = ['L','M','M','J','V','S','D'];
+  let html = dias.map(d => `<div class="dw">${d}</div>`).join('');
+  const primero = new Date(_calY, _calM, 1);
+  const offset = (primero.getDay() + 6) % 7;   // lunes primero
+  const nDias = new Date(_calY, _calM + 1, 0).getDate();
+  for (let i = 0; i < offset; i++) html += '<div></div>';
+  for (let d = 1; d <= nDias; d++) {
+    const f = dstr(_calY, _calM, d);
+    const dow = new Date(_calY, _calM, d).getDay();
+    const habil = f >= hoy && f <= lim && (_page.days || []).includes(dow);
+    html += `<button ${habil ? '' : 'disabled'} class="${habil ? 'hab' : ''}${f === _selDate ? ' sel' : ''}" onclick="pickDia('${f}')">${d}</button>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function navMes(dir) {
+  _calM += dir;
+  if (_calM < 0) { _calM = 11; _calY--; }
+  if (_calM > 11) { _calM = 0; _calY++; }
+  renderMiniCal();
+}
+
+async function pickDia(f) {
+  _selDate = f;
+  renderMiniCal();
+  hide('stepDia'); show('stepHora');
+  document.getElementById('horaErr').style.display = 'none';
+  hide('sinSlots');
+  const lbl = new Date(f + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ });
+  document.getElementById('horaLbl').textContent = 'Horarios del ' + lbl;
+  const grid = document.getElementById('slotGrid');
+  grid.innerHTML = '<div class="aviso" style="grid-column:1/-1">Buscando horarios…</div>';
+  const { data, error } = await db.rpc('get_available_slots', { p_slug: SLUG, p_date: f });
+  if (error) { grid.innerHTML = ''; show('sinSlots'); return; }
+  const slots = (data || []).map(r => r.slot_start);
+  if (!slots.length) { grid.innerHTML = ''; show('sinSlots'); return; }
+  grid.innerHTML = slots.map(s => {
+    const h = new Date(s).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: TZ });
+    return `<button onclick="pickHora('${s}','${h}')">${h}</button>`;
+  }).join('');
+}
+
+function volverDia() { hide('stepHora'); hide('stepDatos'); show('stepDia'); }
+function volverHora() { hide('stepDatos'); show('stepHora'); }
+
+function pickHora(iso, hh) {
+  _selSlot = iso;
+  hide('stepHora'); show('stepDatos');
+  document.getElementById('datosErr').style.display = 'none';
+  const lbl = new Date(_selDate + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ });
+  document.getElementById('datosLbl').textContent = lbl + ' · ' + hh + ' — tus datos';
+}
+
+async function submitBooking() {
+  const err = document.getElementById('datosErr');
+  const nombre = document.getElementById('inpNombre').value.trim();
+  const cel = document.getElementById('inpCel').value.replace(/\D/g, '');
+  err.style.display = 'none';
+  if (nombre.length < 2) { err.textContent = 'Escribe tu nombre'; err.style.display = 'block'; return; }
+  if (!/^\d{10}$/.test(cel)) { err.textContent = 'Tu celular debe tener 10 dígitos'; err.style.display = 'block'; return; }
+  const btn = document.getElementById('btnConfirmar');
+  btn.disabled = true; btn.textContent = 'Confirmando…';
+  const { data, error } = await db.rpc('create_appointment', { p_slug: SLUG, p_starts_at: _selSlot, p_name: nombre, p_phone: cel });
+  btn.disabled = false; btn.textContent = 'Confirmar cita';
+  if (error || !data) { err.textContent = 'Algo falló — intenta de nuevo'; err.style.display = 'block'; return; }
+  if (!data.ok) {
+    if (data.error === 'slot_no_disponible') {
+      const he = document.getElementById('horaErr');
+      he.textContent = 'Esa hora se acaba de ocupar 😅 Elige otra.';
+      he.style.display = 'block';
+      hide('stepDatos'); show('stepHora');
+      pickDia(_selDate);   // refresca slots
+      setTimeout(() => { he.style.display = 'block'; }, 400);
+    } else if (data.error === 'limite_telefono') {
+      err.textContent = 'Ya tienes 3 citas próximas con este número. Cancela alguna para agendar otra.';
+      err.style.display = 'block';
+    } else {
+      err.textContent = 'Revisa tus datos e intenta de nuevo';
+      err.style.display = 'block';
+    }
+    return;
+  }
+  showConfirmation(data, nombre);
+}
+
+function showConfirmation(r, nombre) {
+  hide('stepDatos');
+  const f = new Date(r.starts_at);
+  const fecha = f.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ });
+  const hora = f.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: TZ });
+  document.getElementById('doneTtl').textContent = `¡Listo, ${nombre.split(' ')[0]}!`;
+  document.getElementById('doneSub').textContent = `Tu cita: ${fecha}, ${hora} — ${r.business_name}.`;
+  const link = location.origin + '/agenda.html?cancel=' + r.cancel_token;
+  document.getElementById('cancelLink').textContent = link;
+  window._cancelLink = link;
+  show('stepDone');
+}
+
+function copyCancel() {
+  navigator.clipboard.writeText(window._cancelLink || '').then(() => alert('Link copiado ✓')).catch(() => {});
+}
+
+async function doCancel() {
+  const btn = document.getElementById('btnCancelar');
+  btn.disabled = true;
+  const { data, error } = await db.rpc('cancel_appointment', { p_token: CANCEL_TOKEN });
+  if (!error && data && data.ok) {
+    btn.style.display = 'none';
+    show('cancelDone');
+  } else {
+    btn.disabled = false;
+    alert('No se pudo cancelar (quizá la cita ya pasó o ya estaba cancelada).');
+  }
+}
+
+initAgenda();
+</script>
+</body>
+</html>

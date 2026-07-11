@@ -567,6 +567,7 @@ select.mod-inp{cursor:pointer}
 
     <div class="nav-lbl">Operación</div>
     <button class="ni" onclick="showPage('clientes')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Clientes</button>
+    <button class="ni" onclick="showPage('citas')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h5"/><circle cx="16" cy="16" r="6"/><path d="M16 14v2l1 1"/></svg></span>Citas</button>
 
     <div class="nav-lbl">Inteligencia</div>
     <button class="ni" onclick="showPage('resultados')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18v-1"/><path d="M12 18v-6"/><path d="M16 18v-3"/></svg></span>Estado de Resultados</button>
@@ -854,6 +855,44 @@ select.mod-inp{cursor:pointer}
 
     <!-- Vista 2: ficha (se muestra/oculta con JS, sin tocar el router) -->
     <div id="cliFichaView" style="display:none"></div>
+  </div>
+
+  <!-- ══ CITAS (Fase E) ══ -->
+  <div class="page" id="page-citas">
+    <style>
+      #page-citas .cit-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;align-items:start}
+      #page-citas .hor-row{display:flex;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+      #page-citas .hor-row:last-child{border-bottom:none}
+      #page-citas .hor-dia{width:44px;font-weight:700;font-size:.85rem;color:var(--ink)}
+      #page-citas .hor-rango{display:inline-flex;align-items:center;gap:.3rem}
+      #page-citas .hor-rango input{border:1px solid var(--line);border-radius:8px;padding:.3rem .4rem;font:inherit;font-size:.85rem;color:var(--ink)}
+      #page-citas .cit-row{display:flex;align-items:center;gap:.8rem;padding:.65rem 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+      #page-citas .cit-row:last-child{border-bottom:none}
+      #page-citas .cit-fecha{min-width:120px;font-variant-numeric:tabular-nums;font-weight:700;color:var(--p);font-size:.85rem}
+      #page-citas .link-box{display:flex;align-items:center;gap:.5rem;background:var(--p-soft);border:1px solid var(--p-border);border-radius:10px;padding:.6rem .8rem;font-size:.85rem;color:var(--p);font-weight:600;word-break:break-all;margin:.8rem 0}
+      @media(max-width:1080px){#page-citas .cit-grid{grid-template-columns:1fr}}
+    </style>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.2rem;gap:1rem;flex-wrap:wrap">
+      <div>
+        <div class="t-page">Citas</div>
+        <div class="t-sub" style="margin-top:.25rem">Comparte tu link y tus clientes agendan solos — sin ping-pong de "¿te queda el martes?"</div>
+      </div>
+      <button class="tb-btn tb-primary" id="btnCitaManual" onclick="openCitaManual()" style="display:none"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Cita manual</button>
+    </div>
+    <div class="cit-grid">
+      <div>
+        <div class="card" style="margin-bottom:1.2rem" id="citSetupCard"><div class="sk" style="height:80px;border-radius:10px"></div></div>
+        <div class="card" id="citHorarioCard" style="display:none">
+          <div class="card-hdr"><div class="card-ttl">Mi horario</div><button class="tb-btn tb-primary" id="horSaveBtn" onclick="saveHorario()">Guardar horario</button></div>
+          <div class="t-meta" style="margin-bottom:.6rem">Marca los días que atiendes y sus rangos. Puedes partir el día (ej. 9-14 y 16-19).</div>
+          <div id="horEditor"></div>
+        </div>
+      </div>
+      <div class="card" id="citProxCard" style="display:none">
+        <div class="card-hdr"><div class="card-ttl">Próximas citas</div></div>
+        <div id="citLista"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ══ PROVEEDORES (Fase G) ══ -->
@@ -1743,6 +1782,23 @@ select.mod-inp{cursor:pointer}
   </div>
 </div>
 
+<!-- Fase E: cita manual -->
+<div class="overlay" id="citaManualModal">
+  <div class="modal">
+    <div class="modal-ttl">Nueva cita manual</div>
+    <div class="fg"><label class="flbl">Nombre</label><input class="finp" id="cmNombre" placeholder="Ej. María López"></div>
+    <div class="fg"><label class="flbl">Celular (10 dígitos)</label><input class="finp" id="cmCel" inputmode="numeric" maxlength="10" placeholder="5512345678"></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Fecha</label><input class="finp" id="cmFecha" type="date"></div>
+      <div class="fg"><label class="flbl">Hora</label><input class="finp" id="cmHora" type="time" step="900"></div>
+    </div>
+    <div class="mod-footer">
+      <button class="btn-cancel" onclick="closeModal('citaManualModal')">Cancelar</button>
+      <button class="btn-save" id="cmSaveBtn" onclick="saveCitaManual()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Fase G v2: vincular pagos del banco a un proveedor -->
 <div class="overlay" id="provLinkModal">
   <div class="mod" style="max-width:620px">
@@ -1982,6 +2038,7 @@ function showPage(id) {
     resultados:   ['Estado de resultados', '— Base efectivo · reporte gerencial'],
     proveedores:  ['Proveedores', '— Rentabilidad por proveedor'],
     clientes:     ['Clientes', '— Tu libreta de clientes, con la cuenta clara'],
+    citas:        ['Citas', '— Tu link público para que agenden solos'],
     referidos:    ['Mi red · Referidos', '— Invita y gana cada mes']
   };
   const t = titles[id] || [id, ''];
@@ -2002,6 +2059,7 @@ function showPage(id) {
   if (id === 'resultados')   loadResultados();
   if (id === 'proveedores')  loadProveedores();
   if (id === 'clientes')     loadClientes();
+  if (id === 'citas')        loadCitas();
   if (id === 'overview')     renderInicio();
   if (id === 'referidos')    loadReferidos();
 }
@@ -4000,10 +4058,14 @@ async function loadCalendario() {
   document.getElementById('calGrid').innerHTML =
     Array.from({length:35}).map(() => '<div class="cal-cell sk" style="min-height:85px"></div>').join('');
 
-  const [txRes, incRes, expRes] = await Promise.all([
+  const [txRes, incRes, expRes, apptRes] = await Promise.all([
     db.from('transactions').select('*').eq('user_id', _user.id).gte('date', firstStr).lte('date', lastStr).order('date'),
     db.from('income_sources').select('*').eq('user_id', _user.id).eq('is_active', true),
     db.from('fixed_expenses').select('*').eq('user_id', _user.id).eq('is_active', true),
+    // Fase E: citas del mes (capa visual; con 1 día de margen por zona horaria)
+    db.from('appointments').select('id,customer_name,starts_at,status')
+      .eq('user_id', _user.id).eq('status', 'confirmada')
+      .gte('starts_at', firstStr + 'T00:00:00-07').lte('starts_at', lastStr + 'T23:59:59-05'),
   ]);
 
   _calTxData = txRes.data || [];
@@ -4011,8 +4073,20 @@ async function loadCalendario() {
   // Inicializar días
   _calDayData = {};
   for (let d = 1; d <= lastDay; d++) {
-    _calDayData[d] = { ingresos: [], egresos: [], totalIn: 0, totalOut: 0 };
+    _calDayData[d] = { ingresos: [], egresos: [], totalIn: 0, totalOut: 0, citas: [] };
   }
+
+  // Fase E: citas confirmadas → su día en hora de México (NO tocan los totales de dinero)
+  (apptRes && !apptRes.error ? apptRes.data || [] : []).forEach(a => {
+    const fmx = new Date(a.starts_at).toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });
+    const [ay, am, ad] = fmx.split('-').map(Number);
+    if (ay === year && am === month + 1 && _calDayData[ad]) {
+      _calDayData[ad].citas.push({
+        nombre: a.customer_name,
+        hora: new Date(a.starts_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Mexico_City' }),
+      });
+    }
+  });
 
   // Transacciones reales
   _calTxData.forEach(tx => {
@@ -4080,7 +4154,7 @@ function renderCalMes(year, month, lastDay) {
     if (dd.totalIn > 0 || dd.totalOut > 0) cls += net >= 0 ? ' green' : ' red';
 
     html += `<div class="${cls}" onclick="showCalDay(${d})">
-      <div class="cal-day-num">${d}</div>
+      <div class="cal-day-num">${d}${dd.citas && dd.citas.length ? ' <span title="Citas agendadas" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--p);vertical-align:middle"></span>' : ''}</div>
       ${dd.totalIn > 0 || dd.totalOut > 0 ? `
         <div class="cal-day-in">+${fmt(dd.totalIn)}</div>
         <div class="cal-day-out">−${fmt(dd.totalOut)}</div>
@@ -4133,7 +4207,18 @@ function showCalDay(day) {
     });
   }
 
-  if (!dd.ingresos.length && !dd.egresos.length) {
+  // Fase E: citas del día (capa visual)
+  if (dd.citas && dd.citas.length) {
+    html += `<div class="cal-section-lbl" style="color:var(--p);margin-top:.85rem">◆ Citas</div>`;
+    dd.citas.forEach(c => {
+      html += `<div class="cal-item-row">
+        <div><div class="cal-item-desc">${_escHtml(c.nombre)}</div><div class="cal-item-sub">Cita agendada</div></div>
+        <span class="t-num-sm" style="color:var(--p)">${c.hora}</span>
+      </div>`;
+    });
+  }
+
+  if (!dd.ingresos.length && !dd.egresos.length && !(dd.citas && dd.citas.length)) {
     html = `<div style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">Sin movimientos este día</div>`;
   }
 
@@ -5616,6 +5701,243 @@ function waSend(i) {
   const msg = WA_TEMPLATES[i].msg(window._waDatos || {});
   closeModal('waModal');
   window.open('https://wa.me/52' + _cliPhoneNorm(c.phone) + (msg ? '?text=' + encodeURIComponent(msg) : ''), '_blank');
+}
+
+// ===== CITAS ===== (Fase E — link público tipo Calendly)
+// El público reserva vía RPCs; aquí el dueño configura y opera su agenda.
+
+let _citPage = null, _citRules = [], _citAppts = [];
+const _CIT_DIAS = [[1,'Lun'],[2,'Mar'],[3,'Mié'],[4,'Jue'],[5,'Vie'],[6,'Sáb'],[0,'Dom']];
+const _citSlug = s => String(s || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 40);
+const _citFechaTxt = iso => new Date(iso).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'America/Mexico_City' });
+const _citHoraTxt = iso => new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Mexico_City' });
+
+async function loadCitas() {
+  if (!_user) return;
+  try {
+    const [pgRes, ruRes] = await Promise.all([
+      db.from('booking_pages').select('*').eq('user_id', _user.id).maybeSingle(),
+      db.from('availability_rules').select('*').eq('user_id', _user.id).order('day_of_week').order('start_time'),
+    ]);
+    _citPage = pgRes.data || null;
+    _citRules = ruRes.error ? [] : (ruRes.data || []);
+    renderCitSetup();
+    renderHorarioEditor();
+    document.getElementById('citHorarioCard').style.display = _citPage ? '' : 'none';
+    document.getElementById('citProxCard').style.display = _citPage ? '' : 'none';
+    document.getElementById('btnCitaManual').style.display = _citPage ? '' : 'none';
+    if (_citPage) await loadProximasCitas();
+  } catch (e) {
+    console.error('loadCitas:', e);
+    document.getElementById('citSetupCard').innerHTML = `<div class="t-meta">Error al cargar: ${_escHtml(e.message || 'error')}</div>`;
+  }
+}
+
+function renderCitSetup() {
+  const box = document.getElementById('citSetupCard');
+  const p = _citPage;
+  const form = `
+    <div class="fg"><label class="flbl">Nombre de tu negocio</label><input class="finp" id="bpName" value="${p ? _escHtml(p.business_name) : ''}" placeholder="Ej. Joyería López"></div>
+    <div class="fg"><label class="flbl">Tu link (solo letras, números y guiones)</label>
+      <input class="finp" id="bpSlug" value="${p ? _escHtml(p.slug) : ''}" placeholder="joyeria-lopez" oninput="this.value=_citSlug(this.value)"></div>
+    <div class="frow">
+      <div class="fg"><label class="flbl">Duración de cada cita</label>
+        <select class="fsel" id="bpSlot">${[15,30,45,60].map(m => `<option value="${m}" ${p && p.slot_minutes === m ? 'selected' : m === 30 && !p ? 'selected' : ''}>${m} minutos</option>`).join('')}</select></div>
+      <div class="fg"><label class="flbl">Aviso mínimo</label>
+        <select class="fsel" id="bpNotice">${[[0,'Sin aviso'],[2,'2 horas'],[4,'4 horas'],[12,'12 horas'],[24,'1 día']].map(([h,t]) => `<option value="${h}" ${p && p.min_notice_hours === h ? 'selected' : h === 4 && !p ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+    </div>
+    <button class="btn-save" id="bpSaveBtn" onclick="saveBookingPage()">${p ? 'Guardar cambios' : 'Crear mi link de citas'}</button>`;
+
+  if (!p) {
+    box.innerHTML = `<div class="card-ttl" style="margin-bottom:.35rem">Crea tu link de citas</div>
+      <div class="t-meta" style="margin-bottom:1rem">Compártelo por WhatsApp o ponlo en tu bio de Instagram. Tus clientes eligen día y hora solos — sin cuenta, sin apps.</div>${form}`;
+  } else {
+    const url = `https://horizen.com.mx/agenda.html?u=${p.slug}`;
+    box.innerHTML = `<div class="card-ttl" style="margin-bottom:.35rem">Mi link de citas</div>
+      <div class="link-box"><span style="flex:1">${url}</span></div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem">
+        <button class="tb-btn tb-primary" onclick="copyAgendaLink()">Copiar link</button>
+        <button class="tb-btn" style="background:#25D366;color:#fff;border-color:#25D366" onclick="shareAgendaWA()">Compartir por WhatsApp</button>
+        <a class="tb-btn" href="${url}" target="_blank" rel="noopener" style="text-decoration:none">Ver mi página</a>
+      </div>
+      <button type="button" onclick="const c=document.getElementById('bpConf');c.style.display=c.style.display==='none'?'':'none'" style="background:none;border:none;color:var(--p);font-weight:600;font-size:.85rem;cursor:pointer;padding:0">Editar configuración ▾</button>
+      <div id="bpConf" style="display:none;margin-top:.8rem">${form}</div>`;
+  }
+}
+
+async function saveBookingPage() {
+  const name = document.getElementById('bpName').value.trim();
+  const slug = _citSlug(document.getElementById('bpSlug').value);
+  if (!name) { toast('Ponle nombre a tu negocio', 'error'); return; }
+  if (!/^[a-z0-9][a-z0-9-]{2,39}$/.test(slug)) { toast('El link debe tener al menos 3 caracteres (letras, números o guiones)', 'error'); return; }
+  const btn = document.getElementById('bpSaveBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const payload = {
+    user_id: _user.id, business_name: name, slug,
+    slot_minutes: parseInt(document.getElementById('bpSlot').value),
+    min_notice_hours: parseInt(document.getElementById('bpNotice').value),
+  };
+  const { error } = await db.from('booking_pages').upsert(payload, { onConflict: 'user_id' });
+  btn.disabled = false; btn.textContent = 'Guardar';
+  if (error) {
+    toast(error.code === '23505' ? 'Ese link ya está ocupado — prueba otro (ej. ' + slug + '-mx)' : 'Error: ' + error.message, 'error');
+    return;
+  }
+  toast('Link de citas listo ✓', 'ok');
+  loadCitas();
+}
+
+function copyAgendaLink() {
+  if (!_citPage) return;
+  navigator.clipboard.writeText(`https://horizen.com.mx/agenda.html?u=${_citPage.slug}`)
+    .then(() => toast('Link copiado ✓', 'ok')).catch(() => {});
+}
+function shareAgendaWA() {
+  if (!_citPage) return;
+  const msg = `Agenda tu cita conmigo aquí 👇\nhttps://horizen.com.mx/agenda.html?u=${_citPage.slug}`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+// ── Editor de horario semanal ──
+function _horRangoHTML(ini, fin) {
+  return `<span class="hor-rango"><input type="time" value="${ini}"> <span class="t-meta">a</span> <input type="time" value="${fin}">
+    <button class="prov-x" title="Quitar rango" onclick="this.parentElement.remove()">✕</button></span>`;
+}
+
+function renderHorarioEditor() {
+  const box = document.getElementById('horEditor'); if (!box) return;
+  box.innerHTML = _CIT_DIAS.map(([dow, lbl]) => {
+    const reglas = _citRules.filter(r => r.day_of_week === dow);
+    const rangos = reglas.map(r => _horRangoHTML(String(r.start_time).slice(0, 5), String(r.end_time).slice(0, 5))).join('');
+    return `<div class="hor-row" data-dow="${dow}">
+      <input type="checkbox" class="hor-on" ${reglas.length ? 'checked' : ''} onchange="toggleHorDia(this)">
+      <span class="hor-dia">${lbl}</span>
+      <span class="hor-rangos" style="display:flex;gap:.6rem;flex-wrap:wrap;flex:1">${rangos}</span>
+      <button class="prov-x" title="Agregar rango (horario partido)" onclick="addHorRango(${dow})">+ rango</button>
+    </div>`;
+  }).join('');
+}
+
+function toggleHorDia(chk) {
+  const row = chk.closest('.hor-row');
+  const cont = row.querySelector('.hor-rangos');
+  if (chk.checked && !cont.children.length) cont.insertAdjacentHTML('beforeend', _horRangoHTML('10:00', '19:00'));
+  if (!chk.checked) cont.innerHTML = '';
+}
+
+function addHorRango(dow) {
+  const row = document.querySelector(`#horEditor .hor-row[data-dow="${dow}"]`);
+  row.querySelector('.hor-on').checked = true;
+  row.querySelector('.hor-rangos').insertAdjacentHTML('beforeend', _horRangoHTML('16:00', '19:00'));
+}
+
+async function saveHorario() {
+  const filas = [];
+  for (const row of document.querySelectorAll('#horEditor .hor-row')) {
+    if (!row.querySelector('.hor-on').checked) continue;
+    const dow = parseInt(row.dataset.dow);
+    for (const rg of row.querySelectorAll('.hor-rango')) {
+      const [ini, fin] = [...rg.querySelectorAll('input')].map(i => i.value);
+      if (!ini || !fin) continue;
+      if (fin <= ini) { toast('Revisa tus horas: el fin debe ser después del inicio', 'error'); return; }
+      filas.push({ user_id: _user.id, day_of_week: dow, start_time: ini, end_time: fin });
+    }
+  }
+  const btn = document.getElementById('horSaveBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const del = await db.from('availability_rules').delete().eq('user_id', _user.id);
+  let error = del.error;
+  if (!error && filas.length) ({ error } = await db.from('availability_rules').insert(filas));
+  btn.disabled = false; btn.textContent = 'Guardar horario';
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Horario guardado ✓', 'ok');
+  loadCitas();
+}
+
+// ── Próximas citas ──
+async function loadProximasCitas() {
+  const box = document.getElementById('citLista'); if (!box) return;
+  const desde = new Date(Date.now() - 7 * 86400000).toISOString();
+  const { data, error } = await db.from('appointments').select('*')
+    .eq('user_id', _user.id).eq('status', 'confirmada').gte('starts_at', desde)
+    .order('starts_at', { ascending: true }).limit(30);
+  if (error) { box.innerHTML = `<div class="t-meta">Error: ${_escHtml(error.message)}</div>`; return; }
+  _citAppts = data || [];
+  if (!_citAppts.length) {
+    box.innerHTML = '<div class="t-meta" style="padding:.5rem 0 1rem">Comparte tu link y aquí verás las citas que agenden tus clientes.</div>';
+    return;
+  }
+  box.innerHTML = _citAppts.map(a => {
+    const pasada = new Date(a.starts_at).getTime() < Date.now();
+    const waMsg = `Hola ${a.customer_name.split(' ')[0]} 👋 Te esperamos ${_citFechaTxt(a.starts_at)} a las ${_citHoraTxt(a.starts_at)}. Si necesitas mover tu cita, avísame por aquí.`;
+    return `<div class="cit-row">
+      <div class="cit-fecha">${_citFechaTxt(a.starts_at)} · ${_citHoraTxt(a.starts_at)}</div>
+      <div style="flex:1;min-width:140px">
+        <div style="font-weight:600;color:var(--ink)">${_escHtml(a.customer_name)}${a.origin === 'manual' ? ' <span class="t-meta">(manual)</span>' : ''}</div>
+        <div class="t-meta">${_escHtml(a.customer_phone)}${pasada ? ' · ya pasó' : ''}</div>
+      </div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+        <button class="cli-wa" title="Recordatorio por WhatsApp" onclick="window.open('https://wa.me/52${_escHtml(a.customer_phone)}?text=${encodeURIComponent(waMsg)}','_blank')"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></button>
+        <button class="tb-btn" onclick="marcarCitaHecha('${a.id}')">Se hizo ✓</button>
+        <button class="prov-x" title="Cancelar cita" onclick="cancelarCitaOwner('${a.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function marcarCitaHecha(id) {
+  const a = _citAppts.find(x => x.id === id); if (!a) return;
+  const { error } = await db.from('appointments').update({ status: 'hecha' }).eq('id', id).eq('user_id', _user.id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Cita marcada como hecha ✓', 'ok');
+  loadProximasCitas();
+  if (confirm('¿Registrar el cobro en efectivo?')) {
+    openCashModal('entrada', { concepto: 'Cita ' + a.customer_name });
+  }
+}
+
+async function cancelarCitaOwner(id) {
+  if (!confirm('¿Cancelar esta cita?')) return;
+  const { error } = await db.from('appointments').update({ status: 'cancelada' }).eq('id', id).eq('user_id', _user.id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast('Cita cancelada', 'ok');
+  loadProximasCitas();
+}
+
+// ── Cita manual (el dueño agenda por teléfono/mostrador) ──
+function openCitaManual() {
+  document.getElementById('cmNombre').value = '';
+  document.getElementById('cmCel').value = '';
+  document.getElementById('cmFecha').value = _cashHoy();
+  document.getElementById('cmHora').value = '';
+  openModal('citaManualModal');
+}
+
+async function saveCitaManual() {
+  const nombre = document.getElementById('cmNombre').value.trim();
+  const cel = document.getElementById('cmCel').value.replace(/\D/g, '');
+  const fecha = document.getElementById('cmFecha').value;
+  const hora = document.getElementById('cmHora').value;
+  if (nombre.length < 2) { toast('Escribe el nombre', 'error'); return; }
+  if (!/^\d{10}$/.test(cel)) { toast('El celular debe tener 10 dígitos', 'error'); return; }
+  if (!fecha || !hora) { toast('Elige fecha y hora', 'error'); return; }
+  const mins = _citPage ? _citPage.slot_minutes : 30;
+  const inicio = new Date(fecha + 'T' + hora);   // hora local del negocio (México)
+  const btn = document.getElementById('cmSaveBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  const { error } = await db.from('appointments').insert({
+    user_id: _user.id, customer_name: nombre, customer_phone: cel,
+    starts_at: inicio.toISOString(), ends_at: new Date(inicio.getTime() + mins * 60000).toISOString(),
+    origin: 'manual',
+  });
+  btn.disabled = false; btn.textContent = 'Guardar';
+  if (error) {
+    toast(error.code === '23P01' ? 'Ese horario se empalma con otra cita' : 'Error: ' + error.message, 'error');
+    return;
+  }
+  toast('Cita agendada ✓', 'ok');
+  closeModal('citaManualModal');
+  loadProximasCitas();
 }
 
 // ===== PROVEEDORES ===== (Fase G — rentabilidad por proveedor)
