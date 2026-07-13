@@ -1752,6 +1752,18 @@ select.mod-inp{cursor:pointer}
   </div>
 </div>
 
+<!-- Elegir alcance al editar movimientos idénticos (reemplaza el confirm feo del navegador) -->
+<div class="overlay" id="scopeModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-ttl">¿Aplicar el cambio a todas?</div>
+    <p id="scopeMsg" style="font-size:.9rem;color:var(--muted);line-height:1.55;margin:0 0 1.1rem"></p>
+    <div style="display:flex;flex-direction:column;gap:.55rem">
+      <button class="btn-save" id="scopeTodas" onclick="scopeAnswer(true)" style="width:100%">Aplicar a todas</button>
+      <button class="btn-cancel" onclick="scopeAnswer(false)" style="width:100%">Solo esta ocasión</button>
+    </div>
+  </div>
+</div>
+
 <!-- Fase D: alta/edición de cliente -->
 <div class="overlay" id="clienteModal">
   <div class="modal">
@@ -4905,6 +4917,23 @@ async function deleteCustomCat(name) {
   toast(`Categoría "${name}" eliminada`, 'success');
 }
 
+// Pregunta bonita (modal del sistema) para elegir alcance: todas o solo esta ocasión
+let _scopeResolve = null;
+function askAplicarTodas(nOtras, kwLbl, cambioLbl) {
+  return new Promise(res => {
+    _scopeResolve = res;
+    document.getElementById('scopeMsg').innerHTML =
+      `Hay <b>${nOtras}</b> movimiento${nOtras === 1 ? '' : 's'} más que dice${nOtras === 1 ? '' : 'n'} “<b>${_escHtml(kwLbl)}</b>”.<br>Si aplicas a todas, Horizen también lo recordará para tus próximos estados.`;
+    document.getElementById('scopeTodas').textContent = `Aplicar a todas (${nOtras + 1}) → ${cambioLbl}`;
+    openModal('scopeModal');
+  });
+}
+function scopeAnswer(todas) {
+  closeModal('scopeModal');
+  const r = _scopeResolve; _scopeResolve = null;
+  if (r) r(todas);
+}
+
 // Cambiar categoría en la revisión. Si hay VARIOS movimientos idénticos, el usuario
 // elige: cambiarlos todos (y recordar la regla) o solo este (sin regla).
 async function setCatLearn(id, value) {
@@ -4916,7 +4945,7 @@ async function setCatLearn(id, value) {
 
   let soloEsta = false;
   if (iguales.length > 1) {
-    soloEsta = !confirm(`Hay ${iguales.length - 1} movimiento${iguales.length === 2 ? '' : 's'} más que dice${iguales.length === 2 ? '' : 'n'} "${kwLbl}".\n\nAceptar = cambiar TODOS a "${value}" (y recordarlo para el futuro)\nCancelar = cambiar SOLO este movimiento`);
+    soloEsta = !(await askAplicarTodas(iguales.length - 1, kwLbl, value));
   }
 
   const objetivo = soloEsta ? [tx] : iguales;
@@ -4955,7 +4984,7 @@ async function setTypeLearn(id, value) {
 
   let soloEsta = false;
   if (iguales.length > 1) {
-    soloEsta = !confirm(`Hay ${iguales.length - 1} movimiento${iguales.length === 2 ? '' : 's'} más que dice${iguales.length === 2 ? '' : 'n'} "${kwLbl2}".\n\nAceptar = marcar TODOS como ${lbl} (y recordarlo para el futuro)\nCancelar = cambiar SOLO este movimiento`);
+    soloEsta = !(await askAplicarTodas(iguales.length - 1, kwLbl2, lbl));
   }
 
   const afectadas = [];
