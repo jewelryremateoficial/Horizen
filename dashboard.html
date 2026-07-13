@@ -1752,6 +1752,20 @@ select.mod-inp{cursor:pointer}
   </div>
 </div>
 
+<!-- PDF con contraseña: pedirla y desbloquear EN el navegador -->
+<div class="overlay" id="pdfPassModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-ttl">Este PDF tiene contraseña</div>
+    <p style="font-size:.88rem;color:var(--muted);line-height:1.55;margin:0 0 .9rem">Escríbela para desbloquearlo. <b style="color:var(--ink)">Tu contraseña no se sube a ningún lado</b>: el PDF se desbloquea aquí mismo, en tu navegador.</p>
+    <input class="finp" id="ppInput" type="password" placeholder="Contraseña del PDF" autocomplete="off" onkeydown="if(event.key==='Enter')pdfPassAnswer(true)">
+    <div id="ppErr" style="color:#be3449;font-size:.82rem;margin-top:.45rem;min-height:1.1em"></div>
+    <div class="mod-footer">
+      <button class="btn-cancel" onclick="pdfPassAnswer(false)">Cancelar</button>
+      <button class="btn-save" onclick="pdfPassAnswer(true)">Desbloquear</button>
+    </div>
+  </div>
+</div>
+
 <!-- Elegir alcance al editar movimientos idénticos (reemplaza el confirm feo del navegador) -->
 <div class="overlay" id="scopeModal">
   <div class="modal" style="max-width:400px">
@@ -4418,8 +4432,104 @@ function setEstadoStep(step) {
   });
 }
 
+// ── PDFs con contraseña: se desbloquean EN EL NAVEGADOR (la contraseña jamás se sube) ──
+let _pdfPassResolve = null;
+function _pedirPassPDF(err) {
+  return new Promise(res => {
+    _pdfPassResolve = res;
+    document.getElementById('ppErr').textContent = err || '';
+    document.getElementById('ppInput').value = '';
+    openModal('pdfPassModal');
+    setTimeout(() => { try { document.getElementById('ppInput').focus(); } catch (e) {} }, 80);
+  });
+}
+function pdfPassAnswer(ok) {
+  const v = ok ? document.getElementById('ppInput').value : null;
+  closeModal('pdfPassModal');
+  const r = _pdfPassResolve; _pdfPassResolve = null;
+  if (r) r(v);
+}
+
+// ¿El binario trae el marcador "/Encrypt" de PDF protegido?
+function _pdfTieneEncrypt(bytes) {
+  const pat = [0x2F, 0x45, 0x6E, 0x63, 0x72, 0x79, 0x70, 0x74];   // "/Encrypt"
+  outer: for (let i = 0, n = bytes.length - pat.length; i <= n; i++) {
+    for (let j = 0; j < pat.length; j++) if (bytes[i + j] !== pat[j]) continue outer;
+    return true;
+  }
+  return false;
+}
+
+// Devuelve: el mismo archivo (si no está protegido), un archivo NUEVO desbloqueado,
+// o null si el usuario canceló la contraseña.
+async function desbloquearPDFSiNecesario(file) {
+  const esPDF = file && (file.type === 'application/pdf' || /\.pdf$/i.test(file.name || ''));
+  if (!esPDF) return file;
+  const buf = new Uint8Array(await file.arrayBuffer());
+  if (!_pdfTieneEncrypt(buf)) return file;
+
+  // Cargar librerías bajo demanda (solo cuando hay un PDF protegido)
+  if (!window.pdfjsLib) await _repLoadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js');
+  if (window.pdfjsLib && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  }
+  if (!window.jspdf) await _repLoadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
+
+  let password = '', doc = null;
+  for (let intento = 0; intento < 6 && !doc; intento++) {
+    try {
+      doc = await pdfjsLib.getDocument({ data: buf.slice(), password }).promise;
+    } catch (e) {
+      const pide = e && (e.name === 'PasswordException' || /password/i.test(e.message || ''));
+      if (!pide) throw new Error('No se pudo abrir el PDF (puede estar dañado). Exporta uno nuevo desde tu banca en línea.');
+      const p = await _pedirPassPDF(password ? 'Contraseña incorrecta — inténtalo de nuevo.' : '');
+      if (p === null) return null;   // canceló
+      password = p;
+    }
+  }
+  if (!doc) throw new Error('No se pudo desbloquear el PDF. Verifica la contraseña con tu banco.');
+
+  // Reconstruir un PDF SIN contraseña (cada página como imagen nítida)
+  toast('Desbloqueando tu PDF… un momento', 'success');
+  const { jsPDF } = window.jspdf;
+  let out = null;
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const base = page.getViewport({ scale: 1 });
+    const scale = Math.min(2, 1600 / base.width);
+    const vp = page.getViewport({ scale });
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+    await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+    const img = cv.toDataURL('image/jpeg', 0.82);
+    const o = base.width > base.height ? 'l' : 'p';
+    if (!out) out = new jsPDF({ unit: 'pt', format: [base.width, base.height], orientation: o });
+    else out.addPage([base.width, base.height], o);
+    out.addImage(img, 'JPEG', 0, 0, base.width, base.height);
+  }
+  const blob = out.output('blob');
+  if (blob.size > 10 * 1024 * 1024) throw new Error('El PDF desbloqueado quedó muy pesado. Divide el estado por mes e inténtalo de nuevo.');
+  const nuevo = new File([blob], String(file.name || 'estado.pdf').replace(/\.pdf$/i, '') + '-desbloqueado.pdf', { type: 'application/pdf' });
+  toast(`✓ PDF desbloqueado (${doc.numPages} página${doc.numPages === 1 ? '' : 's'}). Tu contraseña nunca salió de tu navegador.`, 'success');
+  return nuevo;
+}
+
 async function procesarEstado() {
   if (!_estadoFile) { toast('Selecciona un archivo primero', 'error'); return; }
+
+  // PDF con contraseña → pedirla y desbloquear ANTES de subir nada
+  try {
+    const listo = await desbloquearPDFSiNecesario(_estadoFile);
+    if (listo === null) { toast('Se necesita la contraseña del PDF para poder leerlo', 'error'); return; }
+    if (listo !== _estadoFile) {
+      _estadoFile = listo;
+      const chip = document.getElementById('estadoFileChipTxt');
+      if (chip) chip.textContent = `${_estadoFile.name} · ${(_estadoFile.size / 1024).toFixed(0)} KB`;
+    }
+  } catch (e) {
+    toast(e.message || 'No se pudo leer el PDF', 'error');
+    return;
+  }
 
   document.getElementById('estadosStep1').style.display = 'none';
   document.getElementById('estadosStep2').style.display = 'block';
