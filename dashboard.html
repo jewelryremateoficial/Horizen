@@ -4496,6 +4496,9 @@ async function procesarEstado() {
       if (el && !el.value) el.value = 'Estado de cuenta 1';
     }
 
+    // Guardado automático: si el usuario se sale sin aplastar "Guardar", nada se pierde
+    autoGuardarEstado();
+
   } catch(err) {
     // No perder el archivo: dejarlo listo para reintentar con un clic
     toast(err.message || 'No se pudo analizar el archivo. Intenta de nuevo.', 'error');
@@ -5012,7 +5015,88 @@ async function removeEstadoTx(id) {
   renderEstadosTxs();
 }
 
+// ── Guardado automático tras el análisis ──
+// Inserta el estado + movimientos en cuanto la IA termina, y deja la pantalla en modo
+// "edición en vivo" (_stmtView): cada corrección posterior se guarda sola al instante.
+async function autoGuardarEstado() {
+  if (_stmtView || !_user) return;
+  const toSave = _estadoTxs.filter(t => !t._remove);
+  if (!toSave.length) return;
+  try {
+    // Mismo archivo ya subido antes → NO autoguardar (evita duplicados silenciosos);
+    // el usuario decide con el botón "Guardar" de siempre.
+    if (_estadoFile?.name) {
+      const { data: existing } = await db.from('statements')
+        .select('id').eq('user_id', _user.id).eq('file_name', _estadoFile.name).limit(1);
+      if (existing && existing.length) {
+        toast('Parece que ya habías subido este archivo — revísalo y usa "Guardar" solo si lo quieres duplicar a propósito', 'error');
+        return;
+      }
+    }
+    const stmtName = (document.getElementById('stmtName')?.value || '').trim()
+      || _estadoMeta.bank || 'Estado de cuenta';
+    const { data: stmt, error: stmtErr } = await db.from('statements').insert({
+      user_id: _user.id,
+      name: stmtName,
+      file_name: _estadoFile?.name,
+      bank_name: _estadoMeta.bank,
+      period_start: _estadoMeta.period_start || null,
+      period_end: _estadoMeta.period_end || null,
+      tx_count: toSave.length,
+    }).select().single();
+    if (stmtErr) throw stmtErr;
+
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const payload = toSave.map(tx => {
+      let t = (tx.type || '').toString().toLowerCase();
+      if (t !== 'ingreso' && t !== 'transferencia') t = 'egreso';
+      const amt = Math.abs(parseFloat(tx.amount) || 0);
+      const d = (tx.date && /^\d{4}-\d{2}-\d{2}/.test(String(tx.date))) ? String(tx.date).slice(0, 10) : todayISO;
+      return {
+        user_id: _user.id,
+        description: (tx.description || 'Sin descripción').toString().slice(0, 300),
+        amount: t === 'egreso' ? -amt : amt,
+        type: t,
+        category: tx.category || 'Otros',
+        date: d,
+        source: 'pdf_ocr',
+        statement_id: stmt.id,
+      };
+    });
+    const { data: insData, error: txErr } = await db.from('transactions').insert(payload).select('id');
+    if (txErr) {
+      await db.from('statements').delete().eq('id', stmt.id);   // no dejar un estado huérfano
+      throw txErr;
+    }
+    // Conectar cada fila en pantalla con su registro (el insert respeta el orden enviado)
+    toSave.forEach((t, i) => { t.dbId = insData[i] ? insData[i].id : null; });
+    _stmtView = { id: stmt.id, name: stmtName };
+
+    const _bg = document.getElementById('btnGuardar');
+    if (_bg) { _bg.textContent = 'Guardado ✓ · Ir a reportes'; _bg.disabled = false; }
+    toast(`✓ Guardado automático: ${toSave.length} movimientos ya están a salvo. Edita con calma — cada cambio se guarda solo.`, 'success');
+
+    runTdcPairing();               // emparejar pagos de tarjeta (fire-and-forget)
+    runFixedExpenseDetection();    // detector de gastos fijos (fire-and-forget)
+    loadSavedStatements();
+    try { Promise.all([loadMetrics(), loadRecentTx()]); } catch (e) {}
+  } catch (e) {
+    console.error('autoGuardarEstado:', e);
+    toast('El guardado automático falló — usa el botón "Guardar" cuando termines de revisar', 'error');
+  }
+}
+
 async function confirmarEstado() {
+  // Con autoguardado: si el estado ya se guardó solo, el botón únicamente confirma y navega
+  if (_stmtView) {
+    const n = _estadoTxs.filter(t => !t._remove).length;
+    _repJustSaved = { count: n, name: _stmtView.name, bank: (_estadoMeta && _estadoMeta.bank) || '', month: ((_estadoMeta && (_estadoMeta.period_end || _estadoMeta.period_start)) || '').slice(0, 7) };
+    try { await Promise.all([loadMetrics(), loadRecentTx()]); } catch (e) {}
+    resetEstados();
+    loadSavedStatements();
+    showPage('reportes');
+    return;
+  }
   const toSave = _estadoTxs.filter(t => !t._remove);
   if (!toSave.length) { toast('No hay transacciones que guardar', 'error'); return; }
 
