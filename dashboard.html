@@ -4673,11 +4673,7 @@ function renderEstadosTxs() {
   document.getElementById('estadosTxList').innerHTML = visible.map(tx => `
     <div class="tx-rev-grid" id="txrow-${tx._id}">
       <input class="rev-inp" type="date" value="${tx.date}" onchange="updEstadoTx(${tx._id},'date',this.value)">
-      <div style="min-width:0">
-        <input class="rev-inp" style="width:100%" type="text" value="${_escHtml(tx.description)}" onchange="updEstadoTx(${tx._id},'description',this.value)">
-        ${(() => { const p = String(tx.description || '').split(' · '); return p.length > 1 && p[1].trim()
-          ? `<div style="font-size:.72rem;color:var(--muted);margin-top:3px;line-height:1.4;white-space:normal;word-break:break-word">Concepto: <b style="color:var(--p)">${_escHtml(p.slice(1).join(' · '))}</b></div>` : ''; })()}
-      </div>
+      <input class="rev-inp" type="text" value="${_escHtml(tx.description)}" onchange="updEstadoTx(${tx._id},'description',this.value)">
       <input class="rev-inp" type="number" value="${tx.amount}" min="0" step="0.01" onchange="updEstadoTx(${tx._id},'amount',parseFloat(this.value)||0)">
       <select class="rev-inp" onchange="setCatLearn(${tx._id}, this.value)">
         ${getAllCats().map(c => `<option ${c===tx.category?'selected':''}>${c}</option>`).join('')}
@@ -4688,6 +4684,8 @@ function renderEstadosTxs() {
         ${tx.type==='transferencia'?'<option selected value="transferencia">Transferencia</option>':''}
       </select>
       <button class="rev-del" onclick="removeEstadoTx(${tx._id})" title="Eliminar">${icon('cerrar')}</button>
+      ${(() => { const p = String(tx.description || '').split(' · '); return p.length > 1 && p[1].trim()
+        ? `<div style="grid-column:1/-1;font-size:.74rem;color:var(--muted);margin:-2px 0 2px;padding-left:.15rem;line-height:1.45;white-space:normal;word-break:break-word">Concepto: <b style="color:var(--p)">${_escHtml(p.slice(1).join(' · '))}</b></div>` : ''; })()}
     </div>`).join('');
 }
 
