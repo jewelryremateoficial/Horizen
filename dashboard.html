@@ -513,6 +513,23 @@ select.mod-inp{cursor:pointer}
 .fab-cash:hover{background:var(--p-hover)}
 .fab-cash .ic{width:24px;height:24px}
 @media(max-width:768px){.fab-cash{display:flex}}
+
+/* ── NOVA flotante: dudas explicadas con los datos reales del usuario ── */
+.nova-fab{position:fixed;bottom:22px;right:22px;width:52px;height:52px;border-radius:50%;background:var(--ink);color:#fff;border:none;cursor:pointer;z-index:901;box-shadow:var(--shadow-2);display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.nova-fab:hover{transform:scale(1.06)}
+.nova-fab .ic{width:22px;height:22px}
+@media(max-width:768px){.nova-fab{bottom:88px;right:20px}}
+.nova-panel{display:none;position:fixed;bottom:86px;right:22px;width:min(370px,calc(100vw - 32px));max-height:72vh;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 24px 60px -18px rgba(23,26,54,.35);z-index:902;flex-direction:column;overflow:hidden}
+.nova-panel.open{display:flex}
+@media(max-width:768px){.nova-panel{bottom:152px}}
+.nova-hd{display:flex;gap:.6rem;align-items:center;padding:.85rem 1rem;border-bottom:1px solid var(--line)}
+.nova-hd .nvc{width:34px;height:34px;border-radius:10px;background:var(--p-soft);color:var(--p);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nova-msgs{padding:.9rem 1rem;overflow-y:auto;display:flex;flex-direction:column;gap:.55rem;flex:1;min-height:130px}
+.nova-b{background:var(--p-soft);border:1px solid var(--p-border);border-radius:12px;padding:.6rem .8rem;font-size:.86rem;line-height:1.55;color:var(--ink);white-space:pre-wrap;max-width:95%}
+.nova-u{background:#f4f5f8;border-radius:12px;padding:.55rem .8rem;font-size:.86rem;align-self:flex-end;max-width:85%;color:var(--ink)}
+.nova-chip-q{font-size:.79rem;font-weight:600;padding:.4rem .75rem;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;text-align:left}
+.nova-chip-q:hover{border-color:var(--p-border);color:var(--p)}
+.nova-in{display:flex;gap:.5rem;padding:.7rem;border-top:1px solid var(--line)}
 .cash-toggle{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1rem}
 .cash-pill{padding:.6rem;border-radius:999px;border:1px solid var(--line);background:var(--bg2);color:var(--muted);font:600 .875rem 'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.4rem;transition:background .15s,border-color .15s}
 .cash-pill.in.on{background:var(--pos-bg);color:var(--pos-text);border-color:var(--pos-text)}
@@ -1526,6 +1543,30 @@ select.mod-inp{cursor:pointer}
 
 <!-- ══ FAB móvil: registrar efectivo (Fase A) ═══════════════ -->
 <button class="fab-cash" onclick="openCashModal('entrada')" title="Registra tu efectivo del día" aria-label="Registrar efectivo"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+
+<!-- ══ NOVA flotante: "¿por qué no sale esto?" con datos reales ══ -->
+<button class="nova-fab" onclick="toggleNovaPanel()" title="Pregúntale a NOVA" aria-label="Ayuda de NOVA">
+  <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+</button>
+<div id="novaPanel" class="nova-panel">
+  <div class="nova-hd">
+    <span class="nvc"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg></span>
+    <div style="flex:1;min-width:0"><b style="font-size:.95rem">NOVA</b><div class="t-meta">Te explico cualquier duda con tus datos reales</div></div>
+    <button class="mod-close" onclick="toggleNovaPanel(false)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+  </div>
+  <div id="novaMsgs" class="nova-msgs">
+    <div class="nova-b">Hola, soy NOVA. Pregúntame por qué algo no aparece o no cuadra, y lo reviso con tus datos.</div>
+    <div id="novaChips" style="display:flex;flex-direction:column;gap:.4rem">
+      <button class="nova-chip-q" onclick="novaChip('¿Por qué no aparece uno de mis bancos?')">¿Por qué no aparece uno de mis bancos?</button>
+      <button class="nova-chip-q" onclick="novaChip('¿Por qué no cuadran mis totales del mes?')">¿Por qué no cuadran mis totales del mes?</button>
+      <button class="nova-chip-q" onclick="novaChip('¿Por qué un movimiento no cuenta como gasto?')">¿Por qué un movimiento no cuenta como gasto?</button>
+    </div>
+  </div>
+  <div class="nova-in">
+    <input id="novaInput" class="finp" style="margin:0" placeholder="Escribe tu duda…" onkeydown="if(event.key==='Enter')novaAsk()">
+    <button class="btn-save" id="novaSend" onclick="novaAsk()" aria-label="Enviar">→</button>
+  </div>
+</div>
 
 <!-- ══ MODAL: Nueva Transacción ════════════════════════════ -->
 <div class="overlay" id="txModal">
@@ -5734,6 +5775,85 @@ async function repDownloadPDF() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// ===== NOVA FLOTANTE ===== ("¿por qué no sale esto?" explicado con datos reales)
+const EDGE_NOVA = 'https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/nova-help';
+
+function toggleNovaPanel(force) {
+  const p = document.getElementById('novaPanel');
+  const abrir = force !== undefined ? force : !p.classList.contains('open');
+  p.classList.toggle('open', abrir);
+  if (abrir) setTimeout(() => { try { document.getElementById('novaInput').focus(); } catch (e) {} }, 80);
+}
+
+function novaChip(q) {
+  document.getElementById('novaInput').value = q;
+  novaAsk();
+}
+
+// Resumen compacto y REAL de la cuenta (solo lo del propio usuario, vía su sesión)
+async function _novaContexto() {
+  try {
+    const [sts, txr] = await Promise.all([
+      db.from('statements').select('name,bank_name,period_start,period_end,tx_count,created_at')
+        .eq('user_id', _user.id).order('created_at', { ascending: false }).limit(10),
+      db.from('transactions').select('date,type,category,amount,statement_id,source')
+        .eq('user_id', _user.id).order('date', { ascending: false }).limit(400),
+    ]);
+    const txs = txr.data || [];
+    const porMes = {}, porFuente = {}, porCat = {};
+    txs.forEach(t => {
+      const m = String(t.date || '').slice(0, 7);
+      if (m) porMes[m] = (porMes[m] || 0) + 1;
+      porFuente[t.source || '?'] = (porFuente[t.source || '?'] || 0) + 1;
+      porCat[t.category || '?'] = (porCat[t.category || '?'] || 0) + 1;
+    });
+    return {
+      hoy: new Date().toISOString().slice(0, 10),
+      pagina_actual: (document.querySelector('.page.active') || {}).id || '',
+      rango_del_resumen: _iniRango ? (_iniRango.label + ' (' + _iniRango.d1 + ' a ' + _iniRango.d2 + ')') : null,
+      filtro_banco_activo: document.getElementById('iniBank') ? document.getElementById('iniBank').value : null,
+      estados_de_cuenta: (sts.data || []).map(s => ({ nombre: s.name, banco: s.bank_name || 'Sin banco', periodo: (s.period_start || '?') + ' a ' + (s.period_end || '?'), movimientos: s.tx_count })),
+      movimientos_por_mes: porMes,
+      movimientos_por_fuente: porFuente,
+      movimientos_por_categoria: porCat,
+      transferencias_internas_no_cuentan: txs.filter(t => esTransferInterna(t)).length,
+    };
+  } catch (e) { return { error_contexto: String(e && e.message || e) }; }
+}
+
+async function novaAsk() {
+  const btn = document.getElementById('novaSend');
+  if (btn.disabled) return;
+  const inp = document.getElementById('novaInput');
+  const q = (inp.value || '').trim();
+  if (!q) return;
+  const chips = document.getElementById('novaChips'); if (chips) chips.remove();
+  const msgs = document.getElementById('novaMsgs');
+  msgs.insertAdjacentHTML('beforeend', `<div class="nova-u">${_escHtml(q)}</div><div class="nova-b" id="novaWait">Déjame revisar tus datos…</div>`);
+  inp.value = '';
+  msgs.scrollTop = msgs.scrollHeight;
+  btn.disabled = true;
+  try {
+    const ctx = await _novaContexto();
+    const session = await db.auth.getSession();
+    const token = session.data.session && session.data.session.access_token;
+    const r = await fetch(EDGE_NOVA, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ question: q, context: ctx }),
+    });
+    let d = null; try { d = await r.json(); } catch (e) {}
+    const w = document.getElementById('novaWait');
+    if (w) { w.removeAttribute('id'); w.textContent = (d && (d.answer || d.error)) || 'No pude responder — intenta de nuevo en unos segundos.'; }
+  } catch (e) {
+    const w = document.getElementById('novaWait');
+    if (w) { w.removeAttribute('id'); w.textContent = 'Se perdió la conexión — intenta de nuevo.'; }
+  } finally {
+    btn.disabled = false;
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+}
+
 // ===== EMPAREJADOR PAGO TDC =====
 // Detecta el par "salió del débito / entró a la tarjeta" (mismo monto, fechas cercanas,
 // estados de cuenta distintos) y marca AMBOS lados como transferencia interna 'Pago TDC'
