@@ -1856,6 +1856,11 @@ select.mod-inp{cursor:pointer}
           </select>
           <button class="tb-btn tb-primary" onclick="addCustomCat()">+ Crear</button>
         </div>
+        <div class="cat-new-ttl" style="margin-top:.9rem"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Nuevo grupo (para organizar tus categorías)</div>
+        <div class="cat-new-row">
+          <input id="newGroupName" class="mod-inp" placeholder="Ej: Joyería, Inversiones inmobiliarias, Familia..." style="flex:1;min-width:140px" maxlength="24">
+          <button class="tb-btn tb-primary" onclick="addCustomGroup()">+ Crear grupo</button>
+        </div>
       </div>
       <div class="cat-org-hint">Organiza tus categorías</div>
       <div class="cat-org-sub">Cambia el grupo de cualquier categoría con su menú. Los totales por grupo se actualizan en todo Horizen: análisis, inicio y reportes.</div>
@@ -4778,8 +4783,45 @@ function showCatEdit(id) {
 
 async function loadCustomCats() {
   if (!_user) return;
-  const { data } = await db.from('custom_categories').select('name,group_name').eq('user_id', _user.id).order('created_at');
-  _customCats = data || [];
+  const [cats, grps] = await Promise.all([
+    db.from('custom_categories').select('name,group_name').eq('user_id', _user.id).order('created_at'),
+    db.from('custom_groups').select('name').eq('user_id', _user.id).order('created_at'),
+  ]);
+  _customCats = cats.data || [];
+  _customGroups = grps.error ? [] : (grps.data || []).map(g => g.name);
+}
+
+// Grupos = los 6 de siempre + los que el usuario haya creado
+let _customGroups = [];
+function getAllGroups() {
+  return [..._GRP_ORDER, ..._customGroups.filter(n => !_GRP_ORDER.includes(n))];
+}
+
+async function addCustomGroup() {
+  const name = (document.getElementById('newGroupName').value || '').trim();
+  if (!name) { toast('Escribe un nombre para el grupo', 'error'); return; }
+  if (name.length > 24) { toast('Nombre muy largo (máx. 24 caracteres)', 'error'); return; }
+  if (getAllGroups().some(g => g.toLowerCase() === name.toLowerCase())) { toast('Ese grupo ya existe', 'error'); return; }
+  const { error } = await db.from('custom_groups').insert({ user_id: _user.id, name });
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  document.getElementById('newGroupName').value = '';
+  await loadCustomCats();
+  renderCatModal();
+  toast(`✓ Grupo "${name}" creado — ya puedes mover categorías a él`, 'success');
+}
+
+async function deleteCustomGroup(name) {
+  if (!confirm(`¿Eliminar el grupo "${name}"? Sus categorías pasarán a "Otros".`)) return;
+  // Reasignar las categorías de ese grupo a Otros (propias y predefinidas movidas)
+  const { error: e1 } = await db.from('custom_categories')
+    .update({ group_name: 'Otros' }).eq('user_id', _user.id).eq('group_name', name);
+  if (e1) { toast('Error: ' + e1.message, 'error'); return; }
+  const { error: e2 } = await db.from('custom_groups').delete().eq('user_id', _user.id).eq('name', name);
+  if (e2) { toast('Error: ' + e2.message, 'error'); return; }
+  await loadCustomCats();
+  renderCatModal();
+  try { renderInicioBody(); } catch (_) {}
+  toast(`Grupo "${name}" eliminado`, 'success');
 }
 
 function openCatModal() {
@@ -4794,16 +4836,25 @@ function renderCatModal() {
   getAllCats().forEach(c => { const g = getCatGroup(c); (byGroup[g] = byGroup[g] || []).push(c); });
   const isCustom = name => !_PREDEFINED_CATS.includes(name);
   const moved = name => _PREDEFINED_CATS.includes(name) && _customCats.some(c => c.name === name);
-  el.innerHTML = `<div class="cat-org-grid">` + _GRP_ORDER.map(g => `
+  const GRUPOS = getAllGroups();
+  const esGrupoPropio = g => !_GRP_ORDER.includes(g);
+  // El select de "nueva categoría" también debe ofrecer los grupos propios
+  const selGrp = document.getElementById('newCatGroup');
+  if (selGrp) {
+    const prev = selGrp.value;
+    selGrp.innerHTML = GRUPOS.map(g => `<option>${_escHtml(g)}</option>`).join('');
+    if (GRUPOS.includes(prev)) selGrp.value = prev;
+  }
+  el.innerHTML = `<div class="cat-org-grid">` + GRUPOS.map(g => `
     <div class="cat-grp-sec" data-g="${_escHtml(g)}">
-      <div class="cat-grp-hd"><span class="cat-grp-ico">${icon(_CAT_GROUP_ICONS[g] || 'otros')}</span><span class="cat-grp-nm">${_escHtml(g)}</span><span class="cat-grp-count">${(byGroup[g] || []).length}</span></div>
+      <div class="cat-grp-hd"><span class="cat-grp-ico">${icon(_CAT_GROUP_ICONS[g] || 'otros')}</span><span class="cat-grp-nm">${_escHtml(g)}</span><span class="cat-grp-count">${(byGroup[g] || []).length}</span>${esGrupoPropio(g) ? ` <span class="cat-badge">PROPIO</span><button class="cat-del" style="margin-left:auto" onclick="deleteCustomGroup('${g.replace(/['\\]/g, ' ')}')" title="Eliminar grupo">${icon('cerrar')}</button>` : ''}</div>
       <div class="cat-grp-rows">
         ${(byGroup[g] || []).map(c => {
           const safe = c.replace(/['\\]/g, ' ');
           return `<div class="cat-org-row">
             <span class="cat-org-nm"><span class="t">${_escHtml(c)}</span>${isCustom(c) ? ' <span class="cat-badge">PROPIA</span>' : ''}${moved(c) ? ' <span class="cat-moved" title="Movida de su grupo original">↪</span>' : ''}</span>
             <select onchange="moveCatToGroup('${safe}', this.value)">
-              ${_GRP_ORDER.map(og => `<option ${og === g ? 'selected' : ''}>${og}</option>`).join('')}
+              ${GRUPOS.map(og => `<option ${og === g ? 'selected' : ''}>${_escHtml(og)}</option>`).join('')}
             </select>
             ${isCustom(c) ? `<button class="cat-del" onclick="deleteCustomCat('${safe}')" title="Eliminar categoría">${icon('cerrar')}</button>` : ''}
           </div>`;
