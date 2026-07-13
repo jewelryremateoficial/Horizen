@@ -4904,30 +4904,41 @@ async function deleteCustomCat(name) {
   toast(`Categoría "${name}" eliminada`, 'success');
 }
 
-// Cambiar categoría en la revisión: aplica a TODOS los del mismo comercio y lo recuerda
+// Cambiar categoría en la revisión. Si hay VARIOS movimientos idénticos, el usuario
+// elige: cambiarlos todos (y recordar la regla) o solo este (sin regla).
 async function setCatLearn(id, value) {
   const tx = _estadoTxs.find(t => t._id === id);
   if (!tx) return;
   const kw = extractKeyword(tx.description);
-  let applied = 0;
+  const iguales = _estadoTxs.filter(t => !t._remove && extractKeyword(t.description) === kw);
+  const kwLbl = kw.length > 34 ? kw.slice(0, 34) + '…' : kw;
+
+  let soloEsta = false;
+  if (iguales.length > 1) {
+    soloEsta = !confirm(`Hay ${iguales.length - 1} movimiento${iguales.length === 2 ? '' : 's'} más que dice${iguales.length === 2 ? '' : 'n'} "${kwLbl}".\n\nAceptar = cambiar TODOS a "${value}" (y recordarlo para el futuro)\nCancelar = cambiar SOLO este movimiento`);
+  }
+
+  const objetivo = soloEsta ? [tx] : iguales;
   const _affected = [];
-  _estadoTxs.forEach(t => {
-    if (!t._remove && extractKeyword(t.description) === kw) { t.category = value; applied++; if (t.dbId) _affected.push(t.dbId); }
-  });
+  objetivo.forEach(t => { t.category = value; if (t.dbId) _affected.push(t.dbId); });
+
   if (_stmtView && _affected.length) {
     db.from('transactions').update({ category: value }).in('id', _affected).eq('user_id', _user.id)
       .then(({ error }) => { if (error) toast('No se pudo guardar la categoría: ' + error.message, 'error'); });
   }
-  if (_user) {
+  // La regla solo se guarda cuando el cambio fue para TODOS (si fue "solo esta",
+  // recordarla haría que el próximo estado se lo aplique a todas otra vez).
+  if (_user && !soloEsta) {
     db.from('category_rules')
       .upsert({ user_id: _user.id, keyword: kw, category: value }, { onConflict: 'user_id,keyword' })
       .then(({ error }) => { if (error) console.warn('No se pudo guardar la regla:', error.message); });
   }
   renderEstadosTxs();
-  const kwLbl = kw.length > 34 ? kw.slice(0, 34) + '…' : kw;
-  toast(applied > 1
-    ? `✓ Apliqué "${value}" a ${applied} movimientos idénticos a "${kwLbl}" y lo recordaré`
-    : `✓ "${kwLbl}" → ${value}. Lo recordaré para el próximo estado`, 'success');
+  toast(soloEsta
+    ? `✓ Solo este movimiento → ${value} (los demás "${kwLbl}" quedan igual)`
+    : objetivo.length > 1
+      ? `✓ Apliqué "${value}" a ${objetivo.length} movimientos idénticos a "${kwLbl}" y lo recordaré`
+      : `✓ "${kwLbl}" → ${value}. Lo recordaré para el próximo estado`, 'success');
 }
 
 // Cambiar el TIPO (ingreso/egreso) de una transacción se aplica a TODAS las del
@@ -4937,11 +4948,18 @@ async function setTypeLearn(id, value) {
   const tx = _estadoTxs.find(t => t._id === id);
   if (!tx) return;
   const kw = extractKeyword(tx.description);
-  let applied = 0;
+  const lbl = value === 'ingreso' ? 'Ingreso' : value === 'egreso' ? 'Egreso' : 'Transferencia';
+  const kwLbl2 = kw.length > 34 ? kw.slice(0, 34) + '…' : kw;
+  const iguales = _estadoTxs.filter(t => !t._remove && extractKeyword(t.description) === kw);
+
+  let soloEsta = false;
+  if (iguales.length > 1) {
+    soloEsta = !confirm(`Hay ${iguales.length - 1} movimiento${iguales.length === 2 ? '' : 's'} más que dice${iguales.length === 2 ? '' : 'n'} "${kwLbl2}".\n\nAceptar = marcar TODOS como ${lbl} (y recordarlo para el futuro)\nCancelar = cambiar SOLO este movimiento`);
+  }
+
   const afectadas = [];
-  _estadoTxs.forEach(t => {
-    if (!t._remove && extractKeyword(t.description) === kw) { t.type = value; applied++; if (t.dbId) afectadas.push(t); }
-  });
+  (soloEsta ? [tx] : iguales).forEach(t => { t.type = value; if (t.dbId) afectadas.push(t); });
+
   // Persistir en BD si el estado ya está guardado (el signo del monto depende del tipo)
   if (_stmtView && afectadas.length) {
     Promise.all(afectadas.map(t => {
@@ -4954,18 +4972,18 @@ async function setTypeLearn(id, value) {
       if (bad) toast('No se pudo guardar el tipo: ' + bad.error.message, 'error');
     });
   }
-  // Recordar la regla para futuros estados de cuenta
-  if (_user) {
+  // La regla solo se recuerda cuando el cambio fue para TODOS
+  if (_user && !soloEsta) {
     db.from('category_rules')
       .upsert({ user_id: _user.id, keyword: kw, tx_type: value }, { onConflict: 'user_id,keyword' })
       .then(({ error }) => { if (error) console.warn('No se pudo guardar la regla de tipo:', error.message); });
   }
   renderEstadosTxs();
-  const lbl = value === 'ingreso' ? 'Ingreso' : value === 'egreso' ? 'Egreso' : 'Transferencia';
-  const kwLbl2 = kw.length > 34 ? kw.slice(0, 34) + '…' : kw;
-  toast(applied > 1
-    ? `✓ Marqué como ${lbl} ${applied} movimientos idénticos a "${kwLbl2}" y lo recordaré`
-    : `✓ "${kwLbl2}" → ${lbl}. Lo recordaré para el próximo estado`, 'success');
+  toast(soloEsta
+    ? `✓ Solo este movimiento → ${lbl} (los demás "${kwLbl2}" quedan igual)`
+    : iguales.length > 1
+      ? `✓ Marqué como ${lbl} ${iguales.length} movimientos idénticos a "${kwLbl2}" y lo recordaré`
+      : `✓ "${kwLbl2}" → ${lbl}. Lo recordaré para el próximo estado`, 'success');
 }
 
 async function saveCategRule(id) {
