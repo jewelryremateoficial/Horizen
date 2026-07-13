@@ -2329,7 +2329,7 @@ function txRowShort(tx) {
   const src = tx.source || 'manual';
   const sign = tx.type === 'ingreso' ? '+' : tx.type === 'egreso' ? '−' : '↔';
   return `<tr>
-    <td><div style="font-weight:500;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tx.description}</div>${tx.counterpart ? `<div style="font-size:.68rem;color:var(--muted)">${tx.counterpart}</div>` : ''}</td>
+    <td><div style="font-weight:500;max-width:240px;white-space:normal;word-break:break-word;line-height:1.35">${tx.description}</div>${tx.counterpart ? `<div style="font-size:.68rem;color:var(--muted)">${tx.counterpart}</div>` : ''}</td>
     <td><span class="cat-pill">${tx.category || '—'}</span>${esTransferInterna(tx) ? '<div style="font-size:.66rem;color:var(--muted);margin-top:2px">↔ entre tus cuentas · no cuenta</div>' : ''}</td>
     <td><span class="src-tag src-${src}">${srcLabel(src)}</span></td>
     <td>${tx.is_fiscal ? '<span class="fiscal-tag">CFDI</span>' : '<span style="color:var(--muted);font-size:.8rem">—</span>'}</td>
@@ -2342,7 +2342,7 @@ function txRowFull(tx) {
   const src = tx.source || 'manual';
   const sign = tx.type === 'ingreso' ? '+' : tx.type === 'egreso' ? '−' : '↔';
   return `<tr>
-    <td><div style="font-weight:500;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tx.description}</div>${tx.receipt_path ? `<button class="act-btn" style="padding:0;margin-top:2px;display:inline-flex;align-items:center;gap:.25rem;font-size:.68rem" onclick="verComprobante('${tx.receipt_path}')" title="Ver foto de la nota">${icon('imagen')}Foto</button>` : ''}</td>
+    <td><div style="font-weight:500;max-width:240px;white-space:normal;word-break:break-word;line-height:1.35">${tx.description}</div>${tx.receipt_path ? `<button class="act-btn" style="padding:0;margin-top:2px;display:inline-flex;align-items:center;gap:.25rem;font-size:.68rem" onclick="verComprobante('${tx.receipt_path}')" title="Ver foto de la nota">${icon('imagen')}Foto</button>` : ''}</td>
     <td style="font-size:.8rem;color:var(--muted)">${tx.accounts?.institution_name || '—'}</td>
     <td><span class="cat-pill">${tx.category || '—'}</span>${esTransferInterna(tx) ? '<div style="font-size:.66rem;color:var(--muted);margin-top:2px">↔ entre tus cuentas · no cuenta</div>' : ''}</td>
     <td><span class="src-tag src-${src}">${srcLabel(src)}</span></td>
@@ -4648,7 +4648,7 @@ function renderEstadosTxs() {
         `<div style="border-bottom:1px solid rgba(10,37,64,.04)">
           <div style="display:flex;justify-content:space-between;align-items:center;padding:.32rem .6rem">
             <div style="min-width:0">
-              <div style="font-size:.875rem;color:var(--ink);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.description}</div>
+              <div style="font-size:.875rem;color:var(--ink);white-space:normal;word-break:break-word;line-height:1.35">${t.description}</div>
               <div class="t-meta" style="margin-top:.05rem">${t.date ? fmtDate(t.date + 'T12:00:00') : 'Sin fecha'}</div>
             </div>
             <div style="display:flex;gap:.4rem;align-items:center;flex-shrink:0;margin-left:.5rem">
