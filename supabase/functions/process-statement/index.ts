@@ -54,6 +54,10 @@ Ejemplos de cómo aplicar tu conocimiento (mismo criterio para comercios similar
 - PEMEX, gasolineras, casetas, estacionamientos → Transporte
 - Cualquier SPEI, traspaso o transferencia entre cuentas → "Transferencia".
 
+FECHAS (regla de oro):
+- El AÑO de cada fecha sale del PERIODO impreso en el estado. Está PROHIBIDO usar un año que no aparezca en el documento.
+- Antes de terminar, verifica que TODAS tus fechas caigan dentro del periodo del estado.
+
 Reglas finales:
 - Si falta el año en una fecha, usa el año del periodo del estado.
 - No agregues ninguna línea que no sea #META o una transacción.
@@ -138,6 +142,25 @@ function parseCompact(text: string) {
     let category = (p[4] || 'Otros').trim()
     if (!CATS.includes(category)) category = 'Otros'
     transactions.push({ date: date.slice(0, 10), description: (p[1] || 'Movimiento').trim().slice(0, 140), amount, type, category })
+  }
+  // ── BLINDAJE DE AÑO (determinista, no depende del modelo) ──
+  // Si una fecha cae fuera del periodo del estado, se re-ancla al año del periodo
+  // conservando mes y día. Un estado de junio 2026 JAMÁS puede quedar con fechas 2025.
+  if (period_start || period_end) {
+    const PAD = 4 * 86400000
+    const psT = period_start ? Date.parse(period_start) : -Infinity
+    const peT = period_end ? Date.parse(period_end) : Infinity
+    const years = Array.from(new Set([period_start, period_end].filter(Boolean).map(d => (d as string).slice(0, 4))))
+    for (const tx of transactions) {
+      const d = String(tx.date)
+      const t = Date.parse(d)
+      if (!isNaN(t) && t >= psT - PAD && t <= peT + PAD) continue
+      for (const y of years) {
+        const cand = y + d.slice(4)
+        const ct = Date.parse(cand)
+        if (!isNaN(ct) && ct >= psT - PAD && ct <= peT + PAD) { tx.date = cand; break }
+      }
+    }
   }
   return { bank, period_start, period_end, currency, transactions, summary }
 }

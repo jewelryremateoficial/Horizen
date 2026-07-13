@@ -4474,6 +4474,14 @@ async function procesarEstado() {
 
     // Aplicar reglas guardadas por el usuario (categoría Y tipo ingreso/egreso)
     let txList = data.transactions || [];
+
+    // ── BLINDAJE DE AÑO (doble candado, además del que corre en el servidor) ──
+    // Toda fecha fuera del periodo del estado se re-ancla al año del periodo.
+    const _fy = _fixTxYears(txList, _estadoMeta.period_start, _estadoMeta.period_end);
+    txList = _fy.txList;
+    if (_fy.fixed > 0) {
+      toast(`✓ Corregí ${_fy.fixed} fecha${_fy.fixed === 1 ? '' : 's'} que traía${_fy.fixed === 1 ? '' : 'n'} el año equivocado — las ajusté al periodo del estado`, 'success');
+    }
     const { data: rules } = await db.from('category_rules').select('keyword,category,tx_type').eq('user_id', _user.id);
     if (rules && rules.length > 0) {
       // La regla más específica (keyword más largo) gana sobre las genéricas
@@ -5044,6 +5052,47 @@ async function removeEstadoTx(id) {
   renderEstadosTxs();
 }
 
+// ── Blindaje de fechas: re-anclar el año de cada fecha al periodo del estado ──
+// Determinista: no depende de que la IA "se porte bien". Conserva mes y día.
+function _fixTxYears(txList, ps, pe) {
+  if (!ps && !pe) return { txList, fixed: 0 };
+  const PAD = 4 * 86400000;
+  const psT = ps ? Date.parse(String(ps).slice(0, 10)) : -Infinity;
+  const peT = pe ? Date.parse(String(pe).slice(0, 10)) : Infinity;
+  const years = [...new Set([ps, pe].filter(Boolean).map(d => String(d).slice(0, 4)))];
+  let fixed = 0;
+  const out = txList.map(tx => {
+    const d = String(tx.date || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return tx;
+    const t = Date.parse(d);
+    if (!isNaN(t) && t >= psT - PAD && t <= peT + PAD) return tx;   // ya cae en el periodo
+    for (const y of years) {
+      const cand = y + d.slice(4);
+      const ct = Date.parse(cand);
+      if (!isNaN(ct) && ct >= psT - PAD && ct <= peT + PAD) { fixed++; return { ...tx, date: cand }; }
+    }
+    return tx;   // no se pudo anclar: la dejará atorada el candado del autoguardado
+  });
+  return { txList: out, fixed };
+}
+
+// ¿Las fechas del lote son confiables? (para decidir si se puede autoguardar)
+function _fechasConfiables(toSave) {
+  const ps = _estadoMeta && _estadoMeta.period_start, pe = _estadoMeta && _estadoMeta.period_end;
+  if (!ps && !pe) return false;                       // sin periodo no hay ancla → revisar a mano
+  const PAD = 5 * 86400000;
+  const psT = ps ? Date.parse(String(ps).slice(0, 10)) : -Infinity;
+  const peT = pe ? Date.parse(String(pe).slice(0, 10)) : Infinity;
+  const fuera = toSave.filter(t => {
+    const x = Date.parse(String(t.date || '').slice(0, 10));
+    return isNaN(x) || x < psT - PAD || x > peT + PAD;
+  }).length;
+  if (fuera / toSave.length > 0.2) return false;       // demasiadas fechas fuera del periodo
+  // Periodo a más de 6 meses de hoy = probable año mal leído en la PORTADA → que el usuario confirme
+  if (pe && Math.abs(Date.now() - peT) > 6 * 30.44 * 86400000) return false;
+  return true;
+}
+
 // ── Guardado automático tras el análisis ──
 // Inserta el estado + movimientos en cuanto la IA termina, y deja la pantalla en modo
 // "edición en vivo" (_stmtView): cada corrección posterior se guarda sola al instante.
@@ -5051,6 +5100,11 @@ async function autoGuardarEstado() {
   if (_stmtView || !_user) return;
   const toSave = _estadoTxs.filter(t => !t._remove);
   if (!toSave.length) return;
+  // Candado de fechas: si el año/periodo no cuadra, NO se guarda nada automáticamente
+  if (!_fechasConfiables(toSave)) {
+    toast('Guardado automático en pausa: revisa las FECHAS (el año o el periodo no me cuadran). Corrige lo necesario y usa el botón "Guardar".', 'error');
+    return;
+  }
   try {
     // Mismo archivo ya subido antes → NO autoguardar (evita duplicados silenciosos);
     // el usuario decide con el botón "Guardar" de siempre.
