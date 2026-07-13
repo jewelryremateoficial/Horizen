@@ -4500,7 +4500,8 @@ async function desbloquearPDFSiNecesario(file) {
     const vp = page.getViewport({ scale });
     const cv = document.createElement('canvas');
     cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
-    await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+    // intent:'print' = render directo sin requestAnimationFrame (no se congela si el usuario cambia de pestaña)
+    await page.render({ canvasContext: cv.getContext('2d'), viewport: vp, intent: 'print' }).promise;
     const img = cv.toDataURL('image/jpeg', 0.82);
     const o = base.width > base.height ? 'l' : 'p';
     if (!out) out = new jsPDF({ unit: 'pt', format: [base.width, base.height], orientation: o });
