@@ -184,6 +184,26 @@ serve(async (req) => {
     if (!storagePath) throw new Error('No se recibió la ruta del archivo')
 
     supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+    // ── Límite de análisis por plan (Fase 4). Se checa ANTES de gastar IA. ──
+    // Emprende 3/mes · Negocio 15/mes · Empresa 40/mes · prueba 15/mes.
+    const jwtUser = (req.headers.get('authorization') || '').replace('Bearer ', '')
+    let uid: string | null = null
+    try { uid = JSON.parse(atob(jwtUser.split('.')[1] || ''))?.sub || null } catch { /* ignore */ }
+    if (uid) {
+      const { data: prof } = await supabase.from('profiles').select('plan,subscription_status').eq('id', uid).maybeSingle()
+      const plan = String(prof?.plan || '').toLowerCase()
+      const LIMITES: Record<string, number> = { basico: 3, emprende: 3, pro: 15, negocio: 15, empresa: 40 }
+      const limite = LIMITES[plan] ?? (prof?.subscription_status === 'trial' ? 15 : 3)
+      const desde = new Date(); desde.setDate(1); desde.setHours(0, 0, 0, 0)
+      const { count } = await supabase.from('statements').select('id', { count: 'exact', head: true })
+        .eq('user_id', uid).gte('created_at', desde.toISOString())
+      if ((count || 0) >= limite) {
+        try { await supabase.storage.from('statements').remove([storagePath]) } catch { /* ignore */ }
+        throw new Error(`Llegaste al límite de tu plan: ${limite} estados de cuenta analizados este mes. Sube de plan para seguir al momento, o espera al próximo mes.`)
+      }
+    }
+
     const { data: fileBlob, error: dlErr } = await supabase.storage.from('statements').download(storagePath)
     if (dlErr) throw new Error('No se pudo leer el archivo subido. Vuelve a intentarlo.')
 

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +15,23 @@ serve(async (req) => {
     if (!ANTHROPIC_API_KEY) throw new Error('El asistente no está configurado. Contacta a soporte.')
     const { question, context } = await req.json()
     if (!question || String(question).trim().length < 3) throw new Error('Escribe tu pregunta.')
+
+    // ── Límite del plan Emprende: 20 preguntas/mes (Fase 4). Negocio/Empresa: sin límite. ──
+    const jwtUser = (req.headers.get('authorization') || '').replace('Bearer ', '')
+    let uid: string | null = null
+    try { uid = JSON.parse(atob(jwtUser.split('.')[1] || ''))?.sub || null } catch { /* ignore */ }
+    if (uid) {
+      const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+      const { data: prof } = await admin.from('profiles').select('plan').eq('id', uid).maybeSingle()
+      const plan = String(prof?.plan || '').toLowerCase()
+      const mes = new Date().toISOString().slice(0, 7)
+      const { data: uso } = await admin.from('nova_usage').select('id,count').eq('user_id', uid).eq('month', mes).maybeSingle()
+      if ((plan === 'basico' || plan === 'emprende') && (uso?.count || 0) >= 20) {
+        throw new Error('Llegaste a tus 20 preguntas del mes en el plan Emprende. En el plan Negocio, NOVA no tiene límite.')
+      }
+      if (uso) await admin.from('nova_usage').update({ count: (uso.count || 0) + 1 }).eq('id', uso.id)
+      else await admin.from('nova_usage').insert({ user_id: uid, month: mes, count: 1 })
+    }
 
     const prompt = `Eres NOVA, el copiloto de Horizen (app mexicana de finanzas para emprendedores). El usuario tiene una duda sobre POR QUÉ ve o no ve algo en su cuenta. Abajo va un resumen REAL de sus datos. Responde en español mexicano, simple y directo (máximo ~120 palabras), sin tecnicismos, y si aplica dile exactamente qué botón o pantalla usar para arreglarlo. Basa tu respuesta SOLO en el contexto; si no alcanza para saberlo con certeza, dilo con honestidad y sugiere qué revisar.
 

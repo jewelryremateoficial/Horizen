@@ -292,20 +292,55 @@ function toggleBilling() {
   });
 }
 
+// ── Fase 4: interruptor del cobro ──
+// Se enciende (true) cuando la función paypal-setup haya creado los planes NUEVOS
+// ($199/$399/$799 con 7 días de prueba capturando tarjeta) y sus IDs estén abajo.
+// Mientras esté en false, se muestra el arranque de prueba sin cobro.
+const PAYPAL_LIVE = false;
+const PAYPAL_PLANS_V2 = {
+  basico:  { m: '', y: '' },
+  pro:     { m: '', y: '' },
+  empresa: { m: '', y: '' },
+};
+
 function loadPayPalButtons() {
-  // ⚠️ CANDADO (Fase 4): los planes viejos de PayPal cobran $990/$1,990/$3,990 y la
-  // página ya muestra $199/$399/$799. Hasta que existan los planes NUEVOS en PayPal,
-  // NO se renderiza ningún botón de cobro — solo el arranque del trial.
-  // Al cablear la Fase 4: crear los planes nuevos, actualizar PAYPAL_PLANS y restaurar
-  // el render de window.paypal.Buttons (el código vive en el historial de git).
-  ['paypal-basico', 'paypal-pro', 'paypal-empresa'].forEach(id => {
-    const container = document.getElementById(id);
-    if (!container) return;
-    container.innerHTML = `
-      <div class="paypal-placeholder" onclick="skipForNow()" style="text-align:center">
-        Probar Horizen 7 días →
-      </div>
-      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:.45rem">El pago en línea se activa muy pronto.</div>`;
+  if (!PAYPAL_LIVE) {
+    ['paypal-basico', 'paypal-pro', 'paypal-empresa'].forEach(id => {
+      const container = document.getElementById(id);
+      if (!container) return;
+      container.innerHTML = `
+        <div class="paypal-placeholder" onclick="skipForNow()" style="text-align:center">
+          Probar Horizen 7 días →
+        </div>
+        <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:.45rem">El pago en línea se activa muy pronto.</div>`;
+    });
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&vault=true&intent=subscription&currency=MXN`;
+  script.setAttribute('data-sdk-integration-source', 'button-factory');
+  script.onload = renderPayPalButtons;
+  document.head.appendChild(script);
+}
+
+function renderPayPalButtons() {
+  [
+    { containerId: 'paypal-basico',  planKey: 'basico'  },
+    { containerId: 'paypal-pro',     planKey: 'pro'     },
+    { containerId: 'paypal-empresa', planKey: 'empresa' },
+  ].forEach(({ containerId, planKey }) => {
+    const container = document.getElementById(containerId);
+    if (!container || !window.paypal) return;
+    container.innerHTML = '';
+    window.paypal.Buttons({
+      style: { shape: 'rect', color: 'gold', layout: 'vertical', label: 'subscribe' },
+      createSubscription: (data, actions) => actions.subscription.create({
+        plan_id: annualMode ? PAYPAL_PLANS_V2[planKey].y : PAYPAL_PLANS_V2[planKey].m,
+        custom_id: currentUser.id,   // para que el webhook sepa de quién es la suscripción
+      }),
+      onApprove: (data) => handlePayPalSuccess(data, planKey),
+      onError: (err) => { console.error(err); toast('Error al procesar el pago. Intenta de nuevo.', 'error'); }
+    }).render(`#${containerId}`);
   });
 }
 
