@@ -1499,7 +1499,22 @@ select.mod-inp{cursor:pointer}
 
   <!-- ══ PAGE: Taxes ══════════════════════════════════════════ -->
   <div class="page" id="page-taxes">
-    <div><div class="t-page">SAT / Fiscal</div><div class="t-sub" style="margin-top:.25rem">IVA e ISR calculados de tus transacciones con factura (CFDI)</div></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:.4rem">
+      <div><div class="t-page">SAT / Fiscal</div><div class="t-sub" style="margin-top:.25rem">Cuánto apartar de IVA e ISR, calculado de tus movimientos con factura</div></div>
+      <label style="display:inline-flex;align-items:center;gap:.45rem;font-size:.82rem;font-weight:600;color:var(--muted)" title="RESICO paga entre 1% y 2.5% de sus ingresos; actividad empresarial ronda el 30% de la utilidad. Pregúntale a tu contador cuál es tu régimen.">
+        Mi tasa de ISR
+        <select class="fsel" id="taxRateSel" style="width:auto" onchange="taxSetRate(this.value)">
+          <option value="1">RESICO · 1%</option>
+          <option value="1.5">RESICO · 1.5%</option>
+          <option value="2">RESICO · 2%</option>
+          <option value="2.5">RESICO · 2.5%</option>
+          <option value="10">10%</option>
+          <option value="20">20%</option>
+          <option value="30">General · 30%</option>
+          <option value="35">35%</option>
+        </select>
+      </label>
+    </div>
     <div class="card">
       <div class="card-hdr">
         <div class="card-ttl">Reservas fiscales</div>
@@ -1511,6 +1526,7 @@ select.mod-inp{cursor:pointer}
       <div class="card-ttl" style="margin-bottom:.9rem">Cobertura CFDI</div>
       <div id="cfdiStats"><div class="sk" style="height:52px;border-radius:8px"></div></div>
     </div>
+    <div class="t-meta" style="margin-top:.8rem">Estimación gerencial sobre tus movimientos marcados con factura (CFDI). No sustituye a tu contador ni a tus declaraciones.</div>
   </div>
 
   <!-- ══ PAGE: Integrations ════════════════════════════════════ -->
@@ -2401,7 +2417,9 @@ function txRowFull(tx) {
     <td style="font-size:.8rem;color:var(--muted)">${tx.accounts?.institution_name || '—'}</td>
     <td><span class="cat-pill">${tx.category || '—'}</span>${esTransferInterna(tx) ? '<div style="font-size:.66rem;color:var(--muted);margin-top:2px">↔ entre tus cuentas · no cuenta</div>' : ''}</td>
     <td><span class="src-tag src-${src}">${srcLabel(src)}</span></td>
-    <td>${tx.is_fiscal ? '<span class="fiscal-tag">CFDI</span>' : '<span style="color:var(--muted);font-size:.8rem">—</span>'}</td>
+    <td>${src === 'efectivo'
+      ? '<span style="color:var(--muted);font-size:.8rem" title="El efectivo es registro interno (no fiscal)">—</span>'
+      : `<button class="act-btn" style="padding:.15rem .35rem" title="¿Este movimiento tiene factura? Da clic para cambiarlo — alimenta tu reserva del SAT" onclick="toggleFiscal('${tx.id}', ${tx.is_fiscal ? 'true' : 'false'})">${tx.is_fiscal ? '<span class="fiscal-tag">CFDI</span>' : '<span style="color:var(--muted);font-size:.78rem">+ CFDI</span>'}</button>`}</td>
     <td style="font-size:.75rem;color:var(--muted);font-family:monospace;max-width:110px;overflow:hidden;text-overflow:ellipsis">${tx.rfc_emisor || '—'}</td>
     <td style="color:var(--muted);font-size:.8rem">${fmtDate(tx.date)}</td>
     <td class="${tx.type === 'ingreso' ? 'amt-in' : 'amt-out'}" style="text-align:right">${sign}${fmt(Math.abs(tx.amount))}</td>
@@ -2496,36 +2514,70 @@ function renderDebts() {
 }
 
 // ── Taxes ─────────────────────────────────────────────────────
+// SAT/Fiscal con motor propio: calcula EN VIVO desde los movimientos marcados con
+// factura (is_fiscal). Ya no depende de tablas que nadie llena. La tabla tax_reserves
+// solo guarda las palomitas de "ya lo pagué".
+let _taxRate = 30;
+let _taxCalc = {};   // period -> números calculados (para guardarlos al marcar pagado)
+
 async function loadTaxes() {
+  // Tasa de ISR del usuario (RESICO 1-2.5%, general ~30%)
+  try {
+    const { data: prof } = await db.from('profiles').select('isr_rate').eq('id', _user.id).single();
+    const v = parseFloat(prof && prof.isr_rate);
+    if (!isNaN(v) && v >= 0) _taxRate = v;
+  } catch (e) {}
+  const sel = document.getElementById('taxRateSel');
+  if (sel) sel.value = String(_taxRate);
+
   const periods = [];
   const now = new Date();
   for (let i = 0; i < 3; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     periods.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   }
-  const { data } = await db.from('tax_reserves').select('*')
-    .eq('user_id', _user.id).in('period', periods).order('period', { ascending: false });
+  const desde = periods[2] + '-01';
+  const [txRes, resRes] = await Promise.all([
+    db.from('transactions').select('date,amount,type,category,is_fiscal')
+      .eq('user_id', _user.id).eq('is_fiscal', true).gte('date', desde),
+    db.from('tax_reserves').select('*').eq('user_id', _user.id).in('period', periods),
+  ]);
+  // Los pagos de tarjeta / transferencias internas no son ni venta ni gasto
+  const txs = (txRes.data || []).filter(t => !esTransferInterna(t));
+  const pagados = {}; (resRes.data || []).forEach(r => { pagados[r.period] = r; });
 
   const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const grid = document.getElementById('taxGrid');
-  if (!data?.length) {
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="eico" style="width:48px;height:48px;border-radius:50%;background:var(--bg4);color:var(--muted);display:flex;align-items:center;justify-content:center;margin:0 auto .75rem">${icon('recibo','ic ic-24')}</div><div class="etxt t-card">Sin reservas fiscales</div><div class="t-body" style="margin-top:.35rem">Agrega transacciones con factura (CFDI) para calcularlas.</div></div>`;
+  _taxCalc = {};
+
+  if (!txs.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="eico" style="width:48px;height:48px;border-radius:50%;background:var(--bg4);color:var(--muted);display:flex;align-items:center;justify-content:center;margin:0 auto .75rem">${icon('recibo','ic ic-24')}</div><div class="etxt t-card">Aún no marcas movimientos con factura</div><div class="t-body" style="margin-top:.35rem;max-width:430px;margin-left:auto;margin-right:auto">Ve a <b>Transacciones</b> y toca <b>"+ CFDI"</b> en los movimientos que tengan factura. Con eso calculo cuánto apartar de IVA e ISR cada mes.</div><button class="btn btn-primary" style="margin-top:1rem" onclick="showPage('transactions')">Ir a Transacciones</button></div>`;
   } else {
-    grid.innerHTML = data.map(r => {
-      const [y, mo] = r.period.split('-');
-      const pending = (!r.has_paid_iva ? (r.iva_net || 0) : 0) + (!r.has_paid_isr ? (r.isr_estimated || 0) : 0);
+    grid.innerHTML = periods.map(p => {
+      const del = txs.filter(t => String(t.date || '').slice(0, 7) === p);
+      const ing = del.filter(t => parseFloat(t.amount) > 0).reduce((s, t) => s + parseFloat(t.amount), 0);
+      const eg  = del.filter(t => parseFloat(t.amount) < 0).reduce((s, t) => s + Math.abs(parseFloat(t.amount)), 0);
+      const ivaC = ing * 0.16 / 1.16;            // IVA incluido en lo que facturaste
+      const ivaP = eg * 0.16 / 1.16;             // IVA acreditable de tus compras con factura
+      const ivaNet = Math.max(ivaC - ivaP, 0);
+      const base = (ing - eg) / 1.16;            // utilidad sin IVA
+      const isr = base > 0 ? base * _taxRate / 100 : 0;
+      _taxCalc[p] = { iva_collected: Math.round(ivaC * 100) / 100, iva_paid: Math.round(ivaP * 100) / 100, iva_net: Math.round(ivaNet * 100) / 100, isr_estimated: Math.round(isr * 100) / 100 };
+      const pg = pagados[p] || {};
+      const pend = (!pg.has_paid_iva ? ivaNet : 0) + (!pg.has_paid_isr ? isr : 0);
+      const [y, mo] = p.split('-');
       return `<div class="tax-card">
-        <div class="tax-period-lbl">${months[parseInt(mo) - 1]} ${y}</div>
-        <div class="tax-row"><span class="tax-lbl">IVA cobrado</span><span class="tax-val" style="color:var(--ink)">+${fmt(r.iva_collected)}</span></div>
-        <div class="tax-row"><span class="tax-lbl">IVA pagado</span><span class="tax-val" style="color:var(--ink)">−${fmt(r.iva_paid)}</span></div>
-        <div class="tax-row"><span class="tax-lbl">ISR estimado (30%)</span><span class="tax-val" style="color:var(--ink)">${fmt(r.isr_estimated)}</span></div>
+        <div class="tax-period-lbl">${months[parseInt(mo) - 1]} ${y}${del.length ? '' : ' · sin facturas'}</div>
+        <div class="tax-row"><span class="tax-lbl">IVA cobrado</span><span class="tax-val" style="color:var(--ink)">+${fmt(ivaC)}</span></div>
+        <div class="tax-row"><span class="tax-lbl">IVA acreditable</span><span class="tax-val" style="color:var(--ink)">−${fmt(ivaP)}</span></div>
+        <div class="tax-row"><span class="tax-lbl">ISR estimado (${_taxRate}%)</span><span class="tax-val" style="color:var(--ink)">${fmt(isr)}</span></div>
         <div class="tax-total">
-          <span class="tax-total-lbl">A pagar al SAT</span>
-          <span class="tax-total-val">${fmt(pending)}</span>
+          <span class="tax-total-lbl">Aparta este mes</span>
+          <span class="tax-total-val">${fmt(pend)}</span>
         </div>
         <div class="tax-pills">
-          <span class="tax-pill ${r.has_paid_iva ? 'paid' : 'due'}">${r.has_paid_iva ? 'IVA pagado' : 'IVA pendiente'}</span>
-          <span class="tax-pill ${r.has_paid_isr ? 'paid' : 'due'}">${r.has_paid_isr ? 'ISR pagado' : 'ISR pendiente'}</span>
+          <button class="tax-pill ${pg.has_paid_iva ? 'paid' : 'due'}" style="cursor:pointer;border:none;font:inherit" onclick="taxTogglePaid('${p}','iva',${pg.has_paid_iva ? 'true' : 'false'})">${pg.has_paid_iva ? 'IVA pagado ✓' : 'Marcar IVA pagado'}</button>
+          <button class="tax-pill ${pg.has_paid_isr ? 'paid' : 'due'}" style="cursor:pointer;border:none;font:inherit" onclick="taxTogglePaid('${p}','isr',${pg.has_paid_isr ? 'true' : 'false'})">${pg.has_paid_isr ? 'ISR pagado ✓' : 'Marcar ISR pagado'}</button>
         </div>
       </div>`;
     }).join('');
@@ -2552,6 +2604,39 @@ async function loadTaxes() {
         </div>
       </div>
     </div>`;
+}
+
+// Cambiar la tasa de ISR (se guarda en el perfil y recalcula al instante)
+async function taxSetRate(v) {
+  let n = parseFloat(v);
+  if (isNaN(n) || n < 0 || n > 50) n = 30;
+  _taxRate = n;
+  loadTaxes();
+  const { error } = await db.from('profiles').update({ isr_rate: n }).eq('id', _user.id);
+  if (error) console.warn('taxSetRate:', error.message);
+}
+
+// Palomita "ya pagué IVA/ISR" del mes (se guarda en tax_reserves junto con los montos)
+async function taxTogglePaid(period, tipo, cur) {
+  const campo = tipo === 'iva' ? 'has_paid_iva' : 'has_paid_isr';
+  const calc = _taxCalc[period] || {};
+  try {
+    const { data: ex } = await db.from('tax_reserves').select('id')
+      .eq('user_id', _user.id).eq('period', period).maybeSingle();
+    let error;
+    if (ex) ({ error } = await db.from('tax_reserves').update({ [campo]: !cur, ...calc }).eq('id', ex.id));
+    else ({ error } = await db.from('tax_reserves').insert({ user_id: _user.id, period, [campo]: !cur, ...calc }));
+    if (error) throw error;
+    loadTaxes();
+  } catch (e) { toast('No se pudo guardar: ' + (e.message || 'error'), 'error'); }
+}
+
+// Marcar/desmarcar factura (CFDI) en un movimiento — alimenta la sección SAT/Fiscal
+async function toggleFiscal(id, cur) {
+  const { error } = await db.from('transactions').update({ is_fiscal: !cur }).eq('id', id).eq('user_id', _user.id);
+  if (error) { toast('Error: ' + error.message, 'error'); return; }
+  toast(!cur ? 'Marcado con factura (CFDI) ✓ — ya cuenta para tu reserva del SAT' : 'Factura desmarcada', 'ok');
+  loadTx();
 }
 
 // ── Alerts ────────────────────────────────────────────────────
