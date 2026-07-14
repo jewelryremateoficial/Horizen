@@ -43,7 +43,7 @@ select.input{-webkit-appearance:none}
     <span class="brand-name">Horiz<span class="en">en</span></span>
   </a>
 
-  <div class="pill" style="margin-bottom:1.25rem"><span class="dot"></span> 14 días gratis — sin tarjeta de crédito</div>
+  <div class="pill" style="margin-bottom:1.25rem"><span class="dot"></span> 7 días de prueba con todo incluido</div>
 
   <h1>Crea tu cuenta</h1>
   <p class="subtitle">Únete a las personas y negocios que ya toman mejores decisiones financieras</p>
@@ -103,7 +103,7 @@ select.input{-webkit-appearance:none}
         <span>Acepto los <a href="/terminos.html" target="_blank">Términos de Servicio</a> y la <a href="/privacidad.html" target="_blank">Política de Privacidad</a> de Horizen.</span>
       </div>
       <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">
-        Crear cuenta — 14 días gratis
+        Crear cuenta — 7 días de prueba
       </button>
     </form>
 
@@ -182,7 +182,7 @@ async function handleSignup(e) {
       : error.message;
     alert.className = 'alert alert-error show';
     btn.disabled = false;
-    btn.innerHTML = 'Crear cuenta — 14 días gratis';
+    btn.innerHTML = 'Crear cuenta — 7 días de prueba';
     return;
   }
 
@@ -197,7 +197,7 @@ async function handleSignup(e) {
       rfc: rfc || null,
       plan: 'free',
       subscription_status: 'trial',
-      trial_ends_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+      trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       referral_code: data.user.id.replace(/-/g, '').slice(0, 8).toUpperCase(),
       referred_by_code: _refCode
     });

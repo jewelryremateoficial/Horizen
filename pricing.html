@@ -137,7 +137,7 @@ body{background:var(--bg-soft)}
       <div class="divider"></div>
       <div class="limit-row"><span class="limit-label">Estados de cuenta con IA</span><span class="limit-val">3 / mes</span></div>
       <div class="limit-row"><span class="limit-label">Preguntas a NOVA</span><span class="limit-val">20 / mes</span></div>
-      <div class="limit-row"><span class="limit-label">Usuarios</span><span class="limit-val">1</span></div>
+      <div class="limit-row"><span class="limit-label">Usuarios</span><span class="limit-val">1 (tu cuenta)</span></div>
       <div class="divider"></div>
       <div class="features-list">
         <div class="feat"><span class="icon check">✓</span> La IA lee tu estado de cuenta y categoriza todo</div>
@@ -146,10 +146,11 @@ body{background:var(--bg-soft)}
         <div class="feat"><span class="icon check">✓</span> Efectivo con foto de nota y corte del día</div>
         <div class="feat"><span class="icon check">✓</span> Detector de gastos fijos y calendario financiero</div>
         <div class="feat"><span class="icon x">✕</span><span style="color:var(--muted)"> Clientes y cobranza por WhatsApp</span></div>
-        <div class="feat"><span class="icon x">✕</span><span style="color:var(--muted)"> Citas con tu link propio · Proveedores</span></div>
+        <div class="feat"><span class="icon x">✕</span><span style="color:var(--muted)"> Citas en línea para tus clientes</span></div>
+        <div class="feat"><span class="icon x">✕</span><span style="color:var(--muted)"> Proveedores</span></div>
       </div>
       <div id="paypal-basico" class="paypal-btn-container"></div>
-      <div class="trial-note">14 días gratis, luego $199/mes</div>
+      <div class="trial-note">7 días de prueba, luego $199/mes</div>
     </div>
 
     <!-- NEGOCIO (featured) -->
@@ -165,19 +166,19 @@ body{background:var(--bg-soft)}
       <div class="divider"></div>
       <div class="limit-row"><span class="limit-label">Estados de cuenta con IA</span><span class="limit-val">15 / mes</span></div>
       <div class="limit-row"><span class="limit-label">Preguntas a NOVA</span><span class="limit-val">Ilimitadas</span></div>
-      <div class="limit-row"><span class="limit-label">Usuarios</span><span class="limit-val">1</span></div>
+      <div class="limit-row"><span class="limit-label">Usuarios</span><span class="limit-val">1 (tu cuenta)</span></div>
       <div class="divider"></div>
       <div class="features-list">
         <div class="feat"><span class="icon check">✓</span> Todo lo de Emprende</div>
         <div class="feat"><span class="icon check">✓</span> Clientes: quién te debe y el WhatsApp de cobro ya redactado</div>
         <div class="feat"><span class="icon check">✓</span> Cotizaciones y apartados con abonos</div>
-        <div class="feat"><span class="icon check">✓</span> Citas: tu link para que agenden solos (adiós ping-pong)</div>
-        <div class="feat"><span class="icon check">✓</span> Proveedores: rentabilidad real, cruzada contra tu banco</div>
+        <div class="feat"><span class="icon check">✓</span> Citas en línea: le mandas un link a tu cliente y él solo elige día y hora</div>
+        <div class="feat"><span class="icon check">✓</span> Proveedores: cuánta ganancia te deja cada proveedor</div>
         <div class="feat"><span class="icon check">✓</span> Reportes en Excel para tu contador</div>
-        <div class="feat"><span class="icon check">✓</span> NOVA sin límite: pregúntale lo que sea de tu dinero</div>
+        <div class="feat"><span class="icon check">✓</span> Asistente NOVA sin límite: pregúntale tus dudas y te explica con tus propios números</div>
       </div>
       <div id="paypal-pro" class="paypal-btn-container"></div>
-      <div class="trial-note">14 días gratis, luego $399/mes</div>
+      <div class="trial-note">7 días de prueba, luego $399/mes</div>
     </div>
 
     <!-- EMPRESA -->
@@ -201,7 +202,7 @@ body{background:var(--bg-soft)}
         <div class="feat"><span class="icon check">✓</span> Onboarding personal: te dejamos todo andando 1 a 1</div>
       </div>
       <div id="paypal-empresa" class="paypal-btn-container"></div>
-      <div class="trial-note">14 días gratis, luego $799/mes</div>
+      <div class="trial-note">7 días de prueba, luego $799/mes</div>
     </div>
 
   </div>
@@ -216,7 +217,7 @@ body{background:var(--bg-soft)}
   </div>
   <div class="faq-item">
     <div class="faq-q" onclick="toggleFaq(this)">¿Cómo funciona el período de prueba? <span class="arrow">▾</span></div>
-    <div class="faq-a"><div class="faq-a-inner">Tienes 14 días completos con acceso a todas las funciones del plan elegido. No te cobramos nada hasta que termine el trial. Puedes cancelar antes sin costo alguno.</div></div>
+    <div class="faq-a"><div class="faq-a-inner">Tienes 7 días completos con acceso a todas las funciones del plan elegido. No se te cobra nada durante la prueba, y puedes cancelar antes de que termine sin costo alguno.</div></div>
   </div>
   <div class="faq-item">
     <div class="faq-q" onclick="toggleFaq(this)">¿Qué pasa si llego a mi límite de estados de cuenta? <span class="arrow">▾</span></div>
@@ -251,7 +252,7 @@ body{background:var(--bg-soft)}
     <h3 id="modalTitle">Suscripción Básico</h3>
     <p id="modalDesc">Estás a un paso de comenzar tu inteligencia financiera.</p>
     <div id="paypalContainer"></div>
-    <p style="text-align:center;font-size:.75rem;color:var(--muted);margin-top:1rem">🔒 Pago seguro procesado por PayPal · 14 días gratis</p>
+    <p style="text-align:center;font-size:.75rem;color:var(--muted);margin-top:1rem">🔒 Pago seguro procesado por PayPal · 7 días de prueba</p>
   </div>
 </div>
 
@@ -302,9 +303,9 @@ function loadPayPalButtons() {
     if (!container) return;
     container.innerHTML = `
       <div class="paypal-placeholder" onclick="skipForNow()" style="text-align:center">
-        Empezar mis 14 días gratis →
+        Probar Horizen 7 días →
       </div>
-      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:.45rem">Sin tarjeta. El pago en línea se activa muy pronto.</div>`;
+      <div style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:.45rem">El pago en línea se activa muy pronto.</div>`;
   });
 }
 
