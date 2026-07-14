@@ -2606,14 +2606,15 @@ async function loadTaxes() {
     </div>`;
 }
 
-// Cambiar la tasa de ISR (se guarda en el perfil y recalcula al instante)
+// Cambiar la tasa de ISR (se guarda PRIMERO en el perfil y luego recalcula,
+// porque loadTaxes vuelve a leer la tasa del perfil)
 async function taxSetRate(v) {
   let n = parseFloat(v);
   if (isNaN(n) || n < 0 || n > 50) n = 30;
   _taxRate = n;
-  loadTaxes();
   const { error } = await db.from('profiles').update({ isr_rate: n }).eq('id', _user.id);
   if (error) console.warn('taxSetRate:', error.message);
+  await loadTaxes();
 }
 
 // Palomita "ya pagué IVA/ISR" del mes (se guarda en tax_reserves junto con los montos)
