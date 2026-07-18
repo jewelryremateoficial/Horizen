@@ -296,11 +296,11 @@ function toggleBilling() {
 // Se enciende (true) cuando la función paypal-setup haya creado los planes NUEVOS
 // ($199/$399/$799 con 7 días de prueba capturando tarjeta) y sus IDs estén abajo.
 // Mientras esté en false, se muestra el arranque de prueba sin cobro.
-const PAYPAL_LIVE = false;
+const PAYPAL_LIVE = true;
 const PAYPAL_PLANS_V2 = {
-  basico:  { m: '', y: '' },
-  pro:     { m: '', y: '' },
-  empresa: { m: '', y: '' },
+  basico:  { m: 'P-6MP19416UB444452XNJNOTXI', y: 'P-590803394S8260056NJNOTXI' },
+  pro:     { m: 'P-1R803598V3206115CNJNOTXQ', y: 'P-3NB26581AS110183YNJNOTXQ' },
+  empresa: { m: 'P-3BN45004MP5224405NJNOTXQ', y: 'P-1V442284S2630510PNJNOTXY' },
 };
 
 function loadPayPalButtons() {

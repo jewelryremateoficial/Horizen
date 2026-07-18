@@ -7,11 +7,11 @@ const SUPABASE_URL = 'https://upcbznfkpswtxiffgsgj.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_2rL4lnWnN_6c3h2KMRt8TA_yz2Bb8yZ';
 const PAYPAL_CLIENT_ID = 'Ab9gde9vp6tmdo_5bc2w-jWtvA4xd_dwWuRoTBxSTJeyd77Gu2EQeOEsFhdd4RmanITAXlDDJKpv8wNI';
 
-// PayPal Plan IDs
+// PayPal Plan IDs — Fase 4 (7 días de prueba con tarjeta, luego cobro mensual)
 const PAYPAL_PLANS = {
-  basico:  'P-79321420JS938303KNIOSOJA',   // $990 MXN/mes
-  pro:     'P-30241692SC5349045NIOSOJI',   // $1,990 MXN/mes
-  empresa: 'P-2KG00541GJ147021VNIOSOJI'   // $3,990 MXN/mes
+  basico:  'P-6MP19416UB444452XNJNOTXI',   // Emprende $199 MXN/mes
+  pro:     'P-1R803598V3206115CNJNOTXQ',   // Negocio $399 MXN/mes
+  empresa: 'P-3BN45004MP5224405NJNOTXQ'   // Empresa $799 MXN/mes
 };
 
 // ── Init Supabase ─────────────────────────────────────────
@@ -104,10 +104,10 @@ function fmtRelative(d) {
 
 // ── Plan helpers ──────────────────────────────────────────
 const PLANS = {
-  basico:  { name: 'Básico',  price: 990,  color: '#6366f1' },
-  pro:     { name: 'Pro',     price: 1990, color: '#00d4aa' },
-  empresa: { name: 'Empresa', price: 3990, color: '#f59e0b' },
-  free:    { name: 'Trial',   price: 0,    color: '#6b7280' }
+  basico:  { name: 'Emprende', price: 199, color: '#6366f1' },
+  pro:     { name: 'Negocio',  price: 399, color: '#00d4aa' },
+  empresa: { name: 'Empresa',  price: 799, color: '#f59e0b' },
+  free:    { name: 'Trial',    price: 0,   color: '#6b7280' }
 };
 
 function planBadge(plan) {
