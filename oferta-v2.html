@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horizen — El Cierre de Mes en 10 Minutos (v2 bold)</title>
+<link rel="icon" href="/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --p:#635bff;--p-dark:#4b45c6;--violet:#8b7cff;--ink:#0a2540;--ink-soft:#3d4f63;--muted:#5b6b7c;
+    --money-in:#1e7a4f;--money-in-bg:#e6f4ec;--line:rgba(10,37,64,.10);--bg-soft:#f6f5ff;--lav:#efeefe;--white:#fff;
+    --grad-brand:linear-gradient(90deg,#ffc98a,#ff8fb4 34%,#b18cff 66%,#6fc6ff);
+    --grad-p:linear-gradient(140deg,#8b7cff,#635bff 52%,#4b45c6);
+    --shadow-1:0 2px 10px rgba(10,37,64,.06);
+    --shadow-2:0 22px 50px -16px rgba(99,91,255,.32),0 8px 22px rgba(10,37,64,.08);
+    --shadow-p:0 26px 60px -18px rgba(99,91,255,.55);
+    --r:14px;--r-lg:22px;--maxw:1120px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:var(--white);line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+  .gtext{background:var(--grad-p);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:1rem;padding:.9rem 1.6rem;border-radius:12px;cursor:pointer;border:0;transition:transform .15s cubic-bezier(.4,0,.2,1),box-shadow .15s,filter .15s;font-family:inherit}
+  .btn-primary{background:var(--grad-p);color:#fff;box-shadow:var(--shadow-2)}
+  .btn-primary:hover{transform:translateY(-2px);filter:brightness(1.06)}
+  .btn-ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn-ghost:hover{background:var(--bg-soft);border-color:var(--violet)}
+  .btn-white{background:#fff;color:var(--p-dark)}.btn-white:hover{transform:translateY(-2px)}
+  .btn-lg{font-size:1.1rem;padding:1.05rem 2rem}
+
+  /* HERO bold morado */
+  .hero{position:relative;overflow:hidden;background:var(--grad-p);color:#fff}
+  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(50% 60% at 85% 8%,rgba(255,255,255,.16),transparent 55%);pointer-events:none}
+  .brand-bar{height:5px;background:var(--grad-brand)}
+  .hnav{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;padding:18px 0;max-width:var(--maxw);margin:0 auto;padding-left:22px;padding-right:22px}
+  .hnav img{height:32px}
+  .hnav .links{display:flex;gap:26px;align-items:center;font-size:.94rem;font-weight:600;color:rgba(255,255,255,.9)}
+  .hinner{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:center;padding:34px 22px 60px;max-width:var(--maxw);margin:0 auto}
+  .hpill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.16);color:#fff;font-weight:700;font-size:.85rem;padding:.44rem 1rem;border-radius:999px;margin-bottom:22px}
+  .live{width:8px;height:8px;border-radius:50%;background:#7CFFB2;box-shadow:0 0 0 3px rgba(124,255,178,.25)}
+  .hero h1{font-size:clamp(2.5rem,5.2vw,4.2rem);line-height:.99;letter-spacing:-.04em;font-weight:900;margin-bottom:20px}
+  .hero h1 .u{background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hsub{font-size:1.2rem;color:rgba(255,255,255,.9);max-width:42ch;margin-bottom:28px;font-weight:500}
+  .capture{display:inline-flex;gap:8px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:7px;flex-wrap:wrap}
+  .capture input{border:0;background:transparent;color:#fff;font-family:inherit;font-size:1rem;padding:.72rem 1.05rem;min-width:200px;outline:none}
+  .capture input::placeholder{color:rgba(255,255,255,.75)}
+  .demo{display:inline-flex;align-items:center;gap:8px;color:#fff;font-weight:700;font-size:.96rem;margin-top:16px;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:2px}
+  .htrust{margin-top:22px;font-size:.9rem;color:rgba(255,255,255,.82);display:flex;gap:18px;flex-wrap:wrap}
+  .visual{position:relative;height:400px}
+  .bignum{position:absolute;top:-24px;right:0;font-size:18rem;font-weight:900;color:rgba(255,255,255,.10);line-height:1;letter-spacing:-.05em;z-index:0;user-select:none}
+  .photo{position:absolute;z-index:1;top:20px;left:50%;transform:translateX(-50%);width:238px;height:320px;border-radius:22px;background:linear-gradient(160deg,#e7e2ff,#c3b8f7);display:flex;align-items:flex-end;justify-content:center;padding:16px;text-align:center;color:var(--p-dark);font-weight:700;font-size:.9rem;box-shadow:0 34px 70px -22px rgba(0,0,0,.45)}
+  .cardf{position:absolute;z-index:2;background:#fff;color:var(--ink);border-radius:15px;padding:13px 16px;box-shadow:0 22px 44px rgba(0,0,0,.28)}
+  .cf1{top:44px;right:-4px}.cf2{bottom:52px;left:-6px}.cf3{bottom:6px;right:24px}
+  .cardf .l{font-size:.7rem;color:var(--muted);font-weight:600}
+  .cardf .v{font-size:1.15rem;font-weight:900}.cardf .v.in{color:var(--money-in)}
+  .cardf .chip{display:inline-block;font-size:.66rem;font-weight:800;padding:.1rem .45rem;border-radius:6px;background:var(--money-in-bg);color:var(--money-in);margin-top:5px}
+
+  section{padding:76px 0}
+  .eyebrow{text-align:center;color:var(--p);font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:.82rem;margin-bottom:14px}
+  h2{font-size:clamp(1.9rem,4.2vw,3rem);line-height:1.08;letter-spacing:-.025em;font-weight:900;text-align:center;max-width:20ch;margin:0 auto 16px}
+  .lead{text-align:center;color:var(--ink-soft);font-size:1.15rem;max-width:56ch;margin:0 auto 46px;font-weight:500}
+
+  .bigstat{display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap;margin-bottom:44px}
+  .bigstat .num{font-size:clamp(4rem,11vw,7.5rem);font-weight:900;letter-spacing:-.04em;line-height:.9;color:var(--p)}
+  .bigstat .txt{max-width:24ch;text-align:left;font-size:1.15rem;color:var(--ink-soft);font-weight:600}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:28px;box-shadow:var(--shadow-1)}
+  .card .ic{width:48px;height:48px;border-radius:13px;background:var(--lav);color:var(--p);display:grid;place-items:center;font-size:1.4rem;font-weight:900;margin-bottom:16px}
+  .card h3{font-size:1.16rem;font-weight:800;margin-bottom:7px}.card p{color:var(--muted);font-size:1rem}
+
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px;margin:0 auto}
+  .ba .col{border-radius:var(--r-lg);padding:30px}
+  .ba .before{background:#f4f5f7;border:1px solid var(--line)}
+  .ba .after{background:var(--lav);border:1.5px solid rgba(99,91,255,.3)}
+  .ba h3{font-size:1.05rem;font-weight:900;letter-spacing:.02em;text-transform:uppercase;margin-bottom:16px}
+  .ba .before h3{color:var(--muted)}.ba .after h3{color:var(--p)}
+  .ba ul{list-style:none;display:flex;flex-direction:column;gap:12px}
+  .ba li{display:flex;gap:10px;align-items:flex-start;font-size:1.02rem;color:var(--ink-soft)}
+  .ba .before li .m{color:#a2abb6;font-weight:900}.ba .after li .m{color:var(--money-in);font-weight:900}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .step{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:30px 26px;box-shadow:var(--shadow-1)}
+  .step .n{width:44px;height:44px;border-radius:13px;background:var(--grad-p);color:#fff;display:grid;place-items:center;font-weight:900;font-size:1.2rem;margin-bottom:16px;box-shadow:var(--shadow-2)}
+  .step h3{font-size:1.16rem;font-weight:800;margin-bottom:7px}.step p{color:var(--muted);font-size:1rem}
+
+  .offer{background:#fff;border:1.5px solid rgba(99,91,255,.22);border-radius:26px;padding:44px;max-width:800px;margin:0 auto;box-shadow:var(--shadow-2)}
+  .offer .badge{display:block;text-align:center;background:var(--lav);color:var(--p-dark);font-weight:800;font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;padding:.5rem 1rem;border-radius:999px;width:fit-content;margin:0 auto 20px}
+  .offer h3.title{text-align:center;font-size:1.7rem;font-weight:900;margin-bottom:6px}
+  .offer .name{text-align:center;color:var(--ink-soft);font-weight:600;margin-bottom:28px}
+  .stack{list-style:none;display:flex;flex-direction:column;gap:2px}
+  .stack li{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px dashed rgba(10,37,64,.12)}
+  .stack .chk{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--money-in-bg);color:var(--money-in);display:grid;place-items:center;font-weight:900;font-size:.9rem;margin-top:2px}
+  .stack .txt{flex:1}.stack .txt b{font-weight:800}.stack .txt span{display:block;color:var(--muted);font-size:.92rem}
+  .stack .price{font-weight:800;white-space:nowrap;font-size:.98rem}
+  .totalrow{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:22px;border-top:2px solid rgba(99,91,255,.25)}
+  .totalrow .l{font-weight:800;color:var(--ink-soft);font-size:1.05rem}
+  .totalrow .old{color:var(--muted);text-decoration:line-through;font-weight:600}.totalrow .new{font-size:1.9rem;font-weight:900}
+
+  .toggle-wrap{display:flex;justify-content:center;margin-bottom:40px}
+  .toggle{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px;gap:4px;box-shadow:var(--shadow-1)}
+  .toggle button{border:0;background:transparent;font-family:inherit;font-weight:800;font-size:.92rem;padding:.55rem 1.3rem;border-radius:999px;cursor:pointer;color:var(--muted)}
+  .toggle button.on{background:var(--grad-p);color:#fff}
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:center}
+  .plan{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:30px 26px;box-shadow:var(--shadow-1)}
+  .plan.feat{border:2px solid var(--p);box-shadow:var(--shadow-p);transform:scale(1.045);position:relative;z-index:2}
+  .plan .pop{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--grad-p);color:#fff;font-weight:800;font-size:.78rem;padding:.4rem 1rem;border-radius:999px;white-space:nowrap}
+  .plan h3{font-size:1.2rem;font-weight:900;margin-bottom:4px}
+  .plan .who{color:var(--muted);font-size:.9rem;min-height:2.6em;margin-bottom:14px}
+  .plan .amt{font-size:2.5rem;font-weight:900;letter-spacing:-.03em;line-height:1}
+  .plan .amt small{font-size:.95rem;font-weight:600;color:var(--muted)}
+  .plan .py{color:var(--muted);font-size:.85rem;margin-top:6px;min-height:2.4em}
+  .plan .feats{list-style:none;margin:18px 0;display:flex;flex-direction:column;gap:9px}
+  .plan .feats li{display:flex;gap:9px;font-size:.95rem;color:var(--ink-soft)}
+  .plan .feats .c{color:var(--money-in);font-weight:900}
+  .plan .btn{width:100%;justify-content:center}
+  .plan .badge-inc{background:var(--money-in-bg);color:var(--money-in);font-weight:700;font-size:.82rem;padding:.4rem .7rem;border-radius:9px;text-align:center;margin-bottom:14px}
+  .anchor-note{text-align:center;color:var(--ink-soft);font-size:1rem;max-width:52ch;margin:36px auto 0;font-weight:500}
+  .scarcity{max-width:640px;margin:22px auto 0;background:#fff7ed;border:1px solid rgba(217,119,6,.28);border-radius:var(--r);padding:16px 20px;text-align:center;color:#8a4b0a;font-weight:600;font-size:.96rem}
+  .scarcity b{color:#b45309}
+
+  .guarantee{max-width:760px;margin:0 auto;background:var(--money-in-bg);border:1px solid rgba(30,122,79,.25);border-radius:var(--r-lg);padding:36px;display:flex;gap:24px;align-items:center}
+  .guarantee .seal{flex-shrink:0;width:96px;height:96px;border-radius:50%;background:#fff;border:3px solid var(--money-in);color:var(--money-in);display:grid;place-items:center;text-align:center;font-weight:900;font-size:.74rem;line-height:1.15;box-shadow:var(--shadow-1)}
+  .guarantee h3{font-size:1.4rem;font-weight:900;color:var(--money-in);margin-bottom:6px}.guarantee p{color:var(--ink-soft)}
+
+  .quotes{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .quote{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:26px;box-shadow:var(--shadow-1)}
+  .quote p{font-size:1rem;color:var(--ink-soft);margin-bottom:18px}
+  .quote .who{display:flex;align-items:center;gap:11px}
+  .quote .av{width:40px;height:40px;border-radius:50%;background:var(--grad-p);color:#fff;display:grid;place-items:center;font-weight:800;font-size:.9rem}
+  .quote .who b{font-size:.94rem}.quote .who span{display:block;color:var(--muted);font-size:.82rem;font-weight:500}
+  .ph-note{text-align:center;color:var(--muted);font-size:.82rem;margin-top:18px;font-style:italic}
+
+  .faq{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+  details{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:4px 22px}
+  summary{cursor:pointer;font-weight:800;padding:17px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;font-size:1.02rem}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:'+';color:var(--p);font-weight:900;font-size:1.4rem}
+  details[open] summary::after{content:'–'}
+  details p{color:var(--muted);padding:0 0 17px}
+
+  .final{position:relative;overflow:hidden;text-align:center;background:var(--grad-p);border-radius:28px;padding:64px 34px;max-width:960px;margin:0 auto;box-shadow:var(--shadow-p)}
+  .final::before{content:'';position:absolute;inset:0;background:radial-gradient(60% 100% at 50% -10%,rgba(255,255,255,.22),transparent 60%);pointer-events:none}
+  .final h2{color:#fff;margin-bottom:14px;position:relative}
+  .final p{color:rgba(255,255,255,.9);font-size:1.18rem;max-width:46ch;margin:0 auto 30px;position:relative;font-weight:500}
+  .final .htrust{justify-content:center;color:rgba(255,255,255,.85)}
+
+  footer{border-top:1px solid var(--line);padding:32px 0;color:var(--muted);font-size:.9rem;text-align:center}
+  footer img{height:26px;opacity:.9;margin-bottom:10px}
+
+  @media(max-width:860px){
+    .hnav .links{display:none}
+    .hinner{grid-template-columns:1fr;gap:10px}.visual{height:330px}.bignum{font-size:13rem}
+    .grid3,.steps,.quotes,.ba{grid-template-columns:1fr}
+    .guarantee{flex-direction:column;text-align:center}.offer{padding:30px 22px}
+    .plans{grid-template-columns:1fr;gap:26px}.plan.feat{transform:none}
+    .bigstat{gap:16px}.bigstat .txt{text-align:center}
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO bold morado -->
+<header class="hero">
+  <div class="brand-bar"></div>
+  <div class="hnav">
+    <img src="/assets/logo-horizen-white.svg" alt="Horizen">
+    <div class="links"><span>Producto</span><span>Precios</span><span>Testimonios</span><a class="btn btn-white" style="padding:.55rem 1.1rem;font-size:.9rem" href="/signup.html">Abrir mi cuenta</a></div>
+  </div>
+  <div class="hinner">
+    <div>
+      <span class="hpill"><span class="live"></span>El nuevo futuro de México</span>
+      <h1>Sabe <span class="u">hoy</span> si tu negocio gana o pierde</h1>
+      <p class="hsub">Sube tu estado de cuenta y en 10 minutos ves tu flujo de caja, tu salud financiera y hacia dónde vas. Sin Excel.</p>
+      <form class="capture" onsubmit="location.href='/signup.html';return false">
+        <input placeholder="Tu correo" type="email">
+        <button class="btn btn-white" type="submit">Empezar gratis →</button>
+      </form>
+      <a class="demo" href="#como">▶ Ver demo de 60 seg</a>
+      <div class="htrust"><span>✓ 14 días gratis</span><span>✓ Sin tarjeta</span><span>✓ Cancela cuando quieras</span></div>
+    </div>
+    <div class="visual">
+      <div class="bignum">10</div>
+      <div class="photo">Foto de un emprendedor real aquí</div>
+      <div class="cardf cf1"><div class="l">Disponible hoy</div><div class="v">$248,900</div><span class="chip">▲ 12%</span></div>
+      <div class="cardf cf2"><div class="l">Entró este mes</div><div class="v in">+$412,300</div></div>
+      <div class="cardf cf3"><div class="l">Salud financiera</div><div class="v">Sólida</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- PROBLEM -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow">El problema real</p>
+    <div class="bigstat">
+      <div class="num">33%</div>
+      <div class="txt">de los negocios en México cierra el primer año. Y casi ninguno fue por vender poco.</div>
+    </div>
+    <p class="lead">Según INEGI, la causa #1 de cierre es la falta de control del flujo de efectivo. No es que vendas poco: es que no ves tu dinero a tiempo.</p>
+    <div class="grid3">
+      <div class="card"><div class="ic">?</div><h3>Cierras el mes a ciegas</h3><p>Vendiste, cobraste, pagaste… pero no sabes si ganaste o perdiste hasta que "sientes" que algo anda mal.</p></div>
+      <div class="card"><div class="ic">≋</div><h3>Todo vive disperso</h3><p>Tres apps de banco, un Excel y una libreta. Para cuando armas el rompecabezas, el dato ya cambió.</p></div>
+      <div class="card"><div class="ic">!</div><h3>Reaccionas tarde</h3><p>Te enteras de que no alcanza cuando ya no alcanza. Nunca antes, cuando todavía podías moverte.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- BEFORE/AFTER -->
+<section style="background:var(--bg-soft)">
+  <div class="wrap">
+    <p class="eyebrow">La transformación</p>
+    <h2>Tu dinero, antes y después de Horizen</h2>
+    <p class="lead">El cambio no es tener otra app. Es dejar de adivinar.</p>
+    <div class="ba">
+      <div class="col before"><h3>Antes</h3><ul>
+        <li><span class="m">✕</span>Abres 3 apps de banco para sumar tu saldo real.</li>
+        <li><span class="m">✕</span>El cierre de mes tarda días… y sale a ojo.</li>
+        <li><span class="m">✕</span>Descubres los problemas de caja cuando ya explotaron.</li>
+        <li><span class="m">✕</span>Decides por corazonada, no por datos.</li>
+      </ul></div>
+      <div class="col after"><h3>Después</h3><ul>
+        <li><span class="m">✓</span>Todo tu dinero en una sola pantalla, ordenado.</li>
+        <li><span class="m">✓</span>Tu flujo de caja claro, sin fórmulas.</li>
+        <li><span class="m">✓</span>Alertas de salud financiera antes de que duela.</li>
+        <li><span class="m">✓</span>Decides con números reales, con seguridad.</li>
+      </ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section id="como">
+  <div class="wrap">
+    <p class="eyebrow">Cómo funciona</p>
+    <h2>De tu estado de cuenta a claridad en 3 pasos</h2>
+    <p class="lead">Sin conectar bancos, sin fórmulas, sin capturar cientos de movimientos a mano.</p>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h3>Subes tu estado de cuenta</h3><p>Arrastras el PDF (o capturas tus movimientos). Horizen lo lee y lo ordena por ti.</p></div>
+      <div class="step"><div class="n">2</div><h3>Horizen hace los números</h3><p>Categoriza, calcula tu flujo de caja y evalúa tu salud financiera automáticamente.</p></div>
+      <div class="step"><div class="n">3</div><h3>Ves y decides</h3><p>Tu tablero: cuánto entra, cuánto sale, cuánto aguantas y hacia dónde vas. En una pantalla.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- OFFER -->
+<section style="background:var(--bg-soft)">
+  <div class="wrap">
+    <p class="eyebrow">Todo lo que te llevas</p>
+    <h2>El paquete de arranque de fundador</h2>
+    <p class="lead">Incluido gratis con tu plan Profesional o Empresarial. No es solo la app: es todo para tener el control desde el día uno.</p>
+    <div class="offer">
+      <span class="badge">🎯 El Cierre de Mes en 10 Minutos</span>
+      <ul class="stack">
+        <li><span class="chk">✓</span><span class="txt"><b>Arranque Hecho por Ti</b><span>Sesión 1 a 1 de 30 min: subimos y categorizamos tu primer estado de cuenta contigo.</span></span><span class="price">$1,500</span></li>
+        <li><span class="chk">✓</span><span class="txt"><b>Mini-curso "Lee tus números en 20 minutos"</b><span>Videos cortos para entender tu tablero aunque no sepas nada de finanzas.</span></span><span class="price">$990</span></li>
+        <li><span class="chk">✓</span><span class="txt"><b>Reporte mensual para tu contador</b><span>Exportable y ordenado. Tu contador te lo va a agradecer.</span></span><span class="price">$800</span></li>
+        <li><span class="chk">✓</span><span class="txt"><b>Alertas de reserva fiscal</b><span>Cuánto guardar para IVA e ISR. Que los impuestos no te agarren en curva.</span></span><span class="price">$700</span></li>
+        <li><span class="chk">✓</span><span class="txt"><b>Plantillas por giro</b><span>Restaurante, tienda, servicios y más. Configurado para tu tipo de negocio.</span></span><span class="price">$500</span></li>
+        <li><span class="chk">✓</span><span class="txt"><b>Soporte prioritario por WhatsApp</b><span>Ayuda real de una persona cuando la necesites.</span></span><span class="price">$600</span></li>
+      </ul>
+      <div class="totalrow"><div class="l">Valor total del paquete</div><div><span class="old">$5,090</span> &nbsp; <span class="new gtext">Gratis</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="precio">
+  <div class="wrap">
+    <p class="eyebrow">Precio</p>
+    <h2>Menos que un mes de contador</h2>
+    <p class="lead">Elige el plan de tu negocio. Cámbialo o cancélalo cuando quieras.</p>
+    <div class="toggle-wrap"><div class="toggle">
+      <button id="tMonth" class="on" onclick="setPlan('month')">Mensual</button>
+      <button id="tYear" onclick="setPlan('year')">Anual · 2 meses gratis</button>
+    </div></div>
+    <div class="plans">
+      <div class="plan">
+        <h3>Emprendedor</h3><p class="who">El que empieza, con 1 negocio.</p>
+        <div class="amt"><span data-m="$590" data-y="$492">$590</span><small>/mes</small></div>
+        <div class="py" data-m="Facturación mensual" data-y="$5,900 al año · ahorras $1,180">Facturación mensual</div>
+        <ul class="feats"><li><span class="c">✓</span>10 estados de cuenta al mes</li><li><span class="c">✓</span>Flujo de caja y salud financiera</li><li><span class="c">✓</span>1 negocio</li></ul>
+        <a class="btn btn-ghost" href="/signup.html">Empezar gratis</a>
+      </div>
+      <div class="plan feat">
+        <span class="pop">★ Más popular</span>
+        <h3>Profesional</h3><p class="who">PyME en crecimiento. El favorito.</p>
+        <div class="amt"><span data-m="$1,490" data-y="$1,242">$1,490</span><small>/mes</small></div>
+        <div class="py" data-m="Facturación mensual" data-y="$14,900 al año · ahorras $2,980">Facturación mensual</div>
+        <div class="badge-inc">+ Paquete de arranque ($5,090) gratis</div>
+        <ul class="feats"><li><span class="c">✓</span>50 estados de cuenta al mes</li><li><span class="c">✓</span>Proyecciones y alertas fiscales</li><li><span class="c">✓</span>Reporte para tu contador</li><li><span class="c">✓</span>Soporte prioritario por WhatsApp</li></ul>
+        <a class="btn btn-primary" href="/signup.html">Empezar 14 días gratis →</a>
+      </div>
+      <div class="plan">
+        <h3>Empresarial</h3><p class="who">Varias cuentas o usuarios.</p>
+        <div class="amt"><span data-m="$3,490" data-y="$2,908">$3,490</span><small>/mes</small></div>
+        <div class="py" data-m="Facturación mensual" data-y="$34,900 al año · ahorras $6,980">Facturación mensual</div>
+        <div class="badge-inc" style="background:var(--lav);color:var(--p-dark)">+ Paquete de arranque ($5,090) gratis</div>
+        <ul class="feats"><li><span class="c">✓</span>Estados de cuenta ilimitados</li><li><span class="c">✓</span>Varias cuentas y usuarios</li><li><span class="c">✓</span>Todo lo de Profesional</li></ul>
+        <a class="btn btn-ghost" href="/signup.html">Empezar gratis</a>
+      </div>
+    </div>
+    <p class="anchor-note">Un contador cuesta $2,000–6,000 al mes y aun así no te dice si ganas o pierdes hoy. Horizen sí — por una fracción.</p>
+    <div class="scarcity">🔥 El <b>Arranque "Hecho por Ti"</b> es limitado: solo tomamos <b>30 negocios nuevos al mes</b>. Quedan <b>12 lugares</b> este mes.</div>
+  </div>
+</section>
+
+<!-- GUARANTEE -->
+<section style="background:var(--bg-soft)">
+  <div class="wrap">
+    <p class="eyebrow">Cero riesgo</p>
+    <h2>La garantía de claridad</h2>
+    <div class="guarantee">
+      <div class="seal">GARANTÍA 30 DÍAS</div>
+      <div><h3>Si no te encanta, te devolvemos todo.</h3><p>Prueba Horizen 30 días. Si no sientes que por fin tienes claridad de tu dinero, te regresamos cada peso — sin preguntas incómodas. El riesgo es nuestro, no tuyo.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIAL -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Lo que dicen</p>
+    <h2>Dueños de negocio que ya ven claro</h2>
+    <div class="quotes">
+      <div class="quote"><p>"Por primera vez sé cuánto dinero tengo de verdad. Dejé de cerrar el mes con la angustia de siempre."</p><div class="who"><span class="av">MG</span><b>María G.<span>Dueña de cafetería · CDMX</span></b></div></div>
+      <div class="quote"><p>"Subí seis meses de estados de cuenta y en minutos entendí en qué se me iba el dinero. Brutal."</p><div class="who"><span class="av">JR</span><b>Jorge R.<span>Agencia de marketing · GDL</span></b></div></div>
+      <div class="quote"><p>"Mi contador me pide el reporte y se lo mando en un clic. Ahorro horas cada mes."</p><div class="who"><span class="av">AL</span><b>Ana L.<span>Distribuidora · MTY</span></b></div></div>
+    </div>
+    <p class="ph-note">◦ Testimonios de ejemplo (placeholder). Reemplázalos por reseñas reales antes de publicar.</p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section style="background:var(--bg-soft)">
+  <div class="wrap">
+    <p class="eyebrow">Dudas frecuentes</p>
+    <h2>Lo que seguro te estás preguntando</h2>
+    <div class="faq">
+      <details open><summary>¿Tengo que conectar mi banco?</summary><p>No. Horizen funciona subiendo tu estado de cuenta (PDF o archivo) o capturando tus movimientos. Tú tienes el control de qué información entra.</p></details>
+      <details><summary>¿Y si no sé nada de finanzas?</summary><p>Justo para eso está el mini-curso "Lee tus números en 20 minutos" y el Arranque Hecho por Ti. Está pensado para dueños de negocio, no para contadores.</p></details>
+      <details><summary>¿Qué pasa cuando termina la prueba de 14 días?</summary><p>Decides si continúas. Si no activas un plan, no se te cobra nada. Y si activas y no te encanta, tienes 30 días de garantía.</p></details>
+      <details><summary>¿Puedo cambiar de plan después?</summary><p>Sí. Empieza en el que quieras y sube o baja cuando lo necesites, desde tu cuenta.</p></details>
+      <details><summary>¿Puedo cancelar cuando quiera?</summary><p>Cuando quieras, desde tu cuenta. Sin llamadas, sin trámites, sin penalización.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section>
+  <div class="wrap">
+    <div class="final">
+      <h2>Deja de manejar tu negocio a ciegas</h2>
+      <p>Tú eres el nuevo futuro de México. Mereces ver tu dinero con claridad — hoy, no el mes que entra.</p>
+      <a class="btn btn-white btn-lg" href="/signup.html">Empezar mi prueba gratis de 14 días →</a>
+      <div class="htrust" style="margin-top:22px"><span>✓ Sin tarjeta</span><span>✓ Incluye el paquete de arranque</span><span>✓ Garantía 30 días</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <img src="/assets/logo-horizen.svg" alt="Horizen"><br>
+    Inteligencia financiera para el nuevo futuro de México.<br>
+    <span style="display:inline-block;margin-top:8px">© 2026 Horizen · <a href="/terminos.html" style="color:var(--p)">Términos</a> · <a href="/privacidad.html" style="color:var(--p)">Privacidad</a></span>
+  </div>
+</footer>
+
+<script>
+  function setPlan(mode){
+    var m=document.getElementById('tMonth'), y=document.getElementById('tYear'), isYear=mode==='year';
+    document.querySelectorAll('.plan [data-m]').forEach(function(el){ el.textContent=isYear?el.getAttribute('data-y'):el.getAttribute('data-m'); });
+    if(isYear){y.classList.add('on');m.classList.remove('on');}else{m.classList.add('on');y.classList.remove('on');}
+  }
+</script>
+</body>
+</html>
