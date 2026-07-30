@@ -193,8 +193,8 @@ serve(async (req) => {
     if (uid) {
       const { data: prof } = await supabase.from('profiles').select('plan,subscription_status').eq('id', uid).maybeSingle()
       const plan = String(prof?.plan || '').toLowerCase()
-      const LIMITES: Record<string, number> = { basico: 3, emprende: 3, pro: 15, negocio: 15, empresa: 40 }
-      const limite = LIMITES[plan] ?? (prof?.subscription_status === 'trial' ? 15 : 3)
+      const LIMITES: Record<string, number> = { basico: 5, emprende: 5, pro: 35, negocio: 35, empresa: 150 }
+      const limite = LIMITES[plan] ?? (prof?.subscription_status === 'trial' ? 35 : 5)
       const desde = new Date(); desde.setDate(1); desde.setHours(0, 0, 0, 0)
       const { count } = await supabase.from('statements').select('id', { count: 'exact', head: true })
         .eq('user_id', uid).gte('created_at', desde.toISOString())
