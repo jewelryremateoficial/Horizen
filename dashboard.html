@@ -1842,6 +1842,17 @@ select.mod-inp{cursor:pointer}
   </div>
 </div>
 
+<div class="overlay" id="dupModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-ttl">Este archivo ya se subió anteriormente</div>
+    <p id="dupMsg" style="font-size:.9rem;color:var(--muted);line-height:1.55;margin:0 0 1.1rem"></p>
+    <div style="display:flex;flex-direction:column;gap:.55rem">
+      <button class="btn-save" onclick="dupAnswer(false)" style="width:100%">Cancelar — no analizarlo otra vez</button>
+      <button class="btn-cancel" onclick="dupAnswer(true)" style="width:100%">Analizarlo de todas formas</button>
+    </div>
+  </div>
+</div>
+
 <!-- Fase D: alta/edición de cliente -->
 <div class="overlay" id="clienteModal">
   <div class="modal">
@@ -4537,6 +4548,7 @@ function applyEstadoFile(file) {
   const ext = file.name.split('.').pop().toLowerCase();
   if (!['pdf','csv'].includes(ext)) { toast('Solo se aceptan archivos PDF o CSV', 'error'); return; }
   _estadoFile = file;
+  _estadoHash = null; _dupConfirmado = false;   // archivo nuevo → huella y decisión anteriores ya no aplican
   document.getElementById('estadoFileChipTxt').textContent = `${file.name} · ${(file.size/1024).toFixed(0)} KB`;
   document.getElementById('estadoFileChip').style.display = 'block';
   document.getElementById('uploadZone').style.display = 'none';
@@ -4649,6 +4661,53 @@ async function desbloquearPDFSiNecesario(file) {
   return nuevo;
 }
 
+// ── Detección de archivos duplicados (huella digital SHA-256) ──
+// Se calcula ANTES de subir/analizar: si el archivo ya se subió antes (aunque le
+// hayan cambiado el nombre), se avisa sin gastar análisis de IA ni límite del plan.
+let _estadoHash = null;      // huella del archivo actual
+let _hashColOk = false;      // true si la columna file_hash ya existe en la BD
+let _dupConfirmado = false;  // true si el usuario aceptó duplicar a propósito
+let _dupResolve = null;
+
+async function _hashArchivo(file) {
+  try {
+    const buf = await file.arrayBuffer();
+    const dig = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(dig)).map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch (_e) { return null; }
+}
+
+function askDuplicado(msg) {
+  return new Promise(res => {
+    _dupResolve = res;
+    document.getElementById('dupMsg').textContent = msg;
+    openModal('dupModal');
+  });
+}
+function dupAnswer(continuar) {
+  closeModal('dupModal');
+  if (_dupResolve) { _dupResolve(continuar); _dupResolve = null; }
+}
+
+// Busca si este archivo (por huella o por nombre) ya está guardado. Devuelve el
+// registro más reciente o null. Nunca lanza error: si la verificación falla, no bloquea.
+async function _buscarDuplicado() {
+  let dup = null;
+  if (_estadoHash) {
+    const { data, error } = await db.from('statements')
+      .select('name,file_name,created_at').eq('user_id', _user.id).eq('file_hash', _estadoHash)
+      .order('created_at', { ascending: false }).limit(1);
+    if (!error) { _hashColOk = true; if (data && data.length) dup = data[0]; }
+  }
+  if (!dup && _estadoFile?.name) {
+    const { data } = await db.from('statements')
+      .select('name,file_name,created_at').eq('user_id', _user.id).eq('file_name', _estadoFile.name)
+      .order('created_at', { ascending: false }).limit(1);
+    if (data && data.length) dup = data[0];
+  }
+  return dup;
+}
+
 async function procesarEstado() {
   if (!_estadoFile) { toast('Selecciona un archivo primero', 'error'); return; }
 
@@ -4665,6 +4724,22 @@ async function procesarEstado() {
     toast(e.message || 'No se pudo leer el PDF', 'error');
     return;
   }
+
+  // ¿Ya se subió este archivo antes? Avisar ANTES de gastar análisis de IA
+  try {
+    _estadoHash = await _hashArchivo(_estadoFile);
+    const dup = await _buscarDuplicado();
+    if (dup) {
+      const fecha = dup.created_at
+        ? new Date(dup.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+        : 'una fecha anterior';
+      const seguir = await askDuplicado(
+        `"${dup.file_name || dup.name}" ya se subió el ${fecha}. Si lo analizas otra vez, sus movimientos quedarían duplicados en tus cuentas y el análisis contaría contra el límite de tu plan.`
+      );
+      if (!seguir) { toast('Listo, no se volvió a analizar. Tu estado de cuenta original sigue guardado.', 'success'); return; }
+      _dupConfirmado = true;   // el usuario decidió duplicarlo a propósito
+    }
+  } catch (_e) { /* si la verificación falla, no bloquear la subida */ }
 
   document.getElementById('estadosStep1').style.display = 'none';
   document.getElementById('estadosStep2').style.display = 'block';
@@ -5350,8 +5425,9 @@ async function autoGuardarEstado() {
   }
   try {
     // Mismo archivo ya subido antes → NO autoguardar (evita duplicados silenciosos);
-    // el usuario decide con el botón "Guardar" de siempre.
-    if (_estadoFile?.name) {
+    // el usuario decide con el botón "Guardar" de siempre. Se salta si ya aceptó
+    // duplicarlo a propósito en el aviso previo al análisis.
+    if (!_dupConfirmado && _estadoFile?.name) {
       const { data: existing } = await db.from('statements')
         .select('id').eq('user_id', _user.id).eq('file_name', _estadoFile.name).limit(1);
       if (existing && existing.length) {
@@ -5361,7 +5437,7 @@ async function autoGuardarEstado() {
     }
     const stmtName = (document.getElementById('stmtName')?.value || '').trim()
       || _estadoMeta.bank || 'Estado de cuenta';
-    const { data: stmt, error: stmtErr } = await db.from('statements').insert({
+    const stmtRow = {
       user_id: _user.id,
       name: stmtName,
       file_name: _estadoFile?.name,
@@ -5369,7 +5445,9 @@ async function autoGuardarEstado() {
       period_start: _estadoMeta.period_start || null,
       period_end: _estadoMeta.period_end || null,
       tx_count: toSave.length,
-    }).select().single();
+    };
+    if (_hashColOk && _estadoHash) stmtRow.file_hash = _estadoHash;
+    const { data: stmt, error: stmtErr } = await db.from('statements').insert(stmtRow).select().single();
     if (stmtErr) throw stmtErr;
 
     const todayISO = new Date().toISOString().slice(0, 10);
@@ -5426,8 +5504,9 @@ async function confirmarEstado() {
   const toSave = _estadoTxs.filter(t => !t._remove);
   if (!toSave.length) { toast('No hay transacciones que guardar', 'error'); return; }
 
-  // Guardia anti-duplicado: avisar si ya se subió un archivo con el mismo nombre
-  if (_estadoFile?.name) {
+  // Guardia anti-duplicado: avisar si ya se subió un archivo con el mismo nombre.
+  // Se salta si el usuario ya aceptó duplicarlo en el aviso previo al análisis.
+  if (!_dupConfirmado && _estadoFile?.name) {
     const { data: existing } = await db.from('statements')
       .select('id,name').eq('user_id', _user.id).eq('file_name', _estadoFile.name).limit(1);
     if (existing && existing.length &&
@@ -5443,7 +5522,7 @@ async function confirmarEstado() {
     // Crear registro en statements
     const stmtName = (document.getElementById('stmtName')?.value || '').trim()
       || _estadoMeta.bank || 'Estado de cuenta';
-    const { data: stmt, error: stmtErr } = await db.from('statements').insert({
+    const stmtRow2 = {
       user_id: _user.id,
       name: stmtName,
       file_name: _estadoFile?.name,
@@ -5451,7 +5530,9 @@ async function confirmarEstado() {
       period_start: _estadoMeta.period_start || null,
       period_end: _estadoMeta.period_end || null,
       tx_count: toSave.length,
-    }).select().single();
+    };
+    if (_hashColOk && _estadoHash) stmtRow2.file_hash = _estadoHash;
+    const { data: stmt, error: stmtErr } = await db.from('statements').insert(stmtRow2).select().single();
 
     if (stmtErr) throw stmtErr;
 
