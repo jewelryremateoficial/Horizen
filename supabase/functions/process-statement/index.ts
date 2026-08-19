@@ -56,10 +56,12 @@ Ejemplos de cómo aplicar tu conocimiento (mismo criterio para comercios similar
 
 FECHAS (regla de oro):
 - El AÑO de cada fecha sale del PERIODO impreso en el estado. Está PROHIBIDO usar un año que no aparezca en el documento.
+- El año del PERIODO también debe estar IMPRESO en el documento (aunque sea abreviado, ej. "JUL/25" = 2025). Si el documento NO imprime el año del periodo en NINGUNA parte, deja el periodo vacío (#META|banco|||...) — NUNCA supongas el año actual ni ningún otro.
 - Antes de terminar, verifica que TODAS tus fechas caigan dentro del periodo del estado.
 
 Reglas finales:
 - Si falta el año en una fecha, usa el año del periodo del estado.
+- Las fechas de las transacciones SIEMPRE llevan año en formato YYYY-MM-DD. Si el documento no imprime NINGÚN año (y por tanto dejaste el periodo vacío), usa el año actual en las fechas de las transacciones — la app se lo confirmará al usuario.
 - No agregues ninguna línea que no sea #META o una transacción.
 
 Ejemplo:
