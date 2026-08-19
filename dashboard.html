@@ -1853,6 +1853,18 @@ select.mod-inp{cursor:pointer}
   </div>
 </div>
 
+<div class="overlay" id="anioModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-ttl">¿De qué año es este estado de cuenta?</div>
+    <p id="anioMsg" style="font-size:.9rem;color:var(--muted);line-height:1.55;margin:0 0 .5rem"></p>
+    <p style="font-size:.8rem;color:var(--muted);line-height:1.5;margin:0 0 1.1rem">Esto decide en qué mes de tus Reportes aparecerán los movimientos, así que vale la pena confirmarlo.</p>
+    <div style="display:flex;gap:.55rem">
+      <button class="btn-save" id="anioBtnA" onclick="anioAnswer('A')" style="flex:1"></button>
+      <button class="btn-cancel" id="anioBtnB" onclick="anioAnswer('B')" style="flex:1"></button>
+    </div>
+  </div>
+</div>
+
 <!-- Fase D: alta/edición de cliente -->
 <div class="overlay" id="clienteModal">
   <div class="modal">
@@ -3274,7 +3286,7 @@ function confirmSignOut() { if (confirm('¿Cerrar sesión?')) signOut(); }
 
 // ── Modal helpers ─────────────────────────────────────────────
 function openModal(id)  { document.getElementById(id).classList.add('open');  document.body.style.overflow = 'hidden'; }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; if (typeof _modalDismissed === 'function') _modalDismissed(id); }
 document.querySelectorAll('.overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); }));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(o => closeModal(o.id)); });
 
@@ -4685,8 +4697,16 @@ function askDuplicado(msg) {
   });
 }
 function dupAnswer(continuar) {
+  const r = _dupResolve; _dupResolve = null;   // capturar ANTES de cerrar (closeModal dispara _modalDismissed)
   closeModal('dupModal');
-  if (_dupResolve) { _dupResolve(continuar); _dupResolve = null; }
+  if (r) r(continuar);
+}
+
+// Si el usuario cierra un modal-pregunta con Esc o clic afuera, la promesa DEBE
+// resolverse igual (con la opción segura) o el flujo de análisis quedaría congelado.
+function _modalDismissed(id) {
+  if (id === 'dupModal' && _dupResolve)  { const r = _dupResolve;  _dupResolve = null;  r(false); }
+  if (id === 'anioModal' && _anioResolve) { const r = _anioResolve; _anioResolve = null; r(_anioDefault); }
 }
 
 // Busca si este archivo (por huella o por nombre) ya está guardado. Devuelve el
@@ -4706,6 +4726,118 @@ async function _buscarDuplicado() {
     if (data && data.length) dup = data[0];
   }
   return dup;
+}
+
+// ── Validación del AÑO contra el nombre del archivo ──
+// La IA puede adivinar mal el año cuando el PDF no lo imprime (bug real: estados de
+// 2025 guardados como 2026). El nombre del archivo casi siempre trae el año correcto;
+// si no coincide con lo que dijo la IA, se le pregunta al usuario ANTES de guardar.
+let _anioResolve = null;
+let _anioDefault = null;   // respuesta segura si cierran el modal con Esc/clic afuera = no cambiar nada
+
+function _anioDeNombre(nombre) {
+  const hoyY = new Date().getFullYear();
+  const anios = [...new Set(
+    (String(nombre || '').match(/(?:19|20)\d{2}/g) || [])
+      .map(Number).filter(y => y >= 2015 && y <= hoyY + 1)
+  )];
+  return anios.length === 1 ? anios[0] : null;   // solo si el nombre trae UN año claro
+}
+
+// Suma años a una fecha YYYY-MM-DD; el único caso inválido real es 29-feb → 28-feb
+function _shiftAnio(d, shift) {
+  const cand = String(parseInt(d.slice(0, 4)) + shift) + d.slice(4, 10);
+  return isNaN(Date.parse(cand)) ? cand.slice(0, 5) + '02-28' : cand;
+}
+
+function askAnio(opcionA, opcionB, mensaje) {
+  return new Promise(res => {
+    _anioResolve = res;
+    _anioDefault = opcionB;   // opción B = "no cambiar nada" (lo que dijo el análisis)
+    document.getElementById('anioMsg').textContent = mensaje;
+    const a = document.getElementById('anioBtnA'), b = document.getElementById('anioBtnB');
+    a.textContent = `Es de ${opcionA}`; a.dataset.anio = opcionA;
+    b.textContent = `Es de ${opcionB}`; b.dataset.anio = opcionB;
+    const pm = document.getElementById('procMsg');
+    if (pm) pm.textContent = 'Esperando tu confirmación del año…';
+    openModal('anioModal');
+  });
+}
+function anioAnswer(cual) {
+  const btn = document.getElementById(cual === 'A' ? 'anioBtnA' : 'anioBtnB');
+  const r = _anioResolve; _anioResolve = null;   // capturar ANTES de cerrar (closeModal dispara _modalDismissed)
+  closeModal('anioModal');
+  if (r) r(parseInt(btn.dataset.anio));
+}
+
+// Revisa el año del análisis y, si hay duda razonable, pregunta al usuario y corrige.
+// Devuelve txList (posiblemente con fechas ajustadas). Nunca lanza error.
+async function _validarAnioEstado(txList) {
+  const hoyY = new Date().getFullYear();
+  const saneado = y => Number.isInteger(y) && y >= 2000 && y <= hoyY + 1;
+  const fY = _anioDeNombre(_estadoFile?.name);
+  const ps = _estadoMeta.period_start, pe = _estadoMeta.period_end;
+  const pYs = [...new Set([ps, pe].filter(Boolean).map(d => parseInt(String(d).slice(0, 4))))].filter(saneado);
+  const nombre = _estadoFile?.name || '';
+
+  // Años presentes en los movimientos (para las ramas sin periodo)
+  const cnt = {};
+  txList.forEach(t => { const y = parseInt(String(t.date || '').slice(0, 4)); if (saneado(y)) cnt[y] = (cnt[y] || 0) + 1; });
+  const aniosTx = Object.keys(cnt).map(Number);
+  const domY = aniosTx.length ? parseInt(Object.entries(cnt).sort((a, b) => b[1] - a[1])[0][0]) : null;
+
+  // ── Caso 1: hay periodo de UN solo año y el nombre del archivo dice otro ──
+  if (pYs.length === 1 && fY && fY !== pYs[0]) {
+    const elegido = await askAnio(fY, pYs[0],
+      `El documento trae ${pYs[0]} como año del periodo, pero el archivo se llama "${nombre}" (parece ${fY}). Ojo: a veces el nombre trae la fecha en que DESCARGASTE el archivo, no el mes del estado.`);
+    if (elegido !== pYs[0]) {
+      const shift = elegido - pYs[0];
+      const nuevoPe = pe ? _shiftAnio(String(pe).slice(0, 10), shift) : null;
+      // Candado anti-futuro: un estado de cuenta no puede terminar adelante de hoy
+      if (nuevoPe && Date.parse(nuevoPe) > Date.now() + 7 * 86400000) {
+        toast(`Con ${elegido} el periodo quedaría en el futuro, así que conservé ${pYs[0]}. Revisa las fechas antes de guardar.`, 'error');
+        return txList;
+      }
+      if (ps) _estadoMeta.period_start = _shiftAnio(String(ps).slice(0, 10), shift);
+      if (pe) _estadoMeta.period_end = nuevoPe;
+      // Desplazar también los movimientos directamente (no depender solo del re-anclaje):
+      // tras el análisis, sus años vienen anclados al año viejo del periodo.
+      return txList.map(t => {
+        const d = String(t.date || '').slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || parseInt(d.slice(0, 4)) !== pYs[0]) return t;
+        return { ...t, date: _shiftAnio(d, shift) };
+      });
+    }
+    return txList;
+  }
+
+  // ── Caso 2: SIN periodo. Solo actuar si todos los movimientos viven en UN año ──
+  // (dos años = corte dic–ene legítimo, p. ej. CSV: no tocar jamás)
+  if (pYs.length === 0 && domY && aniosTx.length === 1) {
+    // 2a: el nombre del archivo trae un año distinto → preguntar
+    // 2b: sin año en el nombre, pero los movimientos quedaron en el año ACTUAL sin
+    //     periodo impreso que lo respalde (la firma exacta del bug de adivinar) → confirmar
+    let opcionA = null;
+    if (fY && fY !== domY) opcionA = fY;
+    else if (!fY && domY === hoyY && (_estadoFile?.name || '').toLowerCase().endsWith('.pdf')) opcionA = domY - 1;
+    if (opcionA) {
+      const msg = fY
+        ? `El documento no trae el periodo impreso y tus movimientos quedaron marcados como ${domY}, pero el archivo se llama "${nombre}" (parece ${fY}).`
+        : `El documento no trae el año impreso de forma clara, así que tus movimientos quedaron marcados como ${domY}. Confírmame el año, porque decide en qué mes de Reportes aparecerán.`;
+      const elegido = await askAnio(opcionA, domY, msg);
+      if (elegido !== domY) {
+        const shift = elegido - domY;
+        return txList.map(t => {
+          const d = String(t.date || '').slice(0, 10);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return t;
+          return { ...t, date: _shiftAnio(d, shift) };
+        });
+      }
+    }
+    return txList;
+  }
+
+  return txList;   // periodo de dos años (dic–ene), sin datos, o todo en orden: no tocar
 }
 
 async function procesarEstado() {
@@ -4794,6 +4926,10 @@ async function procesarEstado() {
 
     // Aplicar reglas guardadas por el usuario (categoría Y tipo ingreso/egreso)
     let txList = data.transactions || [];
+
+    // ── Cruce del año con el nombre del archivo: si no coinciden, pregunta al usuario ──
+    try { txList = await _validarAnioEstado(txList); } catch (_e) { /* nunca bloquear el análisis por esta validación */ }
+    document.getElementById('procMsg').textContent = 'Aplicando tus reglas y preparando resultados…';
 
     // ── BLINDAJE DE AÑO (doble candado, además del que corre en el servidor) ──
     // Toda fecha fuera del periodo del estado se re-ancla al año del periodo.
