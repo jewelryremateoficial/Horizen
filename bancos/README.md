@@ -44,6 +44,18 @@ Entonces:
 3. Guarda **solo estructura** — etiquetas, encabezados, posiciones. Nunca montos,
    nombres, números de cuenta ni datos de nadie.
 
+## ⚙️ Conectado al análisis
+
+La versión operativa de `tdc-estandar-condusef.md` vive en
+`supabase/functions/process-statement/formato-bancos.ts` y se le pega al prompt
+en cada análisis. **Si cambias uno, cambia el otro.**
+
+Los cambios en esa Edge Function solo surten efecto después de redesplegarla:
+
+```
+supabase functions deploy process-statement
+```
+
 ## Regla de oro
 
 Conocer el formato **no impide** que la IA lea mal un número — sigue siendo una

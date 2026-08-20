@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { FORMATO_BANCOS } from "./formato-bancos.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,7 +16,7 @@ Formato EXACTO, campos separados por | (barra vertical):
 
 Primera línea (metadatos):
 #META|<banco>|<period_start YYYY-MM-DD>|<period_end YYYY-MM-DD>|<moneda>|<total_depositos>|<num_depositos>|<total_retiros>|<num_retiros>
-Los últimos 4 campos salen del RESUMEN impreso del propio estado (la tabla "Depósitos/Abonos" y "Retiros/Cargos" con sus totales). Montos sin signo ni comas. Si el documento no trae ese resumen, deja esos campos vacíos.
+Los últimos 4 campos salen del RESUMEN impreso del propio estado (en débito: la tabla "Depósitos/Abonos" y "Retiros/Cargos"; en tarjeta de crédito: "Total de cargos" / "Total de abonos", que algunos bancos imprimen como "Total Cargos" / "Total Abonos"). Montos sin signo ni comas. Si el documento no trae ese resumen, deja esos campos vacíos.
 
 Una línea por transacción:
 <YYYY-MM-DD>|<descripción sin barras, máx 100 caracteres>|<monto positivo sin signo>|<ingreso o egreso>|<categoría>
@@ -67,7 +68,8 @@ Reglas finales:
 Ejemplo:
 #META|BBVA|2026-04-22|2026-05-21|MXN|55000.00|3|48120.00|12
 2026-04-23|OXXO SUCURSAL 123|120.00|egreso|Comida
-2026-04-25|SPEI RECIBIDO JUAN PEREZ · ANTICIPO PEDIDO 44|5000.00|ingreso|Transferencia`
+2026-04-25|SPEI RECIBIDO JUAN PEREZ · ANTICIPO PEDIDO 44|5000.00|ingreso|Transferencia
+${FORMATO_BANCOS}`
 
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = ''
