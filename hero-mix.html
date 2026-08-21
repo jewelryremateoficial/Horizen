@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horizen — Hero mezcla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --p:#635bff;--p-dark:#4b45c6;--violet:#8b7cff;--ink:#0a2540;--muted:#5b6b7c;
+    --money-in:#1e7a4f;--money-in-bg:#e6f4ec;
+    --grad-p:linear-gradient(140deg,#8b7cff,#635bff 52%,#4b45c6);
+    --grad-brand:linear-gradient(90deg,#ffc98a,#ff8fb4 34%,#b18cff 66%,#6fc6ff);
+    --shadow-2:0 22px 50px -16px rgba(99,91,255,.32),0 8px 22px rgba(10,37,64,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;background:#fff}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:1rem;padding:.9rem 1.6rem;border-radius:12px;border:0;font-family:inherit;cursor:pointer}
+  .btn-white{background:#fff;color:var(--p-dark)}
+  .btn-outline-white{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.55)}
+
+  .hero{position:relative;overflow:hidden;background:var(--grad-p);color:#fff}
+  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(50% 60% at 85% 10%,rgba(255,255,255,.16),transparent 55%);pointer-events:none}
+  .brand-bar{height:5px;background:var(--grad-brand)}
+  .nav{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;padding:18px 40px}
+  .nav img{height:32px}
+  .nav .links{display:flex;gap:26px;align-items:center;font-size:.94rem;font-weight:600;color:rgba(255,255,255,.9)}
+  .inner{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;gap:30px;align-items:center;padding:40px 40px 60px;max-width:1200px;margin:0 auto}
+  .pill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.16);color:#fff;font-weight:700;font-size:.85rem;padding:.44rem 1rem;border-radius:999px;margin-bottom:22px}
+  .live{width:8px;height:8px;border-radius:50%;background:#7CFFB2;box-shadow:0 0 0 3px rgba(124,255,178,.25)}
+  h1{font-size:clamp(2.6rem,5.4vw,4.3rem);line-height:.98;letter-spacing:-.04em;font-weight:900;margin-bottom:20px}
+  h1 .u{background:var(--grad-brand);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{font-size:1.2rem;color:rgba(255,255,255,.9);max-width:42ch;margin-bottom:28px;font-weight:500}
+  .capture{display:inline-flex;gap:8px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:7px;flex-wrap:wrap}
+  .capture input{border:0;background:transparent;color:#fff;font-family:inherit;font-size:1rem;padding:.72rem 1.05rem;min-width:210px;outline:none}
+  .capture input::placeholder{color:rgba(255,255,255,.75)}
+  .second{display:flex;gap:20px;align-items:center;margin-top:16px;flex-wrap:wrap}
+  .demo{color:#fff;font-weight:700;font-size:.96rem;display:inline-flex;align-items:center;gap:8px;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:2px}
+  .trust{margin-top:22px;font-size:.9rem;color:rgba(255,255,255,.82);display:flex;gap:18px;flex-wrap:wrap}
+
+  .visual{position:relative;height:400px}
+  .bignum{position:absolute;top:-30px;right:0;font-size:19rem;font-weight:900;color:rgba(255,255,255,.10);line-height:1;letter-spacing:-.05em;z-index:0;user-select:none}
+  .photo{position:absolute;z-index:1;top:20px;left:50%;transform:translateX(-50%);width:240px;height:320px;border-radius:22px;background:linear-gradient(160deg,#e7e2ff,#c3b8f7);display:flex;align-items:flex-end;justify-content:center;padding:16px;text-align:center;color:var(--p-dark);font-weight:700;font-size:.9rem;box-shadow:0 34px 70px -22px rgba(0,0,0,.45)}
+  .card-float{position:absolute;z-index:2;background:#fff;color:var(--ink);border-radius:15px;padding:13px 16px;box-shadow:0 22px 44px rgba(0,0,0,.28)}
+  .cf1{top:44px;right:-4px}.cf2{bottom:52px;left:-6px}.cf3{bottom:6px;right:24px}
+  .card-float .l{font-size:.7rem;color:var(--muted);font-weight:600}
+  .card-float .v{font-size:1.15rem;font-weight:900}.card-float .v.in{color:var(--money-in)}
+  .card-float .chip{display:inline-block;font-size:.66rem;font-weight:800;padding:.1rem .45rem;border-radius:6px;background:var(--money-in-bg);color:var(--money-in);margin-top:5px}
+
+  @media(max-width:860px){
+    .nav .links{display:none}
+    .inner{grid-template-columns:1fr;gap:10px}
+    .visual{height:330px;margin-top:6px}
+    .bignum{font-size:13rem}
+  }
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="brand-bar"></div>
+  <div class="nav">
+    <img src="/assets/logo-horizen-white.svg" alt="Horizen">
+    <div class="links"><span>Producto</span><span>Precios</span><span>Testimonios</span><a class="btn btn-white" style="padding:.55rem 1.1rem;font-size:.9rem">Abrir mi cuenta</a></div>
+  </div>
+  <div class="inner">
+    <div>
+      <span class="pill"><span class="live"></span>El nuevo futuro de México</span>
+      <h1>Sabe <span class="u">hoy</span> si tu negocio gana o pierde</h1>
+      <p class="sub">Sube tu estado de cuenta y en 10 minutos ves tu flujo de caja, tu salud financiera y hacia dónde vas. Sin Excel.</p>
+      <div class="capture">
+        <input placeholder="Tu correo" readonly>
+        <a class="btn btn-white">Empezar gratis →</a>
+      </div>
+      <div class="second">
+        <a class="demo">▶ Ver demo de 60 seg</a>
+      </div>
+      <div class="trust"><span>✓ 14 días gratis</span><span>✓ Sin tarjeta</span><span>✓ Cancela cuando quieras</span></div>
+    </div>
+    <div class="visual">
+      <div class="bignum">10</div>
+      <div class="photo">Foto de un emprendedor real aquí</div>
+      <div class="card-float cf1"><div class="l">Disponible hoy</div><div class="v">$248,900</div><span class="chip">▲ 12%</span></div>
+      <div class="card-float cf2"><div class="l">Entró este mes</div><div class="v in">+$412,300</div></div>
+      <div class="card-float cf3"><div class="l">Salud financiera</div><div class="v">Sólida</div></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
