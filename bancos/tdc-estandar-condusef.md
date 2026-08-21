@@ -174,6 +174,17 @@ La tabla cierra con dos renglones impresos:
 > `Total de abonos`. Si no cuadra, algo se leyó mal o falta un movimiento.
 > Extráelos SIEMPRE.
 
+> ⚠️ **Estos renglones van al `#META`, nunca a la lista de movimientos.** Igual el
+> encabezado `PAGOS Y ABONOS` y los `Saldo/Adeudo anterior`. Caso real (nov-2025):
+> la IA metió `PAGOS Y ABONOS $190,931.00` como si fuera un pago más — era la suma
+> de los 12 pagos que ya estaban listados abajo. Se contó el mismo dinero dos veces.
+
+> ⚠️ **Los pagos a la tarjeta son INGRESO, no gasto.** En ese mismo estado los 12
+> `PAGO POR TRANSFERENCIA` quedaron marcados como egreso, y los $168,578 de compras
+> se mostraron como $359,509 de gasto. Hoy el parser lo corrige solo cuando el
+> `#META` declara `tdc`, o cuando lo marcado como "Pago TDC" suma exacto el
+> `Total de abonos` — el documento probándose a sí mismo.
+
 ### 2.5 Las otras dos tablas
 
 `COMPRAS A MESES SIN INTERESES` y `COMPRAS A MESES CON INTERESES` tienen columnas
@@ -184,6 +195,11 @@ distintas: `Fecha de la operación`, `Descripción`, `Monto original`,
 > ⚠️ **`Monto original` NO es el gasto de este mes.** Es el precio total de la
 > compra a meses. Lo que corresponde a este periodo es `Pago requerido`.
 > No sumes `Monto original` a los gastos del mes.
+
+> ⚠️ **Pero SÍ hay que extraer estas tablas.** Cada renglón es un movimiento más
+> del periodo, con su `Pago requerido` como monto. Caso real (nov-2025): la IA se
+> saltó estas tablas y sus cargos sumaron $168,578.05 contra los $184,727.22
+> impresos — **faltaban $16,149.17**, justo el tamaño de las mensualidades.
 
 ---
 

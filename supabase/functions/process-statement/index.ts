@@ -15,8 +15,9 @@ Responde ÚNICAMENTE en texto plano, SIN markdown, SIN comentarios, SIN encabeza
 Formato EXACTO, campos separados por | (barra vertical):
 
 Primera línea (metadatos):
-#META|<banco>|<period_start YYYY-MM-DD>|<period_end YYYY-MM-DD>|<moneda>|<total_depositos>|<num_depositos>|<total_retiros>|<num_retiros>
-Los últimos 4 campos salen del RESUMEN impreso del propio estado (en débito: la tabla "Depósitos/Abonos" y "Retiros/Cargos"; en tarjeta de crédito: "Total de cargos" / "Total de abonos", que algunos bancos imprimen como "Total Cargos" / "Total Abonos"). Montos sin signo ni comas. Si el documento no trae ese resumen, deja esos campos vacíos.
+#META|<banco>|<period_start YYYY-MM-DD>|<period_end YYYY-MM-DD>|<moneda>|<total_depositos>|<num_depositos>|<total_retiros>|<num_retiros>|<tipo_cuenta>
+Los campos 6 a 9 salen del RESUMEN impreso del propio estado (en débito: la tabla "Depósitos/Abonos" y "Retiros/Cargos"; en tarjeta de crédito: "Total de cargos" / "Total de abonos", que algunos bancos imprimen como "Total Cargos" / "Total Abonos"). Montos sin signo ni comas. Si el documento no trae ese resumen, deja esos campos vacíos.
+El último campo, <tipo_cuenta>, es OBLIGATORIO y solo admite dos valores: escribe "tdc" si es un estado de TARJETA DE CRÉDITO (lo reconoces por fecha de corte, pago mínimo, límite de crédito) o "debito" si es cuenta de débito, nómina o cheques. La app lo usa para saber de qué lado va cada pago; no lo dejes vacío.
 
 Una línea por transacción:
 <YYYY-MM-DD>|<descripción sin barras, máx 100 caracteres>|<monto positivo sin signo>|<ingreso o egreso>|<categoría>
@@ -25,8 +26,18 @@ CONCEPTO (crítico para el usuario):
 - En transferencias, SPEI y pagos, la descripción DEBE incluir el beneficiario Y el concepto/referencia que escribió quien envió el dinero (ej: "SPEI A JUAN PEREZ · NOMINA SEMANA 22", "TRANSFERENCIA · COMPRA MERCANCIA MAYO"). Dos transferencias del mismo monto deben poder distinguirse por su concepto.
 - Si el movimiento trae leyenda o referencia adicional en una segunda línea del PDF, inclúyela en la descripción.
 
+LOS RENGLONES DE RESUMEN NO SON MOVIMIENTOS (error real, no lo repitas):
+Un estado trae, además de la lista de movimientos, renglones de TOTALES y títulos de tabla.
+Esos NUNCA se extraen como transacción. Van al #META o se ignoran, jamás a la lista.
+Prohibido convertir en movimiento cualquiera de estos: "PAGOS Y ABONOS", "TOTAL DE CARGOS",
+"TOTAL DE ABONOS", "SALDO ANTERIOR", "SALDO DEUDOR", "ADEUDO DEL PERIODO ANTERIOR",
+"PAGO MÍNIMO", "SU PAGO REQUERIDO", "LÍMITE DE CRÉDITO", "DESGLOSE DE MOVIMIENTOS",
+"CARGOS, ABONOS Y COMPRAS REGULARES", "COMPRAS A MESES SIN INTERESES".
+Señal de alarma: si un renglón lleva por monto justo la SUMA de otros renglones, es un total, no un movimiento.
+
 CONCILIACIÓN (antes de terminar):
 - Si el estado imprime cuántos depósitos y retiros tiene y sus totales, tu lista DEBE coincidir en número y suma. Si no coincide, revisa qué movimiento te faltó o duplicaste.
+- En TARJETA DE CRÉDITO, comprueba también esto antes de entregar: la suma de todo lo que marcaste como INGRESO debe dar el "Total de abonos", y la suma de todo lo que marcaste como EGRESO debe dar el "Total de cargos". Si te salen cambiados, es que volteaste los tipos: los pagos A la tarjeta son INGRESO.
 
 CÓMO DECIDIR ingreso o egreso (crítico, no te equivoques):
 - "ingreso" = el dinero ENTRA a la cuenta: depósitos, abonos, SPEI/transferencia RECIBIDA, devoluciones, intereses a favor. En el estado suele venir en la columna de ABONOS o con (+).
@@ -66,7 +77,7 @@ Reglas finales:
 - No agregues ninguna línea que no sea #META o una transacción.
 
 Ejemplo:
-#META|BBVA|2026-04-22|2026-05-21|MXN|55000.00|3|48120.00|12
+#META|BBVA|2026-04-22|2026-05-21|MXN|55000.00|3|48120.00|12|debito
 2026-04-23|OXXO SUCURSAL 123|120.00|egreso|Comida
 2026-04-25|SPEI RECIBIDO JUAN PEREZ · ANTICIPO PEDIDO 44|5000.00|ingreso|Transferencia
 ${FORMATO_BANCOS}`
@@ -117,11 +128,31 @@ async function callClaude(apiKey: string, messageContent: unknown, maxRetries = 
 
 const CATS = ['Ventas','Proveedores','Mercancía','Nómina','Publicidad','Software','Papelería','Renta','Contabilidad','Servicios','Envíos','Honorarios','Comisiones','Comida','Café','Supermercado','Farmacia','Salud','Entretenimiento','Ropa','Transporte','Viajes','SAT/Impuestos','Transferencia','Pago TDC','Inversiones','Educación','Otros']
 
+// Renglones que son TOTALES o títulos de tabla, no movimientos. La IA a veces los
+// extrae como si fueran una transacción (caso real: "PAGOS Y ABONOS" por $190,931,
+// que era el total impreso de los abonos, no un pago). Se descartan aquí, sin depender
+// del prompt. La lista es de encabezados completos, no de fragmentos, para no tirar
+// por error el nombre de un comercio.
+const _norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim()
+const FILAS_DE_RESUMEN = [
+  /^pagos? y abonos$/,
+  /^total (de )?(cargos|abonos|compras|movimientos|depositos|retiros)( del periodo)?$/,
+  /^(saldo|adeudo) (anterior|deudor( total)?|al corte|del periodo anterior|total)$/,
+  /^(su )?pago (minimo|requerido)( este periodo)?$/,
+  /^limite de credito$/,
+  /^desglose de movimientos$/,
+  /^cargos, abonos y compras.*$/,
+  /^compras a meses.*$/,
+  /^resumen( del periodo)?$/,
+]
+const esFilaDeResumen = (desc: string) => { const d = _norm(desc); return FILAS_DE_RESUMEN.some(rx => rx.test(d)) }
+
 // Parsea el formato compacto (líneas separadas por |) a la estructura que espera el frontend.
 function parseCompact(text: string) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
   let bank = 'Desconocido', period_start: string | null = null, period_end: string | null = null, currency = 'MXN'
   let summary: Record<string, number | null> | null = null
+  let esTdc = false
   const transactions: Array<Record<string, unknown>> = []
   for (const line of lines) {
     if (line.startsWith('#META')) {
@@ -134,6 +165,8 @@ function parseCompact(text: string) {
       const num = (v?: string) => { const n = parseFloat(String(v || '').replace(/[^0-9.]/g, '')); return isFinite(n) && n > 0 ? n : null }
       const depTotal = num(p[5]), depCount = num(p[6]), retTotal = num(p[7]), retCount = num(p[8])
       if (depTotal || retTotal) summary = { dep_total: depTotal, dep_count: depCount, ret_total: retTotal, ret_count: retCount }
+      const tc = _norm(p[9] || '')
+      if (tc.includes('tdc') || tc.includes('credito') || tc.includes('tarjeta')) esTdc = true
       continue
     }
     if (line.startsWith('```') || line.startsWith('#')) continue
@@ -145,7 +178,9 @@ function parseCompact(text: string) {
     const type = (p[3] || '').toLowerCase().includes('ingreso') ? 'ingreso' : 'egreso'
     let category = (p[4] || 'Otros').trim()
     if (!CATS.includes(category)) category = 'Otros'
-    transactions.push({ date: date.slice(0, 10), description: (p[1] || 'Movimiento').trim().slice(0, 140), amount, type, category })
+    const description = (p[1] || 'Movimiento').trim().slice(0, 140)
+    if (esFilaDeResumen(description)) continue // total impreso, no un movimiento
+    transactions.push({ date: date.slice(0, 10), description, amount, type, category })
   }
   // ── BLINDAJE DE AÑO (determinista, no depende del modelo) ──
   // Si una fecha cae fuera del periodo del estado, se re-ancla al año del periodo
@@ -166,6 +201,21 @@ function parseCompact(text: string) {
       }
     }
   }
+  // ── BLINDAJE DE SIGNO EN TARJETA DE CRÉDITO (determinista) ──
+  // En un estado de TDC, un pago A la tarjeta es un ABONO: baja la deuda, va como
+  // ingreso. La IA los marcó como egreso en un Santander real y eso duplicó el gasto
+  // del periodo (168,578 de compras se volvieron 359,509 al sumarle los pagos).
+  // Se corrige aquí por dos vías, la segunda para cuando el modelo no declara el tipo:
+  //   1. el #META dice que es tarjeta de crédito, o
+  //   2. lo que se marcó como "Pago TDC" suma EXACTO el "Total de abonos" impreso
+  //      — el propio documento probando que esos renglones son los abonos.
+  const pagosTdc = transactions.filter(tx => tx.category === 'Pago TDC')
+  if (pagosTdc.length) {
+    const sumaPagos = pagosTdc.reduce((a, tx) => a + (Number(tx.amount) || 0), 0)
+    const cuadraConAbonos = !!(summary && summary.dep_total && Math.abs(sumaPagos - summary.dep_total) < 1)
+    if (esTdc || cuadraConAbonos) for (const tx of pagosTdc) tx.type = 'ingreso'
+  }
+
   return { bank, period_start, period_end, currency, transactions, summary }
 }
 

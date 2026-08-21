@@ -68,10 +68,19 @@ tiene EXACTAMENTE cuatro columnas, en este orden:
 - TOTALES: la tabla cierra con "Total de cargos" (+) y "Total de abonos" (−).
   Algunos bancos los imprimen como "Total Cargos" / "Total Abonos". Extráelos
   SIEMPRE al #META: total_depositos = total de ABONOS, total_retiros = total de
-  CARGOS.
-- TABLAS A MESES ("COMPRAS A MESES SIN/CON INTERESES"): el gasto que corresponde
-  a ESTE periodo es "Pago requerido", NO "Monto original" (ese es el precio total
-  de la compra a meses). No sumes "Monto original" a los gastos del mes.
+  CARGOS. Esos dos renglones van SOLO al #META: son totales, NUNCA movimientos.
+  Lo mismo con el encabezado "PAGOS Y ABONOS" y con cualquier "Saldo/Adeudo
+  anterior" — no los metas a la lista (error real: se coló "PAGOS Y ABONOS" por
+  $190,931 como si fuera un pago, cuando era la suma de los 12 pagos de abajo).
+- TABLAS A MESES ("COMPRAS A MESES SIN/CON INTERESES"): SÍ SE EXTRAEN. Cada
+  renglón de esas tablas es un movimiento más de este periodo, con su fecha, su
+  descripción y categoría normales. El monto que se extrae es "Pago requerido"
+  (la mensualidad de este mes), NUNCA "Monto original" (ese es el precio total de
+  la compra a meses, ya se cobró repartido). Si las omites, tus cargos van a
+  quedar por debajo del "Total de cargos" impreso y el estado no va a cuadrar.
+- CUADRE FINAL DE LA TARJETA: la suma de TODOS tus egresos (tabla principal +
+  mensualidades de las tablas a meses + intereses + comisiones) debe dar el
+  "Total de cargos" impreso. Si te queda corto, te faltó una tabla.
 - El AÑO sale de "Periodo:" o "Fecha de corte:".
 
 ════════════════════════════════════════════════════════════════
