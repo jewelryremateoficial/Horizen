@@ -553,6 +553,33 @@ select.mod-inp{cursor:pointer}
 /* ── RESPONSIVE ──────────────────────────────────────────────── */
 @media(max-width:900px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}.kpi-grid{grid-template-columns:1fr}}
 @media(max-width:640px){.page{padding:1rem}.topbar{padding:0 1rem}.frow{grid-template-columns:1fr}.cal-summary{grid-template-columns:1fr}.cal-layout{grid-template-columns:1fr}.cal-cell{min-height:60px}}
+/* ── Mi plan ─────────────────────────────────────────── */
+.mp-lbl{font-size:.72rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem}
+.mp-uso{display:flex;justify-content:space-between;align-items:baseline;font-size:.88rem;color:var(--slate)}
+.mp-uso b{color:var(--ink);font-variant-numeric:tabular-nums}
+.mp-bar{height:7px;border-radius:99px;background:var(--bg4);margin-top:.45rem;overflow:hidden}
+.mp-bar i{display:block;height:100%;border-radius:99px;transition:width .4s ease}
+.mp-grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:1rem}
+.mp-card{position:relative;border:1px solid var(--line);border-radius:var(--r-lg,16px);padding:1.4rem 1.25rem;background:var(--bg2);display:flex;flex-direction:column}
+.mp-card.pop{border-color:var(--p-border)}
+.mp-card.es-suyo{border-color:var(--p);box-shadow:0 0 0 1px var(--p)}
+.mp-pop{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--p);color:#fff;font-size:.62rem;font-weight:700;letter-spacing:.09em;padding:.25rem .6rem;border-radius:99px;white-space:nowrap}
+.mp-name{font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.mp-price{font-size:1.75rem;font-weight:700;letter-spacing:-.025em;margin:.35rem 0 .1rem;color:var(--ink)}
+.mp-price span{display:block;font-size:.75rem;font-weight:500;color:var(--muted);letter-spacing:0}
+.mp-desc{font-size:.85rem;color:var(--muted);line-height:1.5;margin:.85rem 0 1rem}
+.mp-desc b{color:var(--ink)}
+.mp-lims{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:.7rem 0;margin-bottom:.9rem}
+.mp-lims div{display:flex;justify-content:space-between;font-size:.82rem;padding:.2rem 0}
+.mp-lims span{color:var(--muted)}
+.mp-lims b{color:var(--ink)}
+.mp-feats{list-style:none;padding:0;margin:0 0 1.1rem;font-size:.84rem;color:var(--slate);flex:1}
+.mp-feats li{padding-left:1.15rem;position:relative;margin-bottom:.4rem;line-height:1.45}
+.mp-feats li::before{content:"✓";position:absolute;left:0;color:var(--p);font-weight:700}
+.mp-btn{display:block;text-align:center;padding:.7rem 1rem;border-radius:var(--r-sm,8px);background:var(--p);color:#fff;font-weight:650;font-size:.88rem;text-decoration:none;transition:background .15s}
+.mp-btn:hover{background:var(--p-hover,#4b45c6)}
+.mp-btn.actual{background:var(--pos-bg);color:var(--pos-text);cursor:default}
+
 </style>
 </head>
 <body>
@@ -592,6 +619,7 @@ select.mod-inp{cursor:pointer}
 
     <div class="nav-lbl">Cuenta</div>
     <button class="ni" onclick="showPage('referidos')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Mi red · Referidos</button>
+    <button class="ni" onclick="showPage('miplan')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>Mi plan</button>
     <button class="ni" onclick="showPage('settings')"><span class="ico"><svg class="ic ic-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span>Configuración</button>
   </div>
   <div class="sidebar-footer">
@@ -1541,6 +1569,14 @@ select.mod-inp{cursor:pointer}
     </div>
   </div>
 
+  <!-- ══ PAGE: Mi plan ═════════════════════════════════════════ -->
+  <div class="page" id="page-miplan">
+    <div><div class="t-page">Mi plan</div><div class="t-sub" style="margin-top:.25rem">Tu paquete, cuánto llevas usado y cómo mejorarlo</div></div>
+    <div id="miplanBody">
+      <div class="card"><div class="sk" style="height:120px;border-radius:12px"></div></div>
+    </div>
+  </div>
+
   <!-- ══ PAGE: Settings ════════════════════════════════════════ -->
   <div class="page" id="page-settings">
     <div><div class="t-page">Configuración</div><div class="t-sub" style="margin-top:.25rem">Perfil y empresa</div></div>
@@ -2020,6 +2056,7 @@ select.mod-inp{cursor:pointer}
   </div>
 </div>
 
+<script src="/assets/planes.js"></script>
 <script src="/assets/app.js"></script>
 <script src="/assets/auth.js"></script>
 <script>
@@ -2167,6 +2204,7 @@ function showPage(id) {
     debts:        ['Deudas',           '— Tarjetas y préstamos'],
     taxes:        ['SAT / Fiscal',     '— IVA e ISR automáticos'],
     alerts:       ['Alertas',          ''],
+    miplan:       ['Mi plan',          '— Tu paquete, tu uso del mes y cómo mejorarlo'],
     settings:     ['Configuración',    ''],
     calendario:   ['Calendario',       '— Flujo diario de ingresos y egresos'],
     estados:      ['Subir estado de cuenta', '— Tus números listos en un minuto'],
@@ -2198,6 +2236,7 @@ function showPage(id) {
   if (id === 'citas')        loadCitas();
   if (id === 'overview')     renderInicio();
   if (id === 'referidos')    loadReferidos();
+  if (id === 'miplan')       loadMiPlan();
 }
 
 // ── Metrics ───────────────────────────────────────────────────
@@ -7497,7 +7536,99 @@ const _RF_RANKS = [
   { min: 1,   name: icon('medalla') + ' Bronce',    l1: .10 },
   { min: 0,   name: 'Sin referidos aún', l1: .10 }
 ];
-const _RF_PRICE = { free: 0, trial: 0, basico: 990, pro: 1990, empresa: 3990 };
+// Los precios salen de /assets/planes.js — antes esta lista tenía los precios
+// viejos ($990/$1990/$3990) y la estimación de ganancias salía ~5x inflada.
+
+// ══ MI PLAN ══════════════════════════════════════════════════
+// Qué paquete tienes, cuánto llevas usado del mes y los otros planes.
+// Los precios y límites salen de /assets/planes.js (un solo archivo).
+async function loadMiPlan() {
+  const cont = document.getElementById('miplanBody');
+  if (!cont || !_user) return;
+
+  const actual   = horizenPlan(_profile?.plan);
+  const enPrueba = _profile?.subscription_status === 'trial' || !_profile?.subscription_status;
+
+  // Uso del mes: estados de cuenta analizados y preguntas a NOVA
+  const desde = new Date(); desde.setDate(1); desde.setHours(0,0,0,0);
+  const mesKey = new Date().toISOString().slice(0,7);
+  let usoEstados = 0, usoNova = 0;
+  try {
+    const { count } = await db.from('statements').select('id', { count:'exact', head:true })
+      .eq('user_id', _user.id).gte('created_at', desde.toISOString());
+    usoEstados = count || 0;
+  } catch(e) {}
+  try {
+    const { data } = await db.from('nova_usage').select('count')
+      .eq('user_id', _user.id).eq('month', mesKey).maybeSingle();
+    usoNova = data?.count || 0;
+  } catch(e) {}
+
+  // Barra de uso. Si no hay tope, no se pinta barra.
+  const barra = (usado, tope) => {
+    if (tope === null || tope === undefined) {
+      return `<div class="mp-uso"><span>${usado} este mes</span><b style="color:var(--pos-text)">Sin límite</b></div>`;
+    }
+    const pct  = Math.min(100, Math.round((usado / tope) * 100));
+    const col  = pct >= 90 ? 'var(--neg)' : pct >= 70 ? 'var(--warn)' : 'var(--p)';
+    return `<div class="mp-uso"><span>${usado} de ${tope} este mes</span><b>${pct}%</b></div>
+      <div class="mp-bar"><i style="width:${pct}%;background:${col}"></i></div>`;
+  };
+
+  const cabecera = actual ? `
+    <div class="card" style="border:1px solid var(--p-border);background:var(--p-soft)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
+        <div>
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--p)">Tu plan</div>
+          <div style="font-size:1.6rem;font-weight:700;letter-spacing:-.02em;margin-top:.2rem">${actual.nombre}</div>
+          <div style="color:var(--muted);font-size:.9rem">$${actual.precio.toLocaleString('es-MX')} MXN / mes${enPrueba ? ' · en prueba' : ''}</div>
+        </div>
+      </div>
+      <div style="margin-top:1.35rem;display:grid;gap:1.1rem;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))">
+        <div><div class="mp-lbl">Estados de cuenta con IA</div>${barra(usoEstados, actual.limites.estados)}</div>
+        <div><div class="mp-lbl">Preguntas a NOVA</div>${barra(usoNova, actual.limites.nova)}</div>
+      </div>
+    </div>` : `
+    <div class="card">
+      <div class="card-ttl">Todavía no tienes un plan activo</div>
+      <div style="color:var(--muted);font-size:.92rem;margin-top:.4rem">Elige uno abajo para seguir usando Horizen sin interrupciones.</div>
+    </div>`;
+
+  const tarjetas = HORIZEN_PLANES.map(pl => {
+    const esElSuyo = actual && actual.id === pl.id;
+    const btn = esElSuyo
+      ? `<div class="mp-btn actual">✓ Tu plan actual</div>`
+      : `<a class="mp-btn" href="/pricing.html">${actual ? 'Cambiarme a ' + pl.nombre : 'Elegir ' + pl.nombre} →</a>`;
+    return `
+      <div class="mp-card${esElSuyo ? ' es-suyo' : ''}${pl.popular ? ' pop' : ''}">
+        ${pl.popular && !esElSuyo ? '<div class="mp-pop">MÁS POPULAR</div>' : ''}
+        <div class="mp-name">${pl.nombre}</div>
+        <div class="mp-price">$${pl.precio.toLocaleString('es-MX')}<span>MXN / mes</span></div>
+        <div class="mp-desc"><b>${_escHtml(pl.gancho)}</b> ${_escHtml(pl.desc)}</div>
+        <div class="mp-lims">
+          <div><span>Estados de cuenta</span><b>${horizenLimite(pl.limites.estados)}</b></div>
+          <div><span>Preguntas a NOVA</span><b>${horizenLimite(pl.limites.nova)}</b></div>
+          <div><span>Usuarios</span><b>${pl.limites.usuarios === 1 ? '1 (tu cuenta)' : 'Tú + ' + (pl.limites.usuarios - 1)}</b></div>
+        </div>
+        <ul class="mp-feats">${pl.incluye.map(f => `<li>${_escHtml(f)}</li>`).join('')}</ul>
+        ${btn}
+      </div>`;
+  }).join('');
+
+  cont.innerHTML = cabecera + `
+    <div class="card" style="margin-top:1.1rem">
+      <div class="card-ttl">Los paquetes</div>
+      <div class="mp-grid">${tarjetas}</div>
+      <div style="font-size:.82rem;color:var(--muted);margin-top:1.1rem;line-height:1.55">
+        Todos incluyen ${HORIZEN_TRIAL_DIAS} días de prueba. Pagando el año sale ~20% más barato.<br>
+        ¿Quieres cambiar de plan y no perder tus datos? Escríbenos a
+        <a href="mailto:hola@horizen.com.mx" style="color:var(--p)">hola@horizen.com.mx</a> y lo hacemos por ti.
+      </div>
+    </div>`;
+}
+
+const _RF_PRICE = new Proxy({}, { get: (_, k) =>
+  (typeof horizenPlan === 'function' ? (horizenPlan(String(k))?.precio || 0) : 0) });
 
 async function loadReferidos() {
   const body = document.getElementById('redBody'); if (!body) return;
