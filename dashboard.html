@@ -526,6 +526,8 @@ select.mod-inp{cursor:pointer}
 .nova-hd .nvc{width:34px;height:34px;border-radius:10px;background:var(--p-soft);color:var(--p);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .nova-msgs{padding:.9rem 1rem;overflow-y:auto;display:flex;flex-direction:column;gap:.55rem;flex:1;min-height:130px}
 .nova-b{background:var(--p-soft);border:1px solid var(--p-border);border-radius:12px;padding:.6rem .8rem;font-size:.86rem;line-height:1.55;color:var(--ink);white-space:pre-wrap;max-width:95%}
+.nova-b .nova-lista{white-space:normal;margin:.35rem 0;padding-left:1.15rem}
+.nova-b .nova-lista li{margin:.15rem 0}
 .nova-u{background:#f4f5f8;border-radius:12px;padding:.55rem .8rem;font-size:.86rem;align-self:flex-end;max-width:85%;color:var(--ink)}
 .nova-chip-q{font-size:.79rem;font-weight:600;padding:.4rem .75rem;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;text-align:left}
 .nova-chip-q:hover{border-color:var(--p-border);color:var(--p)}
@@ -6125,25 +6127,83 @@ async function repDownloadPDF() {
 // ===== NOVA FLOTANTE ===== ("¿por qué no sale esto?" explicado con datos reales)
 const EDGE_NOVA = 'https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/nova-help';
 
-// Historial de la conversación con NOVA. Vive mientras la página esté abierta:
-// cerrar/abrir el panel NO lo borra; solo "Nueva conversación" o recargar.
-window._novaHist = window._novaHist || [];
+// Historial de la conversación con NOVA. Se guarda en el navegador, así que
+// sobrevive a recargar la página y a cerrar la pestaña: solo lo borra el botón
+// "Nueva conversación". Es la memoria de NOVA entre una sesión y la siguiente.
+const _NOVA_MEM = 'horizen_nova_hist';
+function _novaCargarHist() {
+  try { const v = JSON.parse(localStorage.getItem(_NOVA_MEM) || '[]'); return Array.isArray(v) ? v : []; }
+  catch (e) { return []; }
+}
+function _novaGuardarHist() {
+  try { localStorage.setItem(_NOVA_MEM, JSON.stringify(window._novaHist.slice(-40))); } catch (e) {}
+}
+window._novaHist = window._novaHist || _novaCargarHist();
 
-// NOVA contesta en Markdown ligero (**negritas**). Se escapa el HTML primero
-// —la respuesta viene de fuera— y solo despues se convierten los ** a <strong>.
-const _novaFmt = s => _escHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+// NOVA contesta en Markdown ligero. Aquí se dibuja para que el usuario NUNCA vea
+// los símbolos crudos (**, -, ##). Orden obligatorio: primero se escapa el HTML
+// —la respuesta viene de fuera y no es de fiar— y solo después se aplica formato.
+// La burbuja tiene white-space:pre-wrap, así que los saltos de línea ya se respetan.
+function _novaFmt(s) {
+  const lineas = _escHtml(s).split('\n');
+  const out = [];
+  let enLista = null; // 'ul' | 'ol' | null
+  const cerrarLista = () => { if (enLista) { out.push('</' + enLista + '>'); enLista = null; } };
+  for (let linea of lineas) {
+    // Títulos con # → solo negrita; un <h2> desentona en un chat angosto.
+    linea = linea.replace(/^\s*#{1,6}\s+(.*)$/, '<strong>$1</strong>');
+    const vinieta = linea.match(/^\s*[-*•]\s+(.*)$/);
+    const numerada = linea.match(/^\s*\d+[.)]\s+(.*)$/);
+    if (vinieta) {
+      if (enLista !== 'ul') { cerrarLista(); out.push('<ul class="nova-lista">'); enLista = 'ul'; }
+      out.push('<li>' + vinieta[1] + '</li>');
+    } else if (numerada) {
+      if (enLista !== 'ol') { cerrarLista(); out.push('<ol class="nova-lista">'); enLista = 'ol'; }
+      out.push('<li>' + numerada[1] + '</li>');
+    } else {
+      cerrarLista();
+      out.push(linea);
+    }
+  }
+  cerrarLista();
+  return out.join('\n')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')   // **negrita**
+    .replace(/(^|[\s(])_(?!_)(.+?)_(?=[\s.,;:!?)]|$)/g, '$1<em>$2</em>'); // _cursiva_
+}
 
 function novaReset() {
   window._novaHist = [];
+  try { localStorage.removeItem(_NOVA_MEM); } catch (e) {}
   const msgs = document.getElementById('novaMsgs');
   if (msgs) msgs.innerHTML = '<div class="nova-b">Listo, empezamos de cero. ¿Cuál es tu duda?</div>';
+}
+
+// Repinta en pantalla la conversación guardada, para que el usuario VEA que NOVA
+// se acuerda. Se hace una sola vez por carga de página.
+let _novaPintado = false;
+function _novaPintarHist() {
+  if (_novaPintado) return;
+  _novaPintado = true;
+  if (!window._novaHist.length) return;
+  const msgs = document.getElementById('novaMsgs');
+  if (!msgs) return;
+  const chips = document.getElementById('novaChips'); if (chips) chips.remove();
+  msgs.insertAdjacentHTML('beforeend',
+    '<div class="t-meta" style="text-align:center;margin:.3rem 0">— lo que habíamos platicado —</div>' +
+    window._novaHist.map(m => m.role === 'user'
+      ? `<div class="nova-u">${_escHtml(m.content)}</div>`
+      : `<div class="nova-b">${_novaFmt(m.content)}</div>`).join(''));
+  msgs.scrollTop = msgs.scrollHeight;
 }
 
 function toggleNovaPanel(force) {
   const p = document.getElementById('novaPanel');
   const abrir = force !== undefined ? force : !p.classList.contains('open');
   p.classList.toggle('open', abrir);
-  if (abrir) setTimeout(() => { try { document.getElementById('novaInput').focus(); } catch (e) {} }, 80);
+  if (abrir) {
+    _novaPintarHist();
+    setTimeout(() => { try { document.getElementById('novaInput').focus(); } catch (e) {} }, 80);
+  }
 }
 
 function novaChip(q) {
@@ -6156,18 +6216,33 @@ async function _novaContexto() {
   try {
     const [sts, txr] = await Promise.all([
       db.from('statements').select('name,bank_name,period_start,period_end,tx_count,created_at')
-        .eq('user_id', _user.id).order('created_at', { ascending: false }).limit(10),
-      db.from('transactions').select('date,type,category,amount,statement_id,source')
-        .eq('user_id', _user.id).order('date', { ascending: false }).limit(400),
+        .eq('user_id', _user.id).order('created_at', { ascending: false }).limit(40),
+      db.from('transactions').select('date,type,category,amount,description,statement_id,source')
+        .eq('user_id', _user.id).order('date', { ascending: false }).limit(1500),
     ]);
     const txs = txr.data || [];
     const porMes = {}, porFuente = {}, porCat = {};
+    // Dinero, no solo conteos: NOVA no puede analizar si solo sabe "cuántos".
+    const dineroPorMes = {}, dineroPorCat = {};
+    const _r2 = n => Math.round(n * 100) / 100;
     txs.forEach(t => {
       const m = String(t.date || '').slice(0, 7);
-      if (m) porMes[m] = (porMes[m] || 0) + 1;
+      const monto = Number(t.amount) || 0;
+      const esIngreso = t.type === 'ingreso';
+      if (m) {
+        porMes[m] = (porMes[m] || 0) + 1;
+        const d = dineroPorMes[m] || (dineroPorMes[m] = { entro: 0, salio: 0 });
+        if (esIngreso) d.entro = _r2(d.entro + monto); else d.salio = _r2(d.salio + monto);
+      }
       porFuente[t.source || '?'] = (porFuente[t.source || '?'] || 0) + 1;
-      porCat[t.category || '?'] = (porCat[t.category || '?'] || 0) + 1;
+      const c = t.category || '?';
+      porCat[c] = (porCat[c] || 0) + 1;
+      const dc = dineroPorCat[c] || (dineroPorCat[c] = { entro: 0, salio: 0 });
+      if (esIngreso) dc.entro = _r2(dc.entro + monto); else dc.salio = _r2(dc.salio + monto);
     });
+    // Los movimientos más grandes: es donde suele estar el problema cuando algo no cuadra.
+    const masGrandes = txs.slice().sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0)).slice(0, 25)
+      .map(t => ({ fecha: t.date, desc: String(t.description || '').slice(0, 70), monto: Number(t.amount) || 0, tipo: t.type, categoria: t.category }));
     return {
       hoy: new Date().toISOString().slice(0, 10),
       pagina_actual: (document.querySelector('.page.active') || {}).id || '',
@@ -6177,6 +6252,19 @@ async function _novaContexto() {
       movimientos_por_mes: porMes,
       movimientos_por_fuente: porFuente,
       movimientos_por_categoria: porCat,
+      dinero_por_mes: dineroPorMes,
+      dinero_por_categoria: dineroPorCat,
+      movimientos_mas_grandes: masGrandes,
+      // Lo que el usuario tiene EN PANTALLA en este momento — para que NOVA pueda
+      // hablar de "ese número que traes enfrente" en vez de adivinar.
+      lo_que_ve_en_pantalla: (function () {
+        try {
+          const act = document.querySelector('.page.active');
+          if (!act) return null;
+          const txt = (act.innerText || '').replace(/\s+/g, ' ').trim();
+          return txt ? txt.slice(0, 2500) : null;
+        } catch (e) { return null; }
+      })(),
       transferencias_internas_no_cuentan: txs.filter(t => esTransferInterna(t)).length,
     };
   } catch (e) { return { error_contexto: String(e && e.message || e) }; }
@@ -6201,14 +6289,15 @@ async function novaAsk() {
     const r = await fetch(EDGE_NOVA, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'apikey': SUPABASE_ANON_KEY },
-      body: JSON.stringify({ question: q, context: ctx, history: window._novaHist.slice(-8) }),
+      body: JSON.stringify({ question: q, context: ctx, history: window._novaHist.slice(-24) }),
     });
     let d = null; try { d = await r.json(); } catch (e) {}
     const w = document.getElementById('novaWait');
     if (w) { w.removeAttribute('id'); w.innerHTML = _novaFmt((d && (d.answer || d.error)) || 'No pude responder — intenta de nuevo en unos segundos.'); }
     if (d && d.answer) {
       window._novaHist.push({ role: 'user', content: q }, { role: 'assistant', content: d.answer });
-      if (window._novaHist.length > 16) window._novaHist = window._novaHist.slice(-16);
+      if (window._novaHist.length > 40) window._novaHist = window._novaHist.slice(-40);
+      _novaGuardarHist();
     }
   } catch (e) {
     const w = document.getElementById('novaWait');
