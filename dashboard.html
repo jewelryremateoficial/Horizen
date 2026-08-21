@@ -6129,6 +6129,10 @@ const EDGE_NOVA = 'https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/nova-he
 // cerrar/abrir el panel NO lo borra; solo "Nueva conversación" o recargar.
 window._novaHist = window._novaHist || [];
 
+// NOVA contesta en Markdown ligero (**negritas**). Se escapa el HTML primero
+// —la respuesta viene de fuera— y solo despues se convierten los ** a <strong>.
+const _novaFmt = s => _escHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
 function novaReset() {
   window._novaHist = [];
   const msgs = document.getElementById('novaMsgs');
@@ -6201,7 +6205,7 @@ async function novaAsk() {
     });
     let d = null; try { d = await r.json(); } catch (e) {}
     const w = document.getElementById('novaWait');
-    if (w) { w.removeAttribute('id'); w.textContent = (d && (d.answer || d.error)) || 'No pude responder — intenta de nuevo en unos segundos.'; }
+    if (w) { w.removeAttribute('id'); w.innerHTML = _novaFmt((d && (d.answer || d.error)) || 'No pude responder — intenta de nuevo en unos segundos.'); }
     if (d && d.answer) {
       window._novaHist.push({ role: 'user', content: q }, { role: 'assistant', content: d.answer });
       if (window._novaHist.length > 16) window._novaHist = window._novaHist.slice(-16);
