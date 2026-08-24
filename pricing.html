@@ -262,6 +262,8 @@ body{background:var(--bg-soft)}
 <script>
 let currentUser = null;
 let annualMode = false;
+let _subIdActual = null;   // suscripción viva del cliente, para cambiarle el plan
+let _planActual  = null;   // 'emprende' | 'negocio' | 'empresa'
 
 // Init
 // ANTES: esta página rebotaba a /login.html a quien no tuviera sesión, y a
@@ -336,31 +338,46 @@ function modoVisitante() {
   });
 }
 
-// ── Cliente que ya paga: marca su plan y ofrece el cambio ──
+// ── Cliente que ya paga: marca su plan y ofrece cambiarse a otro ──
+// El cambio usa revise() de PayPal, que MODIFICA la suscripción que ya existe.
+// Nunca crea una segunda: por eso no hay riesgo de doble cobro.
 function modoClienteActivo(profile) {
-  const actual = (typeof horizenPlan === 'function') ? horizenPlan(profile && profile.plan) : null;
+  _planActual  = (typeof horizenPlan === 'function' && horizenPlan(profile?.plan)?.id) || null;
+  _subIdActual = profile?.paypal_subscription_id || null;
+
+  // Marca visualmente el plan que ya tiene
   _CTA_IDS.forEach((id, i) => {
+    const plan = (typeof HORIZEN_PLANES !== 'undefined' && HORIZEN_PLANES[i]) || null;
+    if (!plan || plan.id !== _planActual) return;
     const c = document.getElementById(id);
     if (!c) return;
-    const plan = (typeof HORIZEN_PLANES !== 'undefined' && HORIZEN_PLANES[i]) || null;
-    const esElSuyo = !!(actual && plan && actual.id === plan.id);
-    if (esElSuyo) {
-      c.innerHTML = '<div class="paypal-placeholder" style="text-align:center;cursor:default;' +
-        'background:var(--pos-bg,#e9f9f1);color:var(--pos-text,#0a7a55);font-weight:700">' +
-        '✓ Tu plan actual</div>';
-      c.closest('.plan-card')?.classList.add('plan-actual');
-    } else {
-      // Todavía no existe el cambio de plan automático. Se hace a mano para no
-      // arriesgar que a alguien le queden DOS suscripciones cobrando a la vez.
-      const asunto = encodeURIComponent('Quiero cambiar al plan ' + (plan ? plan.nombre : ''));
-      c.innerHTML = '<a href="mailto:hola@horizen.com.mx?subject=' + asunto + '" ' +
-        'class="paypal-placeholder" style="text-align:center;text-decoration:none;display:block">' +
-        'Cambiarme a este plan →</a>';
-    }
+    c.innerHTML = '<div class="paypal-placeholder" style="text-align:center;cursor:default;' +
+      'background:var(--pos-bg,#e9f9f1);color:var(--pos-text,#0a7a55);font-weight:700">✓ Tu plan actual</div>';
+    c.closest('.plan-card')?.classList.add('plan-actual');
     const nota = c.parentElement?.querySelector('.trial-note');
-    if (nota && esElSuyo) nota.textContent = 'Este es el plan que tienes contratado.';
+    if (nota) nota.textContent = 'Este es el plan que tienes contratado.';
+  });
+
+  // Sin ID de suscripción no se puede cambiar solo (p. ej. alta manual): queda el contacto.
+  if (!_subIdActual) { ctasContacto(); return; }
+
+  loadPayPalButtons();   // pinta botones de PayPal en modo "cambiar de plan"
+}
+
+// Salida de emergencia: si no hay suscripción que modificar, ofrecer contacto.
+function ctasContacto() {
+  _CTA_IDS.forEach((id, i) => {
+    const plan = (typeof HORIZEN_PLANES !== 'undefined' && HORIZEN_PLANES[i]) || null;
+    if (!plan || plan.id === _planActual) return;
+    const c = document.getElementById(id);
+    if (!c) return;
+    const asunto = encodeURIComponent('Quiero cambiar al plan ' + plan.nombre);
+    c.innerHTML = '<a href="mailto:hola@horizen.com.mx?subject=' + asunto + '" ' +
+      'class="paypal-placeholder" style="text-align:center;text-decoration:none;display:block">' +
+      'Cambiarme a este plan →</a>';
   });
 }
+
 
 function toggleBilling() {
   annualMode = document.getElementById('billingToggle').checked;
@@ -405,23 +422,52 @@ function loadPayPalButtons() {
 
 function renderPayPalButtons() {
   [
-    { containerId: 'paypal-basico',  planKey: 'basico'  },
-    { containerId: 'paypal-pro',     planKey: 'pro'     },
-    { containerId: 'paypal-empresa', planKey: 'empresa' },
-  ].forEach(({ containerId, planKey }) => {
+    { containerId: 'paypal-basico',  planKey: 'basico',  planApp: 'emprende' },
+    { containerId: 'paypal-pro',     planKey: 'pro',     planApp: 'negocio'  },
+    { containerId: 'paypal-empresa', planKey: 'empresa', planApp: 'empresa'  },
+  ].forEach(({ containerId, planKey, planApp }) => {
     const container = document.getElementById(containerId);
     if (!container || !window.paypal) return;
+
+    // Su plan actual no lleva botón: ya lo tiene.
+    if (_subIdActual && planApp === _planActual) return;
+
+    const cambiando = !!_subIdActual;
     container.innerHTML = '';
     window.paypal.Buttons({
-      style: { shape: 'rect', color: 'gold', layout: 'vertical', label: 'subscribe' },
-      createSubscription: (data, actions) => actions.subscription.create({
-        plan_id: annualMode ? PAYPAL_PLANS_V2[planKey].y : PAYPAL_PLANS_V2[planKey].m,
-        custom_id: currentUser.id,   // para que el webhook sepa de quién es la suscripción
-      }),
-      onApprove: (data) => handlePayPalSuccess(data, planKey),
-      onError: (err) => { console.error(err); toast('Error al procesar el pago. Intenta de nuevo.', 'error'); }
+      style: { shape: 'rect', color: 'gold', layout: 'vertical', label: cambiando ? 'pay' : 'subscribe' },
+      createSubscription: (data, actions) => {
+        const planId = annualMode ? PAYPAL_PLANS_V2[planKey].y : PAYPAL_PLANS_V2[planKey].m;
+        // revise() CAMBIA la suscripción que ya existe. create() haría una NUEVA
+        // y el cliente terminaría con dos cobros. La diferencia es crítica.
+        return cambiando
+          ? actions.subscription.revise(_subIdActual, { plan_id: planId })
+          : actions.subscription.create({ plan_id: planId, custom_id: currentUser.id });
+      },
+      onApprove: (data) => cambiando
+        ? handlePlanChange(planApp)
+        : handlePayPalSuccess(data, planKey),
+      onError: (err) => {
+        console.error(err);
+        toast(cambiando
+          ? 'No se pudo cambiar el plan. Tu plan actual sigue igual y no se te cobró de más.'
+          : 'Error al procesar el pago. Intenta de nuevo.', 'error');
+      }
     }).render(`#${containerId}`);
   });
+}
+
+// Cambio de plan aprobado. El webhook (BILLING.SUBSCRIPTION.UPDATED) es la fuente
+// de verdad; esto solo adelanta el cambio en pantalla para que se sienta inmediato.
+async function handlePlanChange(planApp) {
+  try {
+    if (currentUser) {
+      await db.from('profiles').update({ plan: planApp }).eq('id', currentUser.id);
+    }
+  } catch (e) { console.error(e); }
+  const nom = (typeof horizenPlan === 'function' && horizenPlan(planApp)?.nombre) || planApp;
+  toast('¡Listo! Ya estás en el plan ' + nom + ' 🎉', 'success');
+  setTimeout(() => window.location.href = '/dashboard.html', 2000);
 }
 
 async function handlePayPalSuccess(data, plan) {

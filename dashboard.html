@@ -2655,12 +2655,14 @@ async function loadTaxes() {
   }
 
   // CFDI stats
+  // Antes traía las filas y las contaba: con más de 1000 movimientos el
+  // porcentaje salía mal porque Supabase cortaba la lista. Ahora cuenta el servidor.
   const [fiscal, all] = await Promise.all([
-    db.from('transactions').select('id').eq('user_id', _user.id).eq('is_fiscal', true),
-    db.from('transactions').select('id').eq('user_id', _user.id)
+    db.from('transactions').select('id', { count: 'exact', head: true }).eq('user_id', _user.id).eq('is_fiscal', true),
+    db.from('transactions').select('id', { count: 'exact', head: true }).eq('user_id', _user.id)
   ]);
-  const fCount = fiscal.data?.length || 0;
-  const total  = all.data?.length    || 0;
+  const fCount = fiscal.count || 0;
+  const total  = all.count    || 0;
   const pct    = total > 0 ? ((fCount / total) * 100).toFixed(0) : 0;
   document.getElementById('cfdiStats').innerHTML = `
     <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
@@ -5917,16 +5919,33 @@ let _repJustSaved = null, _repBanner = null;
 const _REP_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const _repMoney = n => '$' + Math.round(n).toLocaleString('es-MX');
 
+
+// Supabase devuelve como máximo 1000 filas por consulta. Las pantallas que leen
+// TODO el historial (Resumen y Reportes) se quedaban con las 1000 más recientes,
+// así que los meses viejos NUNCA llegaban y desaparecían del selector de fechas.
+// Esto lo pide por tandas hasta acabarse.
+async function _traerTodo(construir, tam = 1000) {
+  const filas = [];
+  for (let desde = 0; ; desde += tam) {
+    const { data, error } = await construir().range(desde, desde + tam - 1);
+    if (error) throw error;
+    if (!data || !data.length) break;
+    filas.push(...data);
+    if (data.length < tam) break;
+    if (filas.length >= 100000) break;   // tope de seguridad
+  }
+  return filas;
+}
+
 async function loadReportes() {
   const body = document.getElementById('repBody');
   body.innerHTML = '<div class="rep-empty">Cargando tus datos…</div>';
   try {
-    const [txRes, stRes] = await Promise.all([
-      db.from('transactions').select('date,type,amount,category,description,statement_id,source').eq('user_id', _user.id).order('date', { ascending: false }),
+    const [txAll, stRes] = await Promise.all([
+      _traerTodo(() => db.from('transactions').select('date,type,amount,category,description,statement_id,source').eq('user_id', _user.id).order('date', { ascending: false })),
       db.from('statements').select('id,bank_name').eq('user_id', _user.id)
     ]);
-    if (txRes.error) throw txRes.error;
-    _repTx = txRes.data || [];
+    _repTx = txAll;
     _repStmtBank = {};
     (stRes.data || []).forEach(s => { _repStmtBank[s.id] = s.bank_name || 'Sin banco'; });
     const banks = [...new Set((stRes.data || []).map(s => s.bank_name || 'Sin banco'))];
@@ -7639,8 +7658,11 @@ async function loadMiPlan() {
   const cont = document.getElementById('miplanBody');
   if (!cont || !_user) return;
 
-  const actual   = horizenPlan(_profile?.plan);
-  const enPrueba = _profile?.subscription_status === 'trial' || !_profile?.subscription_status;
+  const estado   = _profile?.subscription_status || 'trial';
+  const enPrueba = estado === 'trial';
+  // En prueba el plan guardado suele ser 'free'. Mostrar "no tienes plan" ahí
+  // confunde: la persona SÍ tiene acceso. Se le enseña lo que incluye la prueba.
+  const actual   = horizenPlan(_profile?.plan) || (enPrueba ? horizenPlan('negocio') : null);
 
   // Uso del mes: estados de cuenta analizados y preguntas a NOVA
   const desde = new Date(); desde.setDate(1); desde.setHours(0,0,0,0);
@@ -7672,9 +7694,9 @@ async function loadMiPlan() {
     <div class="card" style="border:1px solid var(--p-border);background:var(--p-soft)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
         <div>
-          <div style="font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--p)">Tu plan</div>
+          <div style="font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--p)">${enPrueba ? 'Tu prueba incluye' : 'Tu plan'}</div>
           <div style="font-size:1.6rem;font-weight:700;letter-spacing:-.02em;margin-top:.2rem">${actual.nombre}</div>
-          <div style="color:var(--muted);font-size:.9rem">$${actual.precio.toLocaleString('es-MX')} MXN / mes${enPrueba ? ' · en prueba' : ''}</div>
+          <div style="color:var(--muted);font-size:.9rem">${enPrueba ? 'Prueba de ' + HORIZEN_TRIAL_DIAS + ' días · elige tu plan abajo cuando quieras' : '$' + actual.precio.toLocaleString('es-MX') + ' MXN / mes'}</div>
         </div>
       </div>
       <div style="margin-top:1.35rem;display:grid;gap:1.1rem;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))">
@@ -7688,7 +7710,7 @@ async function loadMiPlan() {
     </div>`;
 
   const tarjetas = HORIZEN_PLANES.map(pl => {
-    const esElSuyo = actual && actual.id === pl.id;
+    const esElSuyo = !enPrueba && actual && actual.id === pl.id;
     const btn = esElSuyo
       ? `<div class="mp-btn actual">✓ Tu plan actual</div>`
       : `<a class="mp-btn" href="/pricing.html">${actual ? 'Cambiarme a ' + pl.nombre : 'Elegir ' + pl.nombre} →</a>`;
@@ -7869,12 +7891,11 @@ async function renderInicio() {
   const hi = document.getElementById('iniHi'); if (hi) hi.textContent = nm ? `Hola, ${nm}` : 'Hola';
   root.innerHTML = '<div class="ini-empty">Cargando tu resumen…</div>';
   try {
-    const [txRes, stRes] = await Promise.all([
-      db.from('transactions').select('date,type,amount,category,statement_id').eq('user_id', _user.id).order('date', { ascending: false }),
+    const [txAll, stRes] = await Promise.all([
+      _traerTodo(() => db.from('transactions').select('date,type,amount,category,statement_id').eq('user_id', _user.id).order('date', { ascending: false })),
       db.from('statements').select('id,bank_name').eq('user_id', _user.id)
     ]);
-    if (txRes.error) throw txRes.error;
-    _iniTx = txRes.data || [];
+    _iniTx = txAll;
     _iniStmtBank = {}; (stRes.data || []).forEach(s => _iniStmtBank[s.id] = s.bank_name || 'Sin banco');
     const banks = [...new Set((stRes.data || []).map(s => s.bank_name || 'Sin banco'))];
     document.getElementById('iniBank').innerHTML = '<option value="__all__">Todos los bancos</option>' + banks.map(b => `<option value="${_escHtml(b)}">${_escHtml(b)}</option>`).join('');

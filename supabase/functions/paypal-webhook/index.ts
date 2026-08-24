@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { planDesdePayPal } from "./planes-paypal.ts"
 
 // ============================================================
 // Fase 4 — Webhook de PayPal (verify_jwt: false — lo llama PayPal)
@@ -69,10 +70,29 @@ serve(async (req) => {
 
     if (tipo === 'BILLING.SUBSCRIPTION.ACTIVATED') {
       const uid = await findUser()
-      if (uid) await supabase.from('profiles').update({
-        subscription_status: 'active',
-        paypal_subscription_id: rec.id,
-      }).eq('id', uid)
+      if (uid) {
+        // ANTES esto no guardaba el plan. Resultado: quien pagaba se quedaba en
+        // 'free' para siempre y recibía los límites del plan más chico (5 estados
+        // al mes) aunque hubiera pagado Empresa (150). Ahora sí se guarda.
+        const cambios: Record<string, unknown> = {
+          subscription_status: 'active',
+          paypal_subscription_id: rec.id,
+        }
+        const plan = planDesdePayPal(rec.plan_id)
+        if (plan) cambios.plan = plan   // si no reconocemos el plan_id, no tocamos el plan
+        await supabase.from('profiles').update(cambios).eq('id', uid)
+      }
+    } else if (tipo === 'BILLING.SUBSCRIPTION.UPDATED') {
+      // Cambio de plan (subir o bajar) hecho con revise() desde la app.
+      // PayPal manda este evento cuando el cliente aprueba el cambio.
+      const uid = await findUser()
+      const plan = planDesdePayPal(rec.plan_id)
+      if (uid && plan) {
+        await supabase.from('profiles').update({
+          plan,
+          subscription_status: 'active',
+        }).eq('id', uid)
+      }
     } else if (tipo === 'BILLING.SUBSCRIPTION.CANCELLED' || tipo === 'BILLING.SUBSCRIPTION.SUSPENDED' || tipo === 'BILLING.SUBSCRIPTION.EXPIRED') {
       const uid = await findUser()
       if (uid) await supabase.from('profiles').update({ subscription_status: 'cancelled' }).eq('id', uid)

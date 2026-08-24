@@ -86,6 +86,7 @@ serve(async (req) => {
         url: 'https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/paypal-webhook',
         event_types: [
           { name: 'BILLING.SUBSCRIPTION.ACTIVATED' },
+          { name: 'BILLING.SUBSCRIPTION.UPDATED' },   // cambio de plan (upgrade/downgrade)
           { name: 'BILLING.SUBSCRIPTION.CANCELLED' },
           { name: 'BILLING.SUBSCRIPTION.SUSPENDED' },
           { name: 'BILLING.SUBSCRIPTION.EXPIRED' },
