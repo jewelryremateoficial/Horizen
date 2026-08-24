@@ -60,6 +60,7 @@ body{background:var(--bg-soft)}
 .paypal-placeholder{background:var(--indigo);color:#fff;border-radius:999px;height:48px;display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 4px 14px rgba(99,91,255,.35)}
 .paypal-placeholder:hover{background:var(--indigo-600);transform:translateY(-1px)}
 .plan-card.featured .paypal-placeholder{background:var(--indigo)}
+.cta-lbl{text-align:center;font-weight:700;font-size:.92rem;color:var(--ink);margin-bottom:.6rem;letter-spacing:-.01em}
 .trial-note{text-align:center;font-size:.76rem;color:var(--faint);margin-top:.75rem}
 
 /* FAQ */
@@ -414,7 +415,7 @@ function loadPayPalButtons() {
     return;
   }
   const script = document.createElement('script');
-  script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&vault=true&intent=subscription&currency=MXN`;
+  script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&vault=true&intent=subscription&currency=MXN&locale=es_MX`;
   script.setAttribute('data-sdk-integration-source', 'button-factory');
   script.onload = renderPayPalButtons;
   document.head.appendChild(script);
@@ -434,7 +435,29 @@ function renderPayPalButtons() {
 
     const cambiando = !!_subIdActual;
     container.innerHTML = '';
+
+    // Quien YA paga tiene cuenta de PayPal por fuerza (PayPal la exige para
+    // suscripciones). Ofrecerle además "tarjeta de débito o crédito" solo lo
+    // confunde: ese botón lo lleva a la misma pantalla de PayPal. A ese le
+    // dejamos UN solo botón, con un texto claro arriba.
+    // Al que canceló o nunca ha pagado sí le dejamos las dos opciones.
+    let destino = container;
+    if (cambiando) {
+      const sube = (typeof horizenRango === 'function')
+        ? horizenRango(planApp) > horizenRango(_planActual) : true;
+      const nombre = (typeof horizenPlan === 'function' && horizenPlan(planApp)?.nombre) || '';
+      const lbl = document.createElement('div');
+      lbl.className = 'cta-lbl';
+      lbl.textContent = (sube ? 'Mejorar a ' : 'Cambiar a ') + nombre;
+      container.appendChild(lbl);
+      destino = document.createElement('div');
+      destino.id = containerId + '-btn';
+      container.appendChild(destino);
+    }
+
     window.paypal.Buttons({
+      // Un solo medio de pago cuando ya es cliente; los dos cuando no lo es.
+      ...(cambiando ? { fundingSource: window.paypal.FUNDING.PAYPAL } : {}),
       style: { shape: 'rect', color: 'gold', layout: 'vertical', label: cambiando ? 'pay' : 'subscribe' },
       createSubscription: (data, actions) => {
         const planId = annualMode ? PAYPAL_PLANS_V2[planKey].y : PAYPAL_PLANS_V2[planKey].m;
@@ -454,7 +477,7 @@ function renderPayPalButtons() {
         const motivo = (err && (err.message || String(err)) || '').slice(0, 300);
         mostrarErrorPayPal(cambiando, motivo);
       }
-    }).render(`#${containerId}`);
+    }).render(cambiando ? `#${containerId}-btn` : `#${containerId}`);
   });
 }
 
