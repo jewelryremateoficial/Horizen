@@ -448,10 +448,11 @@ function renderPayPalButtons() {
         ? handlePlanChange(planApp)
         : handlePayPalSuccess(data, planKey),
       onError: (err) => {
-        console.error(err);
-        toast(cambiando
-          ? 'No se pudo cambiar el plan. Tu plan actual sigue igual y no se te cobró de más.'
-          : 'Error al procesar el pago. Intenta de nuevo.', 'error');
+        // Antes esto escondía el motivo real y solo decía "hubo un error".
+        // Sin el motivo es imposible saber qué rechazó PayPal.
+        console.error('PayPal:', err);
+        const motivo = (err && (err.message || String(err)) || '').slice(0, 300);
+        mostrarErrorPayPal(cambiando, motivo);
       }
     }).render(`#${containerId}`);
   });
@@ -463,6 +464,36 @@ function renderPayPalButtons() {
 //   BAJA  → conserva lo que ya pagó hasta que termine su ciclo; el cambio
 //           entra cuando llegue el próximo cobro (lo aplica el webhook).
 // El webhook es la fuente de verdad; esto solo adelanta lo visible.
+
+// Enseña el motivo real del fallo, en pantalla, con un botón para copiarlo.
+function mostrarErrorPayPal(cambiando, motivo) {
+  const previo = document.getElementById('ppError');
+  if (previo) previo.remove();
+  const caja = document.createElement('div');
+  caja.id = 'ppError';
+  caja.style.cssText = 'max-width:900px;margin:1.5rem auto;padding:1.1rem 1.4rem;border-radius:12px;' +
+    'background:#fef2f2;border:1px solid rgba(226,67,95,.35);color:#b3093c;font-size:.9rem;line-height:1.55';
+  caja.innerHTML =
+    '<b>' + (cambiando ? 'PayPal no pudo cambiar tu plan.' : 'PayPal no pudo procesar el pago.') + '</b> ' +
+    (cambiando ? 'Tu plan actual sigue igual y no se te cobró nada.' : 'No se te cobró nada.') +
+    '<div style="margin-top:.7rem;font-size:.8rem;color:#7f1d1d">Esto es lo que respondió PayPal:</div>' +
+    '<div id="ppErrorTxt" style="margin-top:.35rem;padding:.6rem .75rem;background:#fff;border-radius:8px;' +
+    'font-family:ui-monospace,Menlo,monospace;font-size:.78rem;color:#450a0a;word-break:break-word">' +
+    (motivo ? motivo.replace(/[<>]/g, '') : '(PayPal no dio detalle)') + '</div>' +
+    '<button onclick="copiarErrorPayPal()" style="margin-top:.7rem;padding:.45rem .9rem;border-radius:8px;' +
+    'border:1px solid rgba(226,67,95,.35);background:#fff;color:#b3093c;font-weight:600;cursor:pointer;font-size:.82rem">' +
+    'Copiar este mensaje</button>';
+  const hero = document.querySelector('.hero');
+  hero ? hero.after(caja) : document.body.prepend(caja);
+  caja.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function copiarErrorPayPal() {
+  const t = document.getElementById('ppErrorTxt')?.textContent || '';
+  navigator.clipboard?.writeText(t);
+  toast('Mensaje copiado. Pégalo en el chat.', 'success');
+}
+
 async function handlePlanChange(planApp) {
   const sube = (typeof horizenRango === 'function')
     ? (horizenRango(planApp) > horizenRango(_planActual))
