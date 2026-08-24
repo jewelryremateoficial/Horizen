@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { planDesdePayPal } from "./planes-paypal.ts"
+import { planDesdePayPal, esSubida } from "./planes-paypal.ts"
 
 // ============================================================
 // Fase 4 — Webhook de PayPal (verify_jwt: false — lo llama PayPal)
@@ -83,15 +83,22 @@ serve(async (req) => {
         await supabase.from('profiles').update(cambios).eq('id', uid)
       }
     } else if (tipo === 'BILLING.SUBSCRIPTION.UPDATED') {
-      // Cambio de plan (subir o bajar) hecho con revise() desde la app.
-      // PayPal manda este evento cuando el cliente aprueba el cambio.
+      // Cambio de plan hecho con revise() desde la app.
+      // PayPal NO cobra nada hoy: el precio nuevo entra en el siguiente cobro.
+      // Por eso el trato es distinto según la dirección del cambio:
+      //   SUBE  → se le da al instante (ya pagó menos por lo que va del ciclo,
+      //           y el cobro mayor le llega en su próxima fecha).
+      //   BAJA  → NO se le quita nada hoy. Ya pagó el plan grande hasta que
+      //           termine su ciclo. El cambio entra solo cuando llegue el
+      //           siguiente cobro (ver PAYMENT.SALE.COMPLETED abajo).
       const uid = await findUser()
       const plan = planDesdePayPal(rec.plan_id)
       if (uid && plan) {
-        await supabase.from('profiles').update({
-          plan,
-          subscription_status: 'active',
-        }).eq('id', uid)
+        const { data: prof } = await supabase.from('profiles').select('plan').eq('id', uid).maybeSingle()
+        if (esSubida(plan, prof?.plan)) {
+          await supabase.from('profiles').update({ plan, subscription_status: 'active' }).eq('id', uid)
+        }
+        // Si baja, no se toca: se sincroniza al cobrarse el siguiente periodo.
       }
     } else if (tipo === 'BILLING.SUBSCRIPTION.CANCELLED' || tipo === 'BILLING.SUBSCRIPTION.SUSPENDED' || tipo === 'BILLING.SUBSCRIPTION.EXPIRED') {
       const uid = await findUser()
@@ -111,6 +118,25 @@ serve(async (req) => {
         })
         // Un cobro exitoso también rehabilita a quien estaba en past_due
         await supabase.from('profiles').update({ subscription_status: 'active' }).eq('id', uid).eq('subscription_status', 'past_due')
+
+        // Empezó un ciclo nuevo: el plan de la app debe coincidir con el que
+        // PayPal está cobrando de verdad. Aquí es donde entra en vigor una
+        // BAJADA de plan, que se dejó pendiente para no quitarle al cliente
+        // algo que ya había pagado.
+        if (subId) {
+          try {
+            const subRes = await fetch(BASE + '/v1/billing/subscriptions/' + subId, {
+              headers: { 'Authorization': 'Bearer ' + access_token },
+            })
+            if (subRes.ok) {
+              const sub = await subRes.json()
+              const planReal = planDesdePayPal(sub.plan_id)
+              if (planReal) {
+                await supabase.from('profiles').update({ plan: planReal }).eq('id', uid)
+              }
+            }
+          } catch (_e) { /* si PayPal no responde, se corrige en el próximo cobro */ }
+        }
       }
     }
 

@@ -25,3 +25,20 @@ export function planDesdePayPal(planId?: string | null): string | null {
   if (!planId) return null
   return PLAN_POR_PAYPAL_ID[planId] || null
 }
+
+// Orden de los planes, para saber si un cambio es subida o bajada.
+const RANGO: Record<string, number> = { emprende: 1, basico: 1, negocio: 2, pro: 2, empresa: 3 }
+
+export function rangoPlan(id?: string | null): number {
+  return RANGO[String(id || '').toLowerCase()] || 0
+}
+
+// true = el cliente SUBE de plan (o es su primer plan).
+// Las subidas se aplican al instante; las bajadas esperan a que termine
+// el ciclo que ya pagó — no se le quita algo que ya compró.
+export function esSubida(planNuevo: string, planActual?: string | null): boolean {
+  const a = rangoPlan(planActual)
+  const b = rangoPlan(planNuevo)
+  if (!a) return true          // no tenía plan reconocible: tratarlo como alta
+  return b > a
+}

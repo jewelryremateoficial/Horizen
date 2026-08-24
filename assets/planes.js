@@ -83,10 +83,19 @@ function horizenLimite(v, sufijo) {
   return v + (sufijo || ' / mes');
 }
 
+// Qué tan grande es un plan (1 el más chico). Sirve para saber si un cambio
+// es subida o bajada: las subidas se dan al instante, las bajadas esperan a
+// que termine el ciclo que el cliente ya pagó.
+function horizenRango(id) {
+  const p = horizenPlan(id);
+  return p ? HORIZEN_PLANES.indexOf(p) + 1 : 0;
+}
+
 // Para el navegador (pricing.html, dashboard.html)
 if (typeof window !== 'undefined') {
   window.HORIZEN_PLANES = HORIZEN_PLANES;
   window.HORIZEN_TRIAL_DIAS = HORIZEN_TRIAL_DIAS;
   window.horizenPlan = horizenPlan;
   window.horizenLimite = horizenLimite;
+  window.horizenRango = horizenRango;
 }

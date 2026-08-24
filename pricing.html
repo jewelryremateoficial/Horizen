@@ -213,7 +213,7 @@ body{background:var(--bg-soft)}
   <div class="faq-title">Preguntas frecuentes</div>
   <div class="faq-item">
     <div class="faq-q" onclick="toggleFaq(this)">¿Puedo cambiar de plan después? <span class="arrow">▾</span></div>
-    <div class="faq-a"><div class="faq-a-inner">Sí, puedes subir o bajar de plan en cualquier momento desde tu cuenta. El cambio aplica en el siguiente ciclo de facturación.</div></div>
+    <div class="faq-a"><div class="faq-a-inner">Sí, cuando quieras, desde <b>Mi plan</b> dentro de la app. Si <b>subes</b> de plan lo usas de inmediato, y el precio nuevo entra en tu siguiente cobro (no te cobramos nada extra el día que lo cambias). Si <b>bajas</b> de plan conservas todo lo que ya pagaste hasta que termine tu periodo, y de ahí en adelante pagas menos.</div></div>
   </div>
   <div class="faq-item">
     <div class="faq-q" onclick="toggleFaq(this)">¿Cómo funciona el período de prueba? <span class="arrow">▾</span></div>
@@ -457,40 +457,28 @@ function renderPayPalButtons() {
   });
 }
 
-// Cambio de plan aprobado. El webhook (BILLING.SUBSCRIPTION.UPDATED) es la fuente
-// de verdad; esto solo adelanta el cambio en pantalla para que se sienta inmediato.
+// Cambio de plan aprobado en PayPal.
+// OJO: PayPal no cobra nada hoy — el precio nuevo entra en el siguiente cobro.
+//   SUBE  → se le da al instante.
+//   BAJA  → conserva lo que ya pagó hasta que termine su ciclo; el cambio
+//           entra cuando llegue el próximo cobro (lo aplica el webhook).
+// El webhook es la fuente de verdad; esto solo adelanta lo visible.
 async function handlePlanChange(planApp) {
-  try {
-    if (currentUser) {
-      await db.from('profiles').update({ plan: planApp }).eq('id', currentUser.id);
-    }
-  } catch (e) { console.error(e); }
+  const sube = (typeof horizenRango === 'function')
+    ? (horizenRango(planApp) > horizenRango(_planActual))
+    : true;
   const nom = (typeof horizenPlan === 'function' && horizenPlan(planApp)?.nombre) || planApp;
-  toast('¡Listo! Ya estás en el plan ' + nom + ' 🎉', 'success');
-  setTimeout(() => window.location.href = '/dashboard.html', 2000);
-}
 
-async function handlePayPalSuccess(data, plan) {
-  if (!currentUser) return;
-  // Guardar suscripción en Supabase
-  await db.from('profiles').update({
-    plan,
-    subscription_status: 'active',
-    paypal_subscription_id: data.subscriptionID,
-    subscription_started_at: new Date().toISOString()
-  }).eq('id', currentUser.id);
-
-  await db.from('payments').insert({
-    user_id: currentUser.id,
-    paypal_subscription_id: data.subscriptionID,
-    plan,
-    amount: PLANS[plan].price,
-    currency: 'MXN',
-    status: 'active'
-  });
-
-  toast('¡Suscripción activada! Bienvenido a Horizen 🎉', 'success');
-  setTimeout(() => window.location.href = '/dashboard.html', 2000);
+  if (sube) {
+    try {
+      if (currentUser) await db.from('profiles').update({ plan: planApp }).eq('id', currentUser.id);
+    } catch (e) { console.error(e); }
+    toast('¡Listo! Ya estás en el plan ' + nom + ' 🎉 Tu nuevo precio entra en tu próximo cobro.', 'success');
+  } else {
+    // No se toca el plan: sigue disfrutando lo que pagó hasta su fecha de corte.
+    toast('Listo. Bajarás al plan ' + nom + ' cuando termine el periodo que ya pagaste — mientras tanto conservas todo lo que tienes.', 'success');
+  }
+  setTimeout(() => window.location.href = '/dashboard.html', 3500);
 }
 
 function openPayPalModal(plan) {
