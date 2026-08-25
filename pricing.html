@@ -263,6 +263,7 @@ body{background:var(--bg-soft)}
 <script>
 let currentUser = null;
 let annualMode = false;
+let _planesPayPal = null;  // los planes que PayPal tiene HOY, preguntados en vivo
 let _subIdActual = null;   // suscripción viva del cliente, para cambiarle el plan
 let _planActual  = null;   // 'emprende' | 'negocio' | 'empresa'
 
@@ -272,6 +273,7 @@ let _planActual  = null;   // 'emprende' | 'negocio' | 'empresa'
 // AHORA: los planes se ven siempre. Lo único que cambia es el botón de cada uno.
 (async () => {
   pintarPreciosDesdePlanes();          // los números salen de /assets/planes.js
+  await cargarPlanesPayPal();          // los IDs de PayPal, en vivo
   const session = await getSession();
 
   // Visitante sin cuenta → ve los precios y un botón para registrarse.
@@ -295,6 +297,37 @@ let _planActual  = null;   // 'emprende' | 'negocio' | 'empresa'
   }
   loadPayPalButtons();
 })();
+
+// ── Los planes de PayPal se preguntan en vivo ──
+// Los IDs NO viven en este archivo. La función paypal-planes se los pide a
+// PayPal y los agrupa. Así, recrear un plan en PayPal no obliga a tocar código.
+async function cargarPlanesPayPal() {
+  try {
+    const { data } = await db.functions.invoke('paypal-planes');
+    if (data && data.ok && data.planes) _planesPayPal = data.planes;
+  } catch (e) { console.error('paypal-planes:', e); }
+}
+
+// Devuelve el ID del plan de PayPal que toca.
+//
+//   sinPrueba = false → CON 7 días de prueba. Clientes NUEVOS. Siempre.
+//   sinPrueba = true  → SIN prueba. Solo para quien YA paga y cambia de plan
+//                       (ese ya usó su prueba cuando entró).
+//
+// Si PayPal no contestó, se cae al respaldo — que son planes CON prueba, así
+// que un cliente nuevo nunca se queda sin sus 7 días. Para un cambio de plan
+// devuelve null a propósito: mejor no ofrecer el botón que mandarlo a un plan
+// con prueba, que es justo lo que traba a PayPal.
+function idDePlan(planApp, sinPrueba) {
+  const ciclo = annualMode ? 'anual' : 'mensual';
+  const grupo = sinPrueba ? 'sin_prueba' : 'con_prueba';
+  const vivo = _planesPayPal && _planesPayPal[grupo] && _planesPayPal[grupo][planApp + '_' + ciclo];
+  if (vivo) return vivo;
+  if (sinPrueba) return null;
+  const viejo = { emprende: 'basico', negocio: 'pro', empresa: 'empresa' }[planApp];
+  if (!viejo || !PAYPAL_PLANS_V2[viejo]) return null;
+  return annualMode ? PAYPAL_PLANS_V2[viejo].y : PAYPAL_PLANS_V2[viejo].m;
+}
 
 // ── Los precios, límites y notas salen de /assets/planes.js ──
 // Así cambias un precio en UN solo archivo y esta página se actualiza sola.
@@ -361,6 +394,14 @@ function modoClienteActivo(profile) {
 
   // Sin ID de suscripción no se puede cambiar solo (p. ej. alta manual): queda el contacto.
   if (!_subIdActual) { ctasContacto(); return; }
+
+  // Los planes SIN prueba son indispensables para cambiar de plan: PayPal se
+  // traba si se mueve una suscripción activa hacia un plan con prueba. Si
+  // todavía no existen (falta correr paypal-setup), se ofrece el contacto en
+  // vez de un botón que se va a quedar cargando.
+  const haySinPrueba = !!(_planesPayPal && _planesPayPal.sin_prueba
+    && Object.keys(_planesPayPal.sin_prueba).length >= 6);
+  if (!haySinPrueba) { ctasContacto(); return; }
 
   loadPayPalButtons();   // pinta botones de PayPal en modo "cambiar de plan"
 }
@@ -460,7 +501,9 @@ function renderPayPalButtons() {
       ...(cambiando ? { fundingSource: window.paypal.FUNDING.PAYPAL } : {}),
       style: { shape: 'rect', color: 'gold', layout: 'vertical', label: cambiando ? 'pay' : 'subscribe' },
       createSubscription: (data, actions) => {
-        const planId = annualMode ? PAYPAL_PLANS_V2[planKey].y : PAYPAL_PLANS_V2[planKey].m;
+        // Cliente nuevo → plan CON prueba. Cliente que cambia → plan SIN prueba.
+        const planId = idDePlan(planApp, cambiando);
+        if (!planId) return Promise.reject(new Error('plan no disponible'));
         // revise() CAMBIA la suscripción que ya existe. create() haría una NUEVA
         // y el cliente terminaría con dos cobros. La diferencia es crítica.
         return cambiando
@@ -471,11 +514,12 @@ function renderPayPalButtons() {
         ? handlePlanChange(planApp)
         : handlePayPalSuccess(data, planKey),
       onError: (err) => {
-        // Antes esto escondía el motivo real y solo decía "hubo un error".
-        // Sin el motivo es imposible saber qué rechazó PayPal.
+        // El motivo queda en la consola para diagnóstico. Al cliente solo se le
+        // dice lo que le importa: que no se le cobró.
         console.error('PayPal:', err);
-        const motivo = (err && (err.message || String(err)) || '').slice(0, 300);
-        mostrarErrorPayPal(cambiando, motivo);
+        toast(cambiando
+          ? 'No se pudo cambiar el plan. Tu plan actual sigue igual y no se te cobró nada.'
+          : 'No se pudo procesar el pago. No se te cobró nada.', 'error');
       }
     }).render(cambiando ? `#${containerId}-btn` : `#${containerId}`);
   });
@@ -487,35 +531,6 @@ function renderPayPalButtons() {
 //   BAJA  → conserva lo que ya pagó hasta que termine su ciclo; el cambio
 //           entra cuando llegue el próximo cobro (lo aplica el webhook).
 // El webhook es la fuente de verdad; esto solo adelanta lo visible.
-
-// Enseña el motivo real del fallo, en pantalla, con un botón para copiarlo.
-function mostrarErrorPayPal(cambiando, motivo) {
-  const previo = document.getElementById('ppError');
-  if (previo) previo.remove();
-  const caja = document.createElement('div');
-  caja.id = 'ppError';
-  caja.style.cssText = 'max-width:900px;margin:1.5rem auto;padding:1.1rem 1.4rem;border-radius:12px;' +
-    'background:#fef2f2;border:1px solid rgba(226,67,95,.35);color:#b3093c;font-size:.9rem;line-height:1.55';
-  caja.innerHTML =
-    '<b>' + (cambiando ? 'PayPal no pudo cambiar tu plan.' : 'PayPal no pudo procesar el pago.') + '</b> ' +
-    (cambiando ? 'Tu plan actual sigue igual y no se te cobró nada.' : 'No se te cobró nada.') +
-    '<div style="margin-top:.7rem;font-size:.8rem;color:#7f1d1d">Esto es lo que respondió PayPal:</div>' +
-    '<div id="ppErrorTxt" style="margin-top:.35rem;padding:.6rem .75rem;background:#fff;border-radius:8px;' +
-    'font-family:ui-monospace,Menlo,monospace;font-size:.78rem;color:#450a0a;word-break:break-word">' +
-    (motivo ? motivo.replace(/[<>]/g, '') : '(PayPal no dio detalle)') + '</div>' +
-    '<button onclick="copiarErrorPayPal()" style="margin-top:.7rem;padding:.45rem .9rem;border-radius:8px;' +
-    'border:1px solid rgba(226,67,95,.35);background:#fff;color:#b3093c;font-weight:600;cursor:pointer;font-size:.82rem">' +
-    'Copiar este mensaje</button>';
-  const hero = document.querySelector('.hero');
-  hero ? hero.after(caja) : document.body.prepend(caja);
-  caja.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function copiarErrorPayPal() {
-  const t = document.getElementById('ppErrorTxt')?.textContent || '';
-  navigator.clipboard?.writeText(t);
-  toast('Mensaje copiado. Pégalo en el chat.', 'success');
-}
 
 async function handlePlanChange(planApp) {
   const sube = (typeof horizenRango === 'function')

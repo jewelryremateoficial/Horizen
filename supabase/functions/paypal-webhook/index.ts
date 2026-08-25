@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { planDesdePayPal, esSubida } from "./planes-paypal.ts"
+import { leerNombre } from "../_shared/paypal-planes.ts"
 
 // ============================================================
 // Fase 4 — Webhook de PayPal (verify_jwt: false — lo llama PayPal)
@@ -22,6 +23,25 @@ serve(async (req) => {
     if (!SECRET || !WEBHOOK_ID) return new Response('config pendiente', { status: 200 })
     const ENV = Deno.env.get('PAYPAL_ENV') || 'live'
     const BASE = ENV === 'sandbox' ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com'
+
+    // De un plan_id de PayPal saca el plan de Horizen leyendo su NOMBRE.
+    // Se prefiere el nombre sobre una lista de IDs porque así reconoce
+    // cualquier plan que exista o se cree después —incluidos los "sin prueba"
+    // que usan los cambios de plan— sin tener que actualizar el código.
+    // La lista de IDs queda solo como respaldo si PayPal no contesta.
+    const planDeHorizen = async (planId: string | null | undefined, token: string, base: string) => {
+      if (!planId) return null
+      try {
+        const r = await fetch(base + '/v1/billing/plans/' + planId, {
+          headers: { 'Authorization': 'Bearer ' + token },
+        })
+        if (r.ok) {
+          const info = leerNombre(String((await r.json()).name || ''))
+          if (info) return info.app
+        }
+      } catch (_e) { /* cae al respaldo */ }
+      return planDesdePayPal(planId)
+    }
 
     const bodyText = await req.text()
     const event = JSON.parse(bodyText)
@@ -78,7 +98,7 @@ serve(async (req) => {
           subscription_status: 'active',
           paypal_subscription_id: rec.id,
         }
-        const plan = planDesdePayPal(rec.plan_id)
+        const plan = await planDeHorizen(rec.plan_id, access_token, BASE)
         if (plan) cambios.plan = plan   // si no reconocemos el plan_id, no tocamos el plan
         await supabase.from('profiles').update(cambios).eq('id', uid)
       }
@@ -92,7 +112,7 @@ serve(async (req) => {
       //           termine su ciclo. El cambio entra solo cuando llegue el
       //           siguiente cobro (ver PAYMENT.SALE.COMPLETED abajo).
       const uid = await findUser()
-      const plan = planDesdePayPal(rec.plan_id)
+      const plan = await planDeHorizen(rec.plan_id, access_token, BASE)
       if (uid && plan) {
         const { data: prof } = await supabase.from('profiles').select('plan').eq('id', uid).maybeSingle()
         if (esSubida(plan, prof?.plan)) {
@@ -130,7 +150,7 @@ serve(async (req) => {
             })
             if (subRes.ok) {
               const sub = await subRes.json()
-              const planReal = planDesdePayPal(sub.plan_id)
+              const planReal = await planDeHorizen(sub.plan_id, access_token, BASE)
               if (planReal) {
                 await supabase.from('profiles').update({ plan: planReal }).eq('id', uid)
               }
