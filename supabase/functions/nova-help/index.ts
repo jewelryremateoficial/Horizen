@@ -45,6 +45,8 @@ serve(async (req) => {
     const jwtUser = (req.headers.get('authorization') || '').replace('Bearer ', '')
     let uid: string | null = null
     try { uid = JSON.parse(atob(jwtUser.split('.')[1] || ''))?.sub || null } catch { /* ignore */ }
+    // La pregunta se cobra hasta DESPUÉS de obtener respuesta: si la IA falla, no gasta su cupo
+    let cobrarPregunta: (() => Promise<void>) | null = null
     if (uid) {
       const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
       const { data: prof } = await admin.from('profiles').select('plan').eq('id', uid).maybeSingle()
@@ -54,8 +56,10 @@ serve(async (req) => {
       if ((plan === 'basico' || plan === 'emprende') && (uso?.count || 0) >= 20) {
         throw new Error('Llegaste a tus 20 preguntas del mes en el plan Emprende. En el plan Negocio, NOVA no tiene límite.')
       }
-      if (uso) await admin.from('nova_usage').update({ count: (uso.count || 0) + 1 }).eq('id', uso.id)
-      else await admin.from('nova_usage').insert({ user_id: uid, month: mes, count: 1 })
+      cobrarPregunta = async () => {
+        if (uso) await admin.from('nova_usage').update({ count: (uso.count || 0) + 1 }).eq('id', uso.id)
+        else await admin.from('nova_usage').insert({ user_id: uid, month: mes, count: 1 })
+      }
     }
 
     const system = `Eres NOVA, el copiloto de Horizen (app mexicana de finanzas para emprendedores). El usuario tiene una duda sobre POR QUÉ ve o no ve algo en su cuenta. Abajo va un resumen REAL de sus datos. Responde en español mexicano, simple y directo (máximo ~120 palabras), sin tecnicismos, y si aplica dile exactamente qué botón o pantalla usar para arreglarlo. Basa tu respuesta SOLO en el contexto; si no alcanza para saberlo con certeza, dilo con honestidad y sugiere qué revisar. Si hay mensajes anteriores en la conversación, úsalos para entender a qué se refiere el usuario ("eso", "lo de antes", etc.).
@@ -88,11 +92,18 @@ ${JSON.stringify(context || {}).slice(0, 6000)}`
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 600, system, messages }),
+      // Opus 5 (decisión de Eduardo 2026-08). effort:low = respuestas rápidas; el
+      // "pensamiento" de Opus cuenta dentro de max_tokens, por eso sube de 600 a 2000.
+      body: JSON.stringify({ model: 'claude-opus-5', max_tokens: 2000, output_config: { effort: 'low' }, system, messages }),
     })
     if (!res.ok) throw new Error('El asistente está saturado en este momento. Intenta en unos segundos.')
     const d = await res.json()
-    const answer = d.content?.[0]?.text || 'No pude generar una respuesta. Intenta de nuevo.'
+    if (d.stop_reason === 'refusal') throw new Error('No pude responder esa pregunta. Intenta formularla de otra manera.')
+    // Opus 5 puede devolver bloques "thinking" intercalados: juntar TODOS los bloques de texto
+    const texto = (d.content || []).filter((b: { type?: string }) => b.type === 'text')
+      .map((b: { text?: string }) => b.text || '').join('\n').trim()
+    if (texto && cobrarPregunta) { try { await cobrarPregunta() } catch { /* no bloquear la respuesta */ } }
+    const answer = texto || 'No pude generar una respuesta. Intenta de nuevo.'
     return new Response(JSON.stringify({ answer }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 })
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message || 'Error' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 })
