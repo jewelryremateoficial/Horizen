@@ -60,6 +60,7 @@ body{background:var(--bg-soft)}
 .paypal-placeholder{background:var(--indigo);color:#fff;border-radius:999px;height:48px;display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 4px 14px rgba(99,91,255,.35)}
 .paypal-placeholder:hover{background:var(--indigo-600);transform:translateY(-1px)}
 .plan-card.featured .paypal-placeholder{background:var(--indigo)}
+.cta-lbl{text-align:center;font-weight:700;font-size:.92rem;color:var(--ink);margin-bottom:.6rem;letter-spacing:-.01em}
 .trial-note{text-align:center;font-size:.76rem;color:var(--faint);margin-top:.75rem}
 
 /* FAQ */
@@ -213,7 +214,7 @@ body{background:var(--bg-soft)}
   <div class="faq-title">Preguntas frecuentes</div>
   <div class="faq-item">
     <div class="faq-q" onclick="toggleFaq(this)">¿Puedo cambiar de plan después? <span class="arrow">▾</span></div>
-    <div class="faq-a"><div class="faq-a-inner">Sí, puedes subir o bajar de plan en cualquier momento desde tu cuenta. El cambio aplica en el siguiente ciclo de facturación.</div></div>
+    <div class="faq-a"><div class="faq-a-inner">Sí, cuando quieras, desde <b>Mi plan</b> dentro de la app. Si <b>subes</b> de plan lo usas de inmediato, y el precio nuevo entra en tu siguiente cobro (no te cobramos nada extra el día que lo cambias). Si <b>bajas</b> de plan conservas todo lo que ya pagaste hasta que termine tu periodo, y de ahí en adelante pagas menos.</div></div>
   </div>
   <div class="faq-item">
     <div class="faq-q" onclick="toggleFaq(this)">¿Cómo funciona el período de prueba? <span class="arrow">▾</span></div>
@@ -258,20 +259,35 @@ body{background:var(--bg-soft)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
+<script src="/assets/planes.js"></script>
 <script>
 let currentUser = null;
 let annualMode = false;
+let _planesPayPal = null;  // los planes que PayPal tiene HOY, preguntados en vivo
+let _subIdActual = null;   // suscripción viva del cliente, para cambiarle el plan
+let _planActual  = null;   // 'emprende' | 'negocio' | 'empresa'
 
 // Init
+// ANTES: esta página rebotaba a /login.html a quien no tuviera sesión, y a
+// /dashboard.html a quien ya pagara. Resultado: NADIE podía ver los precios.
+// AHORA: los planes se ven siempre. Lo único que cambia es el botón de cada uno.
 (async () => {
+  pintarPreciosDesdePlanes();          // los números salen de /assets/planes.js
+  await cargarPlanesPayPal();          // los IDs de PayPal, en vivo
   const session = await getSession();
-  if (!session) { window.location.href = '/login.html'; return; }
+
+  // Visitante sin cuenta → ve los precios y un botón para registrarse.
+  // (No se puede poner el botón de PayPal aquí: PayPal necesita saber quién paga.)
+  if (!session) { modoVisitante(); return; }
+
   currentUser = session.user;
   const profile = await getProfile(currentUser.id);
-  if (profile?.subscription_status === 'active') { window.location.href = '/dashboard.html'; return; }
   const name = profile?.full_name || currentUser.email || '';
   document.getElementById('userEmail').textContent = name;
   document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
+
+  // Cliente que ya paga → ve sus planes con el suyo marcado.
+  if (profile?.subscription_status === 'active') { modoClienteActivo(profile); return; }
   // Banner si el trial venció
   if (new URLSearchParams(window.location.search).get('expired') === '1') {
     const banner = document.createElement('div');
@@ -281,6 +297,129 @@ let annualMode = false;
   }
   loadPayPalButtons();
 })();
+
+// ── Los planes de PayPal se preguntan en vivo ──
+// Los IDs NO viven en este archivo. La función paypal-planes se los pide a
+// PayPal y los agrupa. Así, recrear un plan en PayPal no obliga a tocar código.
+async function cargarPlanesPayPal() {
+  try {
+    const { data } = await db.functions.invoke('paypal-planes');
+    if (data && data.ok && data.planes) _planesPayPal = data.planes;
+  } catch (e) { console.error('paypal-planes:', e); }
+}
+
+// Devuelve el ID del plan de PayPal que toca.
+//
+//   sinPrueba = false → CON 7 días de prueba. Clientes NUEVOS. Siempre.
+//   sinPrueba = true  → SIN prueba. Solo para quien YA paga y cambia de plan
+//                       (ese ya usó su prueba cuando entró).
+//
+// Si PayPal no contestó, se cae al respaldo — que son planes CON prueba, así
+// que un cliente nuevo nunca se queda sin sus 7 días. Para un cambio de plan
+// devuelve null a propósito: mejor no ofrecer el botón que mandarlo a un plan
+// con prueba, que es justo lo que traba a PayPal.
+function idDePlan(planApp, sinPrueba) {
+  const ciclo = annualMode ? 'anual' : 'mensual';
+  const grupo = sinPrueba ? 'sin_prueba' : 'con_prueba';
+  const vivo = _planesPayPal && _planesPayPal[grupo] && _planesPayPal[grupo][planApp + '_' + ciclo];
+  if (vivo) return vivo;
+  if (sinPrueba) return null;
+  const viejo = { emprende: 'basico', negocio: 'pro', empresa: 'empresa' }[planApp];
+  if (!viejo || !PAYPAL_PLANS_V2[viejo]) return null;
+  return annualMode ? PAYPAL_PLANS_V2[viejo].y : PAYPAL_PLANS_V2[viejo].m;
+}
+
+// ── Los precios, límites y notas salen de /assets/planes.js ──
+// Así cambias un precio en UN solo archivo y esta página se actualiza sola.
+// No toca el markup ni el cobro: solo reescribe los textos.
+const _CTA_IDS = ['paypal-basico', 'paypal-pro', 'paypal-empresa'];
+
+function pintarPreciosDesdePlanes() {
+  if (typeof HORIZEN_PLANES === 'undefined') return;   // si falla la carga, se queda lo que está
+  document.querySelectorAll('.plan-card').forEach((card, i) => {
+    const plan = HORIZEN_PLANES[i];
+    if (!plan) return;
+    const amt = card.querySelector('.amount');
+    if (amt) {
+      amt.dataset.monthly = plan.precio;
+      amt.dataset.annual  = plan.precioAnual;
+      amt.textContent = '$' + plan.precio.toLocaleString('es-MX');
+    }
+    const vals = card.querySelectorAll('.limit-val');
+    if (vals[0]) vals[0].textContent = horizenLimite(plan.limites.estados);
+    if (vals[1]) vals[1].textContent = horizenLimite(plan.limites.nova);
+    if (vals[2]) vals[2].textContent = plan.limites.usuarios === 1
+      ? '1 (tu cuenta)' : 'Tú + ' + (plan.limites.usuarios - 1) + ' de tu equipo';
+    const nota = card.querySelector('.trial-note');
+    if (nota) nota.textContent = HORIZEN_TRIAL_DIAS + ' días de prueba, luego $' + plan.precio + '/mes';
+  });
+}
+
+// ── Visitante: todavía no tiene cuenta ──
+function modoVisitante() {
+  const barra = document.querySelector('.topbar-user');
+  if (barra) barra.innerHTML =
+    '<a href="/login.html" class="btn-skip" style="text-decoration:none">Iniciar sesión</a>';
+  _CTA_IDS.forEach((id, i) => {
+    const c = document.getElementById(id);
+    if (!c) return;
+    const plan = (typeof HORIZEN_PLANES !== 'undefined' && HORIZEN_PLANES[i]) || null;
+    const dias = (typeof HORIZEN_TRIAL_DIAS !== 'undefined') ? HORIZEN_TRIAL_DIAS : 7;
+    c.innerHTML =
+      '<a href="/signup.html?plan=' + (plan ? plan.id : '') + '" class="paypal-placeholder" ' +
+      'style="text-align:center;text-decoration:none;display:block">' +
+      'Empezar prueba de ' + dias + ' días →</a>';
+  });
+}
+
+// ── Cliente que ya paga: marca su plan y ofrece cambiarse a otro ──
+// El cambio usa revise() de PayPal, que MODIFICA la suscripción que ya existe.
+// Nunca crea una segunda: por eso no hay riesgo de doble cobro.
+function modoClienteActivo(profile) {
+  _planActual  = (typeof horizenPlan === 'function' && horizenPlan(profile?.plan)?.id) || null;
+  _subIdActual = profile?.paypal_subscription_id || null;
+
+  // Marca visualmente el plan que ya tiene
+  _CTA_IDS.forEach((id, i) => {
+    const plan = (typeof HORIZEN_PLANES !== 'undefined' && HORIZEN_PLANES[i]) || null;
+    if (!plan || plan.id !== _planActual) return;
+    const c = document.getElementById(id);
+    if (!c) return;
+    c.innerHTML = '<div class="paypal-placeholder" style="text-align:center;cursor:default;' +
+      'background:var(--pos-bg,#e9f9f1);color:var(--pos-text,#0a7a55);font-weight:700">✓ Tu plan actual</div>';
+    c.closest('.plan-card')?.classList.add('plan-actual');
+    const nota = c.parentElement?.querySelector('.trial-note');
+    if (nota) nota.textContent = 'Este es el plan que tienes contratado.';
+  });
+
+  // Sin ID de suscripción no se puede cambiar solo (p. ej. alta manual): queda el contacto.
+  if (!_subIdActual) { ctasContacto(); return; }
+
+  // Los planes SIN prueba son indispensables para cambiar de plan: PayPal se
+  // traba si se mueve una suscripción activa hacia un plan con prueba. Si
+  // todavía no existen (falta correr paypal-setup), se ofrece el contacto en
+  // vez de un botón que se va a quedar cargando.
+  const haySinPrueba = !!(_planesPayPal && _planesPayPal.sin_prueba
+    && Object.keys(_planesPayPal.sin_prueba).length >= 6);
+  if (!haySinPrueba) { ctasContacto(); return; }
+
+  loadPayPalButtons();   // pinta botones de PayPal en modo "cambiar de plan"
+}
+
+// Salida de emergencia: si no hay suscripción que modificar, ofrecer contacto.
+function ctasContacto() {
+  _CTA_IDS.forEach((id, i) => {
+    const plan = (typeof HORIZEN_PLANES !== 'undefined' && HORIZEN_PLANES[i]) || null;
+    if (!plan || plan.id === _planActual) return;
+    const c = document.getElementById(id);
+    if (!c) return;
+    const asunto = encodeURIComponent('Quiero cambiar al plan ' + plan.nombre);
+    c.innerHTML = '<a href="mailto:hola@horizen.com.mx?subject=' + asunto + '" ' +
+      'class="paypal-placeholder" style="text-align:center;text-decoration:none;display:block">' +
+      'Cambiarme a este plan →</a>';
+  });
+}
+
 
 function toggleBilling() {
   annualMode = document.getElementById('billingToggle').checked;
@@ -325,46 +464,90 @@ function loadPayPalButtons() {
 
 function renderPayPalButtons() {
   [
-    { containerId: 'paypal-basico',  planKey: 'basico'  },
-    { containerId: 'paypal-pro',     planKey: 'pro'     },
-    { containerId: 'paypal-empresa', planKey: 'empresa' },
-  ].forEach(({ containerId, planKey }) => {
+    { containerId: 'paypal-basico',  planKey: 'basico',  planApp: 'emprende' },
+    { containerId: 'paypal-pro',     planKey: 'pro',     planApp: 'negocio'  },
+    { containerId: 'paypal-empresa', planKey: 'empresa', planApp: 'empresa'  },
+  ].forEach(({ containerId, planKey, planApp }) => {
     const container = document.getElementById(containerId);
     if (!container || !window.paypal) return;
+
+    // Su plan actual no lleva botón: ya lo tiene.
+    if (_subIdActual && planApp === _planActual) return;
+
+    const cambiando = !!_subIdActual;
     container.innerHTML = '';
+
+    // Quien YA paga tiene cuenta de PayPal por fuerza (PayPal la exige para
+    // suscripciones). Ofrecerle además "tarjeta de débito o crédito" solo lo
+    // confunde: ese botón lo lleva a la misma pantalla de PayPal. A ese le
+    // dejamos UN solo botón, con un texto claro arriba.
+    // Al que canceló o nunca ha pagado sí le dejamos las dos opciones.
+    let destino = container;
+    if (cambiando) {
+      const sube = (typeof horizenRango === 'function')
+        ? horizenRango(planApp) > horizenRango(_planActual) : true;
+      const nombre = (typeof horizenPlan === 'function' && horizenPlan(planApp)?.nombre) || '';
+      const lbl = document.createElement('div');
+      lbl.className = 'cta-lbl';
+      lbl.textContent = (sube ? 'Mejorar a ' : 'Cambiar a ') + nombre;
+      container.appendChild(lbl);
+      destino = document.createElement('div');
+      destino.id = containerId + '-btn';
+      container.appendChild(destino);
+    }
+
     window.paypal.Buttons({
-      style: { shape: 'rect', color: 'gold', layout: 'vertical', label: 'subscribe' },
-      createSubscription: (data, actions) => actions.subscription.create({
-        plan_id: annualMode ? PAYPAL_PLANS_V2[planKey].y : PAYPAL_PLANS_V2[planKey].m,
-        custom_id: currentUser.id,   // para que el webhook sepa de quién es la suscripción
-      }),
-      onApprove: (data) => handlePayPalSuccess(data, planKey),
-      onError: (err) => { console.error(err); toast('Error al procesar el pago. Intenta de nuevo.', 'error'); }
-    }).render(`#${containerId}`);
+      // Un solo medio de pago cuando ya es cliente; los dos cuando no lo es.
+      ...(cambiando ? { fundingSource: window.paypal.FUNDING.PAYPAL } : {}),
+      style: { shape: 'rect', color: 'gold', layout: 'vertical', label: cambiando ? 'pay' : 'subscribe' },
+      createSubscription: (data, actions) => {
+        // Cliente nuevo → plan CON prueba. Cliente que cambia → plan SIN prueba.
+        const planId = idDePlan(planApp, cambiando);
+        if (!planId) return Promise.reject(new Error('plan no disponible'));
+        // revise() CAMBIA la suscripción que ya existe. create() haría una NUEVA
+        // y el cliente terminaría con dos cobros. La diferencia es crítica.
+        return cambiando
+          ? actions.subscription.revise(_subIdActual, { plan_id: planId })
+          : actions.subscription.create({ plan_id: planId, custom_id: currentUser.id });
+      },
+      onApprove: (data) => cambiando
+        ? handlePlanChange(planApp)
+        : handlePayPalSuccess(data, planKey),
+      onError: (err) => {
+        // El motivo queda en la consola para diagnóstico. Al cliente solo se le
+        // dice lo que le importa: que no se le cobró.
+        console.error('PayPal:', err);
+        toast(cambiando
+          ? 'No se pudo cambiar el plan. Tu plan actual sigue igual y no se te cobró nada.'
+          : 'No se pudo procesar el pago. No se te cobró nada.', 'error');
+      }
+    }).render(cambiando ? `#${containerId}-btn` : `#${containerId}`);
   });
 }
 
-async function handlePayPalSuccess(data, plan) {
-  if (!currentUser) return;
-  // Guardar suscripción en Supabase
-  await db.from('profiles').update({
-    plan,
-    subscription_status: 'active',
-    paypal_subscription_id: data.subscriptionID,
-    subscription_started_at: new Date().toISOString()
-  }).eq('id', currentUser.id);
+// Cambio de plan aprobado en PayPal.
+// OJO: PayPal no cobra nada hoy — el precio nuevo entra en el siguiente cobro.
+//   SUBE  → se le da al instante.
+//   BAJA  → conserva lo que ya pagó hasta que termine su ciclo; el cambio
+//           entra cuando llegue el próximo cobro (lo aplica el webhook).
+// El webhook es la fuente de verdad; esto solo adelanta lo visible.
 
-  await db.from('payments').insert({
-    user_id: currentUser.id,
-    paypal_subscription_id: data.subscriptionID,
-    plan,
-    amount: PLANS[plan].price,
-    currency: 'MXN',
-    status: 'active'
-  });
+async function handlePlanChange(planApp) {
+  const sube = (typeof horizenRango === 'function')
+    ? (horizenRango(planApp) > horizenRango(_planActual))
+    : true;
+  const nom = (typeof horizenPlan === 'function' && horizenPlan(planApp)?.nombre) || planApp;
 
-  toast('¡Suscripción activada! Bienvenido a Horizen 🎉', 'success');
-  setTimeout(() => window.location.href = '/dashboard.html', 2000);
+  if (sube) {
+    try {
+      if (currentUser) await db.from('profiles').update({ plan: planApp }).eq('id', currentUser.id);
+    } catch (e) { console.error(e); }
+    toast('¡Listo! Ya estás en el plan ' + nom + ' 🎉 Tu nuevo precio entra en tu próximo cobro.', 'success');
+  } else {
+    // No se toca el plan: sigue disfrutando lo que pagó hasta su fecha de corte.
+    toast('Listo. Bajarás al plan ' + nom + ' cuando termine el periodo que ya pagaste — mientras tanto conservas todo lo que tienes.', 'success');
+  }
+  setTimeout(() => window.location.href = '/dashboard.html', 3500);
 }
 
 function openPayPalModal(plan) {
