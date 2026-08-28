@@ -91,9 +91,11 @@ async function callClaude(apiKey: string, messageContent: unknown, maxRetries = 
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          // Haiku (rápido, ~2.7x) + el prompt detallado de abajo = rápido sin perder calidad.
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 24000, // Haiku admite hasta 64k; ~900 movimientos dentro del límite de tiempo
+          // Opus 5 (decisión de Eduardo 2026-08): máxima precisión leyendo estados de cuenta.
+          // effort:low = pensamiento mínimo → velocidad y costo controlados sin perder lectura.
+          model: 'claude-opus-5',
+          max_tokens: 32000, // en Opus 5 el "pensamiento" cuenta dentro de max_tokens; margen extra
+          output_config: { effort: 'low' },
           messages: [{ role: 'user', content: messageContent }],
         }),
       })
@@ -240,7 +242,12 @@ serve(async (req) => {
 
     const anthropicData = await anthropicRes.json()
     const stopReason = anthropicData.stop_reason
-    const rawText = anthropicData.content?.[0]?.text || ''
+    // Opus 5 puede devolver bloques "thinking" intercalados: juntar TODOS los bloques de texto
+    const rawText = (anthropicData.content || []).filter((b: { type?: string }) => b.type === 'text')
+      .map((b: { text?: string }) => b.text || '').join('\n')
+    if (stopReason === 'refusal') {
+      throw new Error('El sistema no pudo analizar este documento. Intenta de nuevo en unos minutos o contacta a soporte.')
+    }
 
     // Soporta tanto el formato compacto nuevo como JSON (por si el modelo responde en JSON)
     let parsed: { bank: string; period_start: string | null; period_end: string | null; currency: string; transactions: Array<Record<string, unknown>>; summary?: Record<string, number | null> | null }

@@ -4886,13 +4886,13 @@ async function procesarEstado() {
     if (upErr) throw new Error('Error subiendo archivo: ' + upErr.message);
 
     // 2. Llamar Edge Function (con timeout y un reintento automático)
-    document.getElementById('procMsg').textContent = 'Leyendo tus movimientos… Esto tarda de 15 a 60 segundos. No cierres la ventana.';
+    document.getElementById('procMsg').textContent = 'Leyendo tus movimientos… Puede tardar hasta unos minutos en estados grandes. No cierres la ventana.';
     const session = await db.auth.getSession();
     const token = session.data.session?.access_token;
 
     async function llamarIA() {
       const ctrl = new AbortController();
-      const to = setTimeout(() => ctrl.abort(), 150000);
+      const to = setTimeout(() => ctrl.abort(), 300000);   // Opus 5 es más lento que Haiku: hasta 5 min
       try {
         let res;
         try {
@@ -4902,12 +4902,22 @@ async function procesarEstado() {
             body: JSON.stringify({ storagePath, fileType: _estadoFile.type })
           });
         } catch (netErr) {
-          if (netErr.name === 'AbortError') throw new Error('El análisis tardó demasiado. Puede ser un PDF muy pesado o escaneado; intenta con uno más ligero o divídelo por mes.');
+          if (netErr.name === 'AbortError') {
+            // Reintentar tras un timeout duplicaría el gasto de IA (el análisis sigue corriendo en el servidor)
+            const e = new Error('El análisis tardó demasiado. Puede ser un PDF muy pesado o escaneado; intenta con uno más ligero o divídelo por mes.');
+            e._noRetry = true;
+            throw e;
+          }
           throw new Error('Se perdió la conexión durante el análisis. Revisa tu internet e intenta de nuevo.');
         }
         let d = null;
         try { d = await res.json(); } catch (_e) { /* respuesta no-JSON */ }
-        if (!res.ok || !d || d.error) throw new Error((d && d.error) || 'El análisis falló temporalmente. Intenta de nuevo en unos segundos.');
+        if (!res.ok || !d || d.error) {
+          const e = new Error((d && d.error) || 'El análisis falló temporalmente. Intenta de nuevo en unos segundos.');
+          // Un rechazo del sistema o el límite del plan no cambian en 2 segundos: no reintentar
+          if (/no pudo analizar este documento|límite de tu plan/i.test(e.message)) e._noRetry = true;
+          throw e;
+        }
         return d;
       } finally { clearTimeout(to); }
     }
@@ -4916,6 +4926,7 @@ async function procesarEstado() {
     try {
       data = await llamarIA();
     } catch (e1) {
+      if (e1 && e1._noRetry) throw e1;   // timeout, rechazo o límite: reintentar solo duplica el gasto
       // Reintento automático ante un fallo transitorio
       document.getElementById('procMsg').textContent = 'Reintentando el análisis…';
       await new Promise(r => setTimeout(r, 1800));

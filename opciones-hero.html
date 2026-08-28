@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horizen — Opciones de hero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --p:#635bff;--p-dark:#4b45c6;--violet:#8b7cff;--ink:#0a2540;--ink-soft:#3d4f63;--muted:#5b6b7c;
+    --money-in:#1e7a4f;--money-in-bg:#e6f4ec;--line:rgba(10,37,64,.10);--bg-soft:#f6f5ff;--lav:#efeefe;
+    --grad-brand:linear-gradient(90deg,#ffc98a,#ff8fb4 34%,#b18cff 66%,#6fc6ff);
+    --grad-p:linear-gradient(135deg,#8b7cff,#635bff 55%,#4b45c6);
+    --shadow-2:0 22px 50px -16px rgba(99,91,255,.32),0 8px 22px rgba(10,37,64,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:#e9eaf0;-webkit-font-smoothing:antialiased}
+  .tag{max-width:1120px;margin:0 auto;padding:28px 22px 12px}
+  .tag h2{font-size:1.3rem;font-weight:900}
+  .tag p{color:var(--muted);font-size:.98rem;margin-top:4px;max-width:70ch}
+  .frame{max-width:1120px;margin:0 auto 8px;border-radius:18px;overflow:hidden;border:1px solid rgba(10,37,64,.12);box-shadow:var(--shadow-2);background:#fff}
+  .gtext{background:var(--grad-p);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:1rem;padding:.9rem 1.7rem;border-radius:12px;border:0;font-family:inherit;cursor:pointer}
+  .btn-primary{background:var(--grad-p);color:#fff;box-shadow:var(--shadow-2)}
+  .btn-ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .btn-white{background:#fff;color:var(--p-dark)}
+  .btn-outline-white{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.5)}
+  .navbar{display:flex;align-items:center;justify-content:space-between;padding:16px 30px;border-bottom:1px solid var(--line)}
+  .navbar img{height:30px}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:.84rem;padding:.42rem 1rem;border-radius:999px;margin-bottom:22px}
+  .live{width:8px;height:8px;border-radius:50%;background:var(--money-in);box-shadow:0 0 0 3px var(--money-in-bg)}
+
+  /* OPCION A — claro premium (actual) */
+  .a{text-align:center;padding:56px 24px 60px;background:
+      radial-gradient(52% 48% at 14% 6%,rgba(139,124,255,.20),transparent 60%),
+      radial-gradient(50% 50% at 90% 4%,rgba(110,195,244,.18),transparent 62%),#fff;}
+  .a .pill{background:#fff;color:var(--p-dark);border:1px solid rgba(99,91,255,.24);box-shadow:0 2px 10px rgba(10,37,64,.06)}
+  .a h1{font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.03;letter-spacing:-.035em;font-weight:900;max-width:15ch;margin:0 auto 20px}
+  .a .sub{font-size:1.2rem;color:var(--ink-soft);max-width:48ch;margin:0 auto 28px;font-weight:500}
+  .a .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .a .shot{max-width:640px;margin:40px auto 0;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-2);padding:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .a .kpi{background:var(--bg-soft);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:left}
+  .a .kpi .l{font-size:.72rem;color:var(--muted);font-weight:600}
+  .a .kpi .v{font-size:1.35rem;font-weight:900;margin-top:3px}
+  .a .kpi .v.in{color:var(--money-in)}
+
+  /* OPCION B — bold Konfío (morado protagónico) */
+  .b{position:relative;overflow:hidden;background:var(--grad-p);color:#fff;padding:0}
+  .b .navbar{border-bottom:1px solid rgba(255,255,255,.18)}
+  .b .inner{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:center;padding:44px 40px 54px}
+  .b .pill{background:rgba(255,255,255,.16);color:#fff}
+  .b h1{font-size:clamp(2.6rem,5.6vw,4.4rem);line-height:.98;letter-spacing:-.04em;font-weight:900;margin-bottom:18px}
+  .b .sub{font-size:1.18rem;color:rgba(255,255,255,.88);max-width:40ch;margin-bottom:26px;font-weight:500}
+  .b .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .b .trust{margin-top:20px;font-size:.9rem;color:rgba(255,255,255,.8);display:flex;gap:18px;flex-wrap:wrap}
+  .b .visual{position:relative;height:340px;display:flex;align-items:center;justify-content:center}
+  .b .bignum{position:absolute;font-size:20rem;font-weight:900;color:rgba(255,255,255,.10);line-height:1;letter-spacing:-.05em;z-index:0}
+  .b .photo{position:relative;z-index:1;width:230px;height:300px;border-radius:20px;background:linear-gradient(160deg,#d9d2ff,#b7abf5);display:flex;align-items:flex-end;justify-content:center;padding:14px;text-align:center;color:var(--p-dark);font-weight:700;font-size:.9rem;box-shadow:0 30px 60px -20px rgba(0,0,0,.4)}
+  .b .card-float{position:absolute;z-index:2;background:#fff;color:var(--ink);border-radius:14px;padding:12px 14px;box-shadow:0 20px 40px rgba(0,0,0,.25)}
+  .b .cf1{top:20px;right:6px}.b .cf2{bottom:20px;left:0}
+  .b .card-float .l{font-size:.68rem;color:var(--muted);font-weight:600}
+  .b .card-float .v{font-size:1.1rem;font-weight:900}.b .card-float .v.in{color:var(--money-in)}
+
+  /* OPCION C — Mercury aspiracional (imagen grande) */
+  .c{position:relative;text-align:center;color:#fff;padding:0;overflow:hidden}
+  .c .bg{position:absolute;inset:0;background:
+      radial-gradient(60% 60% at 20% 15%,rgba(139,124,255,.9),transparent 60%),
+      radial-gradient(55% 60% at 85% 25%,rgba(110,195,244,.85),transparent 60%),
+      linear-gradient(160deg,#6a5ff0,#8f86ff 45%,#c9b6ff 100%);}
+  .c .bg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,15,45,.28),rgba(10,15,45,.05) 40%,rgba(10,15,45,.35))}
+  .c .navbar{position:relative;z-index:2;border-bottom:1px solid rgba(255,255,255,.2)}
+  .c .content{position:relative;z-index:2;padding:70px 24px 90px}
+  .c h1{font-size:clamp(2.4rem,5.4vw,4rem);line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:0 auto 16px;max-width:16ch;text-shadow:0 2px 30px rgba(0,0,0,.2)}
+  .c .sub{font-size:1.2rem;color:rgba(255,255,255,.92);max-width:44ch;margin:0 auto 30px;font-weight:500}
+  .c .row{display:inline-flex;gap:8px;background:rgba(255,255,255,.16);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:7px;flex-wrap:wrap;justify-content:center}
+  .c .row input{border:0;background:transparent;color:#fff;font-family:inherit;font-size:1rem;padding:.7rem 1rem;min-width:220px;outline:none}
+  .c .row input::placeholder{color:rgba(255,255,255,.75)}
+  .c .note{margin-top:26px;font-size:.86rem;color:rgba(255,255,255,.85);font-style:italic}
+
+  @media(max-width:820px){
+    .b .inner{grid-template-columns:1fr}.b .visual{height:280px;margin-top:10px}
+    .a .shot{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- OPCION A -->
+<div class="tag"><h2>Opción A — Claro premium <span style="color:var(--muted);font-weight:600">(la que ya está en vivo)</span></h2>
+<p>Fondo blanco con aurora morada, título con "hoy" en degradado y el tablero simulado. Limpio, tipo Stripe/Mercury claro.</p></div>
+<div class="frame">
+  <div class="a">
+    <div class="navbar"><img src="/assets/logo-horizen.svg" alt="Horizen"><a class="btn btn-primary" style="padding:.6rem 1.1rem;font-size:.9rem">Probar 14 días gratis</a></div>
+    <div style="padding-top:44px">
+      <span class="pill"><span class="live"></span>Para el nuevo futuro de México</span>
+      <h1>Sabe <span class="gtext">hoy</span> si tu negocio gana o pierde</h1>
+      <p class="sub">Sube tu estado de cuenta y en 10 minutos ves tu flujo de caja, tu salud financiera y hacia dónde vas.</p>
+      <div class="cta"><a class="btn btn-primary">Empezar mi prueba gratis →</a><a class="btn btn-ghost">Ver planes</a></div>
+      <div class="shot">
+        <div class="kpi"><div class="l">Disponible hoy</div><div class="v">$248,900</div></div>
+        <div class="kpi"><div class="l">Entró este mes</div><div class="v in">+$412,300</div></div>
+        <div class="kpi"><div class="l">Salud</div><div class="v">Sólida</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OPCION B -->
+<div class="tag"><h2>Opción B — Bold morado (estilo Konfío) 🔥</h2>
+<p>Fondo morado de marca protagónico, título gigante, número gigante de fondo, hueco para foto de un emprendedor y tarjetas flotantes del tablero. La más atrevida y aspiracional.</p></div>
+<div class="frame">
+  <div class="b">
+    <div class="navbar"><img src="/assets/logo-horizen-white.svg" alt="Horizen"><a class="btn btn-white" style="padding:.6rem 1.1rem;font-size:.9rem">Abrir mi cuenta</a></div>
+    <div class="inner">
+      <div>
+        <span class="pill"><span class="live"></span>El nuevo futuro de México</span>
+        <h1>Tu dinero,<br>por fin claro.</h1>
+        <p class="sub">Sube tu estado de cuenta y sabe hoy si tu negocio gana o pierde. Sin Excel, sin esperar al contador.</p>
+        <div class="cta"><a class="btn btn-white">Empezar gratis →</a><a class="btn btn-outline-white">Ver demo</a></div>
+        <div class="trust"><span>✓ 14 días gratis</span><span>✓ Sin tarjeta</span></div>
+      </div>
+      <div class="visual">
+        <div class="bignum">10</div>
+        <div class="photo">Foto de un emprendedor real aquí</div>
+        <div class="card-float cf1"><div class="l">Disponible hoy</div><div class="v">$248,900</div></div>
+        <div class="card-float cf2"><div class="l">Entró este mes</div><div class="v in">+$412,300</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OPCION C -->
+<div class="tag"><h2>Opción C — Aspiracional con imagen (estilo Mercury)</h2>
+<p>Hero con imagen/ambiente grande de fondo, título corto y potente, y captura de correo directa. Muy premium y emocional. (El fondo va una foto aspiracional real; aquí va simulada.)</p></div>
+<div class="frame">
+  <div class="c">
+    <div class="bg"></div>
+    <div class="navbar"><img src="/assets/logo-horizen-white.svg" alt="Horizen"><a class="btn btn-white" style="padding:.6rem 1.1rem;font-size:.9rem">Abrir mi cuenta</a></div>
+    <div class="content">
+      <h1>Claridad financiera para tu negocio</h1>
+      <p class="sub">Sube tu estado de cuenta y en 10 minutos sabes si ganas o pierdes. Empieza en un minuto.</p>
+      <div class="row"><input placeholder="Tu correo" readonly><a class="btn btn-white">Empezar gratis</a></div>
+      <p class="note">◦ Aquí va una foto aspiracional real (emprendedor joven, oficina moderna). Esto es una simulación del ambiente.</p>
+    </div>
+  </div>
+</div>
+
+<div style="height:40px"></div>
+</body>
+</html>
