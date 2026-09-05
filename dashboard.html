@@ -1621,8 +1621,10 @@ select.mod-inp{cursor:pointer}
       <button class="nova-chip-q" onclick="novaChip('¿Por qué un movimiento no cuenta como gasto?')">¿Por qué un movimiento no cuenta como gasto?</button>
     </div>
   </div>
-  <div class="nova-in">
-    <input id="novaInput" class="finp" style="margin:0" placeholder="Escribe tu duda…" onkeydown="if(event.key==='Enter')novaAsk()">
+  <div class="nova-in" style="align-items:flex-end">
+    <textarea id="novaInput" class="finp" rows="1" style="margin:0;resize:none;max-height:110px;overflow-y:auto;line-height:1.45" placeholder="Escribe tu duda…"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();novaAsk();}"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,110)+'px'"></textarea>
     <button class="btn-save" id="novaSend" onclick="novaAsk()" aria-label="Enviar">→</button>
   </div>
 </div>
@@ -6290,7 +6292,9 @@ function toggleNovaPanel(force) {
 }
 
 function novaChip(q) {
-  document.getElementById('novaInput').value = q;
+  const inp = document.getElementById('novaInput');
+  inp.value = q;
+  inp.dispatchEvent(new Event('input'));   // ajustar la altura de la caja
   novaAsk();
 }
 
@@ -6363,6 +6367,7 @@ async function novaAsk() {
   const msgs = document.getElementById('novaMsgs');
   msgs.insertAdjacentHTML('beforeend', `<div class="nova-u">${_escHtml(q)}</div><div class="nova-b" id="novaWait">Déjame revisar tus datos…</div>`);
   inp.value = '';
+  inp.style.height = 'auto';   // la caja crecida regresa a un renglón
   msgs.scrollTop = msgs.scrollHeight;
   btn.disabled = true;
   try {
