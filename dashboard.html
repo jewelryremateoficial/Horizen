@@ -426,7 +426,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .rev-del{background:none;border:none;color:var(--muted);cursor:pointer;padding:.2rem;transition:color .15s;display:inline-flex;align-items:center;justify-content:center}
 .rev-del:hover{color:var(--neg-text)}
 .file-chip{display:inline-flex;align-items:center;gap:.5rem;background:var(--bg3);border:1px solid var(--line);border-radius:var(--r-sm);padding:.45rem .9rem;font-size:.875rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);margin-top:1rem}
-.er-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.er-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px}
 .er-card{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-md);padding:20px;box-shadow:var(--shadow-1)}
 .er-card-lbl{font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem}
 .er-card-val{font-size:1.25rem;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--ink)}
@@ -1464,6 +1464,7 @@ select.mod-inp{cursor:pointer}
         <div class="er-card"><div class="er-card-lbl">Entró</div><div class="er-card-val pos" id="erIngresos">—</div></div>
         <div class="er-card"><div class="er-card-lbl">Salió</div><div class="er-card-val" id="erEgresos">—</div></div>
         <div class="er-card"><div class="er-card-lbl">Te quedó</div><div class="er-card-val" id="erNeto">—</div></div>
+        <div class="er-card" id="erSaldoCard" style="display:none"><div class="er-card-lbl" id="erSaldoLbl">En el banco</div><div class="er-card-val" id="erSaldoBanco">—</div><div class="er-card-note" id="erSaldoNote">Saldo final impreso por tu banco</div></div>
         <div class="er-card"><div class="er-card-lbl">Margen</div><div class="er-card-val" id="erAhorro">—</div><div class="er-card-note">De cada $100 que entran, esto es lo que te queda</div></div>
       </div>
 
@@ -4979,7 +4980,8 @@ async function procesarEstado() {
       data = await llamarIA();
     }
 
-    _estadoMeta = { bank: data.bank, period_start: data.period_start, period_end: data.period_end, currency: data.currency, summary: data.summary || null };
+    _estadoMeta = { bank: data.bank, period_start: data.period_start, period_end: data.period_end, currency: data.currency, summary: data.summary || null,
+      saldo_inicial: data.saldo_inicial ?? null, saldo_final: data.saldo_final ?? null, tipo_cuenta: data.tipo_cuenta || null };
 
     // Aplicar reglas guardadas por el usuario (categoría Y tipo ingreso/egreso)
     let txList = data.transactions || [];
@@ -5071,6 +5073,37 @@ function renderEstadosTxs() {
   const ahorroEl = document.getElementById('erAhorro');
   ahorroEl.textContent = ahorro.toFixed(1) + '%';
   ahorroEl.className = 'er-card-val ' + (ahorro >= 20 ? 'pos' : ahorro >= 0 ? '' : 'neg');
+
+  // "¿Cuánto me quedó en el banco?" — el saldo final IMPRESO por el banco, sin abrir el PDF
+  const saldoCard = document.getElementById('erSaldoCard');
+  if (saldoCard) {
+    const sf = parseFloat(_estadoMeta.saldo_final);
+    if (_estadoMeta.saldo_final !== null && _estadoMeta.saldo_final !== undefined && isFinite(sf)) {
+      const esTdc = _estadoMeta.tipo_cuenta === 'tdc';
+      const aFavor = esTdc && sf < 0;   // pagó de más: la tarjeta le debe a él
+      document.getElementById('erSaldoLbl').textContent =
+        aFavor ? 'A tu favor en la tarjeta' : (esTdc ? 'Debes en la tarjeta' : 'En el banco');
+      // Cuadre honesto: saldo_inicial ± totales impresos debe dar el saldo_final.
+      // Si no cuadra, se avisa en lugar de presumir un número que la IA pudo leer mal.
+      const si = parseFloat(_estadoMeta.saldo_inicial);
+      const sm = _estadoMeta.summary || {};
+      const dep = parseFloat(sm.dep_total), ret = parseFloat(sm.ret_total);
+      let nota = esTdc ? 'Saldo deudor al corte, impreso por tu banco' : 'Saldo final impreso por tu banco';
+      if (isFinite(si) && isFinite(dep) && isFinite(ret)) {
+        const esperado = esTdc ? si + ret - dep : si + dep - ret;
+        nota = Math.abs(esperado - sf) > 1
+          ? '⚠ No cuadra con los totales del estado — compáralo contra tu banco'
+          : (esTdc ? 'Saldo deudor al corte' : 'Saldo final') + ' · cuadra con los totales de tu banco ✓';
+      }
+      document.getElementById('erSaldoNote').textContent = nota;
+      const saldoEl = document.getElementById('erSaldoBanco');
+      saldoEl.textContent = (aFavor ? '' : (sf < 0 ? '−' : '')) + fmt(Math.abs(sf));
+      saldoEl.className = 'er-card-val ' + (aFavor ? 'pos' : esTdc ? '' : (sf >= 0 ? 'pos' : 'neg'));
+      saldoCard.style.display = '';
+    } else {
+      saldoCard.style.display = 'none';
+    }
+  }
 
   // Botón guardar
   if (!_stmtView) document.getElementById('btnGuardar').textContent = 'Guardar ' + visible.length + ' movimientos';
@@ -5640,7 +5673,15 @@ async function autoGuardarEstado() {
       tx_count: toSave.length,
     };
     if (_hashColOk && _estadoHash) stmtRow.file_hash = _estadoHash;
-    const { data: stmt, error: stmtErr } = await db.from('statements').insert(stmtRow).select().single();
+    stmtRow.saldo_inicial = _estadoMeta.saldo_inicial ?? null;
+    stmtRow.saldo_final = _estadoMeta.saldo_final ?? null;
+    stmtRow.tipo_cuenta = _estadoMeta.tipo_cuenta || null;
+    let { data: stmt, error: stmtErr } = await db.from('statements').insert(stmtRow).select().single();
+    if (stmtErr && /column|schema/i.test(stmtErr.message || '')) {
+      // BD sin las columnas nuevas: el guardado JAMÁS se detiene por el saldo — reintenta sin ellas
+      delete stmtRow.saldo_inicial; delete stmtRow.saldo_final; delete stmtRow.tipo_cuenta;
+      ({ data: stmt, error: stmtErr } = await db.from('statements').insert(stmtRow).select().single());
+    }
     if (stmtErr) throw stmtErr;
 
     const todayISO = new Date().toISOString().slice(0, 10);
@@ -5725,7 +5766,15 @@ async function confirmarEstado() {
       tx_count: toSave.length,
     };
     if (_hashColOk && _estadoHash) stmtRow2.file_hash = _estadoHash;
-    const { data: stmt, error: stmtErr } = await db.from('statements').insert(stmtRow2).select().single();
+    stmtRow2.saldo_inicial = _estadoMeta.saldo_inicial ?? null;
+    stmtRow2.saldo_final = _estadoMeta.saldo_final ?? null;
+    stmtRow2.tipo_cuenta = _estadoMeta.tipo_cuenta || null;
+    let { data: stmt, error: stmtErr } = await db.from('statements').insert(stmtRow2).select().single();
+    if (stmtErr && /column|schema/i.test(stmtErr.message || '')) {
+      // BD sin las columnas nuevas: el guardado JAMÁS se detiene por el saldo — reintenta sin ellas
+      delete stmtRow2.saldo_inicial; delete stmtRow2.saldo_final; delete stmtRow2.tipo_cuenta;
+      ({ data: stmt, error: stmtErr } = await db.from('statements').insert(stmtRow2).select().single());
+    }
 
     if (stmtErr) throw stmtErr;
 
@@ -5801,7 +5850,8 @@ async function openSavedStatement(id) {
 
     _stmtView = { id: stmt.id, name: stmt.name || 'Estado de cuenta' };
     _estadoFile = null;
-    _estadoMeta = { bank: stmt.bank_name, period_start: stmt.period_start, period_end: stmt.period_end };
+    _estadoMeta = { bank: stmt.bank_name, period_start: stmt.period_start, period_end: stmt.period_end,
+      saldo_inicial: stmt.saldo_inicial ?? null, saldo_final: stmt.saldo_final ?? null, tipo_cuenta: stmt.tipo_cuenta || null };
     _estadoTxs = (txRes.data || []).map((t, i) => ({
       _id: i,
       dbId: t.id,

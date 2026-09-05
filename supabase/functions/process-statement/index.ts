@@ -15,9 +15,10 @@ Responde ÚNICAMENTE en texto plano, SIN markdown, SIN comentarios, SIN encabeza
 Formato EXACTO, campos separados por | (barra vertical):
 
 Primera línea (metadatos):
-#META|<banco>|<period_start YYYY-MM-DD>|<period_end YYYY-MM-DD>|<moneda>|<total_depositos>|<num_depositos>|<total_retiros>|<num_retiros>|<tipo_cuenta>
+#META|<banco>|<period_start YYYY-MM-DD>|<period_end YYYY-MM-DD>|<moneda>|<total_depositos>|<num_depositos>|<total_retiros>|<num_retiros>|<tipo_cuenta>|<saldo_inicial>|<saldo_final>
 Los campos 6 a 9 salen del RESUMEN impreso del propio estado (en débito: la tabla "Depósitos/Abonos" y "Retiros/Cargos"; en tarjeta de crédito: "Total de cargos" / "Total de abonos", que algunos bancos imprimen como "Total Cargos" / "Total Abonos"). Montos sin signo ni comas. Si el documento no trae ese resumen, deja esos campos vacíos.
-El último campo, <tipo_cuenta>, es OBLIGATORIO y solo admite dos valores: escribe "tdc" si es un estado de TARJETA DE CRÉDITO (lo reconoces por fecha de corte, pago mínimo, límite de crédito) o "debito" si es cuenta de débito, nómina o cheques. La app lo usa para saber de qué lado va cada pago; no lo dejes vacío.
+El campo <tipo_cuenta> es OBLIGATORIO y solo admite dos valores: escribe "tdc" si es un estado de TARJETA DE CRÉDITO (lo reconoces por fecha de corte, pago mínimo, límite de crédito) o "debito" si es cuenta de débito, nómina o cheques. La app lo usa para saber de qué lado va cada pago; no lo dejes vacío.
+Los campos 11 y 12 son los SALDOS impresos en el estado (el usuario quiere saber cuánto le quedó en el banco sin abrir el PDF): saldo_inicial = "Saldo anterior/inicial" (en tarjeta: "Adeudo del periodo anterior") y saldo_final = "Saldo final/actual/al corte" (en tarjeta: "Saldo deudor total"). Cópialos TAL CUAL los imprime el banco, con signo negativo si aparecen en negativo, sin comas. Si el documento no los imprime, déjalos vacíos — NUNCA los calcules tú.
 
 Una línea por transacción:
 <YYYY-MM-DD>|<descripción sin barras, máx 100 caracteres>|<monto positivo sin signo>|<ingreso o egreso>|<categoría>
@@ -77,7 +78,7 @@ Reglas finales:
 - No agregues ninguna línea que no sea #META o una transacción.
 
 Ejemplo:
-#META|BBVA|2026-04-22|2026-05-21|MXN|55000.00|3|48120.00|12|debito
+#META|BBVA|2026-04-22|2026-05-21|MXN|55000.00|3|48120.00|12|debito|12500.50|19380.50
 2026-04-23|OXXO SUCURSAL 123|120.00|egreso|Comida
 2026-04-25|SPEI RECIBIDO JUAN PEREZ · ANTICIPO PEDIDO 44|5000.00|ingreso|Transferencia
 ${FORMATO_BANCOS}`
@@ -155,6 +156,7 @@ function parseCompact(text: string) {
   let bank = 'Desconocido', period_start: string | null = null, period_end: string | null = null, currency = 'MXN'
   let summary: Record<string, number | null> | null = null
   let esTdc = false
+  let saldo_inicial: number | null = null, saldo_final: number | null = null
   const transactions: Array<Record<string, unknown>> = []
   for (const line of lines) {
     if (line.startsWith('#META')) {
@@ -169,6 +171,10 @@ function parseCompact(text: string) {
       if (depTotal || retTotal) summary = { dep_total: depTotal, dep_count: depCount, ret_total: retTotal, ret_count: retCount }
       const tc = _norm(p[9] || '')
       if (tc.includes('tdc') || tc.includes('credito') || tc.includes('tarjeta')) esTdc = true
+      // Saldos impresos (pueden ser negativos o cero, por eso no usan num())
+      const numLibre = (v?: string) => { const s = String(v || '').trim(); if (!s) return null; let n = parseFloat(s.replace(/[^0-9.\-]/g, '')); if (/-\s*$/.test(s)) n = -Math.abs(n); return isFinite(n) ? n : null }
+      saldo_inicial = numLibre(p[10])
+      saldo_final = numLibre(p[11])
       continue
     }
     if (line.startsWith('```') || line.startsWith('#')) continue
@@ -218,7 +224,7 @@ function parseCompact(text: string) {
     if (esTdc || cuadraConAbonos) for (const tx of pagosTdc) tx.type = 'ingreso'
   }
 
-  return { bank, period_start, period_end, currency, transactions, summary }
+  return { bank, period_start, period_end, currency, transactions, summary, saldo_inicial, saldo_final, tipo_cuenta: esTdc ? 'tdc' : 'debito' }
 }
 
 serve(async (req) => {
@@ -302,14 +308,16 @@ serve(async (req) => {
     }
 
     // Soporta tanto el formato compacto nuevo como JSON (por si el modelo responde en JSON)
-    let parsed: { bank: string; period_start: string | null; period_end: string | null; currency: string; transactions: Array<Record<string, unknown>>; summary?: Record<string, number | null> | null }
+    let parsed: { bank: string; period_start: string | null; period_end: string | null; currency: string; transactions: Array<Record<string, unknown>>; summary?: Record<string, number | null> | null; saldo_inicial?: number | null; saldo_final?: number | null; tipo_cuenta?: string | null }
     if (rawText.includes('#META') || rawText.includes('|')) {
       parsed = parseCompact(rawText)
     } else {
       try {
         const cleaned = rawText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
         const j = JSON.parse(cleaned)
-        parsed = { bank: j.bank || 'Desconocido', period_start: j.period_start || null, period_end: j.period_end || null, currency: j.currency || 'MXN', transactions: j.transactions || [], summary: j.summary || null }
+        const tj = String(j.tipo_cuenta || '').toLowerCase()
+        parsed = { bank: j.bank || 'Desconocido', period_start: j.period_start || null, period_end: j.period_end || null, currency: j.currency || 'MXN', transactions: j.transactions || [], summary: j.summary || null, saldo_inicial: j.saldo_inicial ?? null, saldo_final: j.saldo_final ?? null,
+          tipo_cuenta: tj ? ((tj.includes('tdc') || tj.includes('cred') || tj.includes('tarjeta')) ? 'tdc' : 'debito') : null }
       } catch (_e) {
         parsed = parseCompact(rawText)
       }
