@@ -67,6 +67,13 @@ async function requireAdmin() {
 }
 
 async function signOut() {
+  // Privacidad en computadoras compartidas: al salir se borran las conversaciones
+  // guardadas en este navegador (NOVA y Asesor Fiscal, incluidas claves viejas).
+  try {
+    Object.keys(localStorage)
+      .filter(k => k.indexOf('horizen_nova_hist') === 0 || k.indexOf('horizen_fiscal_hist') === 0)
+      .forEach(k => localStorage.removeItem(k));
+  } catch (e) {}
   await db.auth.signOut();
   window.location.href = '/login.html';
 }

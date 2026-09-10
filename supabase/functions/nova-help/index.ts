@@ -41,25 +41,26 @@ serve(async (req) => {
     if (!question || String(question).trim().length < 3) throw new Error('Escribe tu pregunta.')
     const historial = sanitizarHistorial(history)
 
-    // ── Límite del plan Emprende: 20 preguntas/mes (Fase 4). Negocio/Empresa: sin límite. ──
+    // ── Seguridad: SOLO usuarios con sesión válida (verificada, no solo decodificada).
+    // Sin esto, cualquiera con la anon key podría quemar la API de IA sin tener cuenta.
     const jwtUser = (req.headers.get('authorization') || '').replace('Bearer ', '')
-    let uid: string | null = null
-    try { uid = JSON.parse(atob(jwtUser.split('.')[1] || ''))?.sub || null } catch { /* ignore */ }
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    const { data: userData, error: authErr } = await admin.auth.getUser(jwtUser)
+    const uid = userData?.user?.id
+    if (authErr || !uid) throw new Error('Tu sesión expiró. Vuelve a iniciar sesión para usar a NOVA.')
+
+    // ── Límite del plan Emprende: 20 preguntas/mes (Fase 4). Negocio/Empresa: sin límite. ──
     // La pregunta se cobra hasta DESPUÉS de obtener respuesta: si la IA falla, no gasta su cupo
-    let cobrarPregunta: (() => Promise<void>) | null = null
-    if (uid) {
-      const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-      const { data: prof } = await admin.from('profiles').select('plan').eq('id', uid).maybeSingle()
-      const plan = String(prof?.plan || '').toLowerCase()
-      const mes = new Date().toISOString().slice(0, 7)
-      const { data: uso } = await admin.from('nova_usage').select('id,count').eq('user_id', uid).eq('month', mes).maybeSingle()
-      if ((plan === 'basico' || plan === 'emprende') && (uso?.count || 0) >= 20) {
-        throw new Error('Llegaste a tus 20 preguntas del mes en el plan Emprende. En el plan Negocio, NOVA no tiene límite.')
-      }
-      cobrarPregunta = async () => {
-        if (uso) await admin.from('nova_usage').update({ count: (uso.count || 0) + 1 }).eq('id', uso.id)
-        else await admin.from('nova_usage').insert({ user_id: uid, month: mes, count: 1 })
-      }
+    const { data: prof } = await admin.from('profiles').select('plan').eq('id', uid).maybeSingle()
+    const plan = String(prof?.plan || '').toLowerCase()
+    const mes = new Date().toISOString().slice(0, 7)
+    const { data: uso } = await admin.from('nova_usage').select('id,count').eq('user_id', uid).eq('month', mes).maybeSingle()
+    if ((plan === 'basico' || plan === 'emprende') && (uso?.count || 0) >= 20) {
+      throw new Error('Llegaste a tus 20 preguntas del mes en el plan Emprende. En el plan Negocio, NOVA no tiene límite.')
+    }
+    const cobrarPregunta = async () => {
+      if (uso) await admin.from('nova_usage').update({ count: (uso.count || 0) + 1 }).eq('id', uso.id)
+      else await admin.from('nova_usage').insert({ user_id: uid, month: mes, count: 1 })
     }
 
     const system = `Eres NOVA, el copiloto financiero de Horizen (app mexicana de finanzas para negocios y personas). Abajo va un resumen REAL de los datos de este usuario y de la pantalla que trae abierta. Habla español mexicano, cálido y directo, sin tecnicismos y sin sonar a robot.

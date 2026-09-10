@@ -1551,6 +1551,30 @@ select.mod-inp{cursor:pointer}
     </div>
     <div class="card">
       <div class="card-hdr">
+        <div>
+          <div class="card-ttl">Asesor Fiscal · IA</div>
+          <div class="t-meta" style="margin-top:.2rem">Orientación fiscal con tus datos reales · privado, solo tú lo ves</div>
+        </div>
+        <button class="card-act" onclick="fisReset()">Nueva conversación</button>
+      </div>
+      <div id="fisMsgs" style="display:flex;flex-direction:column;gap:.55rem;max-height:380px;overflow-y:auto;padding:.25rem 0">
+        <div class="nova-b">Soy tu asesor fiscal. Pregúntame con confianza: ¿me conviene RESICO?, ¿puedo deducir este gasto?, ¿compro o rento local? Oriento con tus números reales.</div>
+        <div id="fisChips" style="display:flex;flex-wrap:wrap;gap:.4rem">
+          <button class="nova-chip-q" onclick="fisChip('¿Me conviene más RESICO o actividad empresarial?')">¿RESICO o actividad empresarial?</button>
+          <button class="nova-chip-q" onclick="fisChip('¿Qué gastos de mi negocio puedo deducir?')">¿Qué puedo deducir?</button>
+          <button class="nova-chip-q" onclick="fisChip('¿Me conviene comprar un local o seguir rentando?')">¿Compro o rento local?</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:flex-end;margin-top:.6rem">
+        <textarea id="fisInput" class="finp" rows="1" style="margin:0;resize:none;max-height:110px;overflow-y:auto;line-height:1.45" placeholder="Escribe tu consulta fiscal…"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();fisAsk();}"
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,110)+'px'"></textarea>
+        <button class="btn-save" id="fisSend" onclick="fisAsk()" aria-label="Enviar">→</button>
+      </div>
+      <div class="t-meta" style="margin-top:.5rem">Orientación educativa con tus datos — no sustituye a tu contador; valida con él las decisiones importantes.</div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
         <div class="card-ttl">Reservas fiscales</div>
         <button class="card-act" onclick="loadTaxes()">Recalcular</button>
       </div>
@@ -2598,6 +2622,7 @@ let _taxRate = 30;
 let _taxCalc = {};   // period -> números calculados (para guardarlos al marcar pagado)
 
 async function loadTaxes() {
+  try { _fisPintarHist(); } catch (e) { /* el asesor pinta su historial al abrir la página */ }
   // Tasa de ISR del usuario (RESICO 1-2.5%, general ~30%)
   try {
     const { data: prof } = await db.from('profiles').select('isr_rate').eq('id', _user.id).single();
@@ -6210,20 +6235,109 @@ async function repDownloadPDF() {
 
 // ══════════════════════════════════════════════════════════════
 // ===== NOVA FLOTANTE ===== ("¿por qué no sale esto?" explicado con datos reales)
+// ═══ ASESOR FISCAL · IA (privado: solo los datos del propio usuario) ═══
+const EDGE_FISCAL = 'https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/asesor-fiscal';
+// La clave lleva el id del usuario: en una computadora compartida, la conversación
+// fiscal de una cuenta JAMÁS se le muestra a otra. Se carga hasta que hay sesión.
+function _fisKey() { return 'horizen_fiscal_hist_' + ((_user && _user.id) || 'anon'); }
+window._fisHist = null;
+function _fisCargarHist() {
+  if (Array.isArray(window._fisHist)) return;
+  try { const v = JSON.parse(localStorage.getItem(_fisKey()) || '[]'); window._fisHist = Array.isArray(v) ? v : []; }
+  catch (e) { window._fisHist = []; }
+}
+function _fisGuardarHist() { try { localStorage.setItem(_fisKey(), JSON.stringify(window._fisHist)); } catch (e) {} }
+
+function fisReset() {
+  window._fisHist = [];
+  try { localStorage.removeItem(_fisKey()); } catch (e) {}
+  const m = document.getElementById('fisMsgs');
+  if (m) m.innerHTML = '<div class="nova-b">Listo, empezamos de cero. ¿Cuál es tu consulta fiscal?</div>';
+}
+
+let _fisPintado = false;
+function _fisPintarHist() {
+  if (_fisPintado) return;
+  _fisPintado = true;
+  _fisCargarHist();
+  if (!window._fisHist.length) return;
+  const msgs = document.getElementById('fisMsgs');
+  if (!msgs) return;
+  const chips = document.getElementById('fisChips'); if (chips) chips.remove();
+  msgs.insertAdjacentHTML('beforeend',
+    '<div class="t-meta" style="text-align:center;margin:.3rem 0">— lo que habíamos platicado —</div>' +
+    window._fisHist.map(m => m.role === 'user'
+      ? `<div class="nova-u">${_escHtml(m.content)}</div>`
+      : `<div class="nova-b">${_novaFmt(m.content)}</div>`).join(''));
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function fisChip(q) {
+  const inp = document.getElementById('fisInput');
+  inp.value = q;
+  inp.dispatchEvent(new Event('input'));
+  fisAsk();
+}
+
+async function fisAsk() {
+  const btn = document.getElementById('fisSend');
+  if (btn.disabled) return;
+  const inp = document.getElementById('fisInput');
+  const q = (inp.value || '').trim();
+  if (!q) return;
+  _fisCargarHist();
+  _fisPintarHist();
+  const chips = document.getElementById('fisChips'); if (chips) chips.remove();
+  const msgs = document.getElementById('fisMsgs');
+  msgs.insertAdjacentHTML('beforeend', `<div class="nova-u">${_escHtml(q)}</div><div class="nova-b" id="fisWait">Déjame revisar tus números y las reglas fiscales…</div>`);
+  inp.value = '';
+  inp.style.height = 'auto';
+  msgs.scrollTop = msgs.scrollHeight;
+  btn.disabled = true;
+  try {
+    const ctx = await _novaContexto();   // mismo resumen privado de SUS datos que usa NOVA
+    try { ctx.tasa_isr_configurada = document.getElementById('taxRateSel')?.value || null; } catch (e) {}
+    const session = await db.auth.getSession();
+    const token = session.data.session && session.data.session.access_token;
+    const r = await fetch(EDGE_FISCAL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ question: q, context: ctx, history: window._fisHist.slice(-24) }),
+    });
+    let d = null; try { d = await r.json(); } catch (e) {}
+    const w = document.getElementById('fisWait');
+    if (w) { w.removeAttribute('id'); w.innerHTML = _novaFmt((d && (d.answer || d.error)) || 'No pude responder — intenta de nuevo en unos segundos.'); }
+    if (d && d.answer) {
+      window._fisHist.push({ role: 'user', content: q }, { role: 'assistant', content: d.answer });
+      if (window._fisHist.length > 40) window._fisHist = window._fisHist.slice(-40);
+      _fisGuardarHist();
+    }
+  } catch (e) {
+    const w = document.getElementById('fisWait');
+    if (w) { w.removeAttribute('id'); w.textContent = 'Se perdió la conexión — intenta de nuevo.'; }
+  } finally {
+    btn.disabled = false;
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+}
+
 const EDGE_NOVA = 'https://upcbznfkpswtxiffgsgj.supabase.co/functions/v1/nova-help';
 
 // Historial de la conversación con NOVA. Se guarda en el navegador, así que
 // sobrevive a recargar la página y a cerrar la pestaña: solo lo borra el botón
 // "Nueva conversación". Es la memoria de NOVA entre una sesión y la siguiente.
-const _NOVA_MEM = 'horizen_nova_hist';
+// La clave lleva el id del usuario: en una computadora compartida, la conversación
+// de una cuenta JAMÁS se le muestra a otra. Se carga hasta que hay sesión (_user).
+function _novaKey() { return 'horizen_nova_hist_' + ((_user && _user.id) || 'anon'); }
+window._novaHist = null;
 function _novaCargarHist() {
-  try { const v = JSON.parse(localStorage.getItem(_NOVA_MEM) || '[]'); return Array.isArray(v) ? v : []; }
-  catch (e) { return []; }
+  if (Array.isArray(window._novaHist)) return;
+  try { const v = JSON.parse(localStorage.getItem(_novaKey()) || '[]'); window._novaHist = Array.isArray(v) ? v : []; }
+  catch (e) { window._novaHist = []; }
 }
 function _novaGuardarHist() {
-  try { localStorage.setItem(_NOVA_MEM, JSON.stringify(window._novaHist.slice(-40))); } catch (e) {}
+  try { localStorage.setItem(_novaKey(), JSON.stringify(window._novaHist.slice(-40))); } catch (e) {}
 }
-window._novaHist = window._novaHist || _novaCargarHist();
 
 // NOVA contesta en Markdown ligero. Aquí se dibuja para que el usuario NUNCA vea
 // los símbolos crudos (**, -, ##). Orden obligatorio: primero se escapa el HTML
@@ -6258,7 +6372,7 @@ function _novaFmt(s) {
 
 function novaReset() {
   window._novaHist = [];
-  try { localStorage.removeItem(_NOVA_MEM); } catch (e) {}
+  try { localStorage.removeItem(_novaKey()); } catch (e) {}
   const msgs = document.getElementById('novaMsgs');
   if (msgs) msgs.innerHTML = '<div class="nova-b">Listo, empezamos de cero. ¿Cuál es tu duda?</div>';
 }
@@ -6269,6 +6383,7 @@ let _novaPintado = false;
 function _novaPintarHist() {
   if (_novaPintado) return;
   _novaPintado = true;
+  _novaCargarHist();
   if (!window._novaHist.length) return;
   const msgs = document.getElementById('novaMsgs');
   if (!msgs) return;
@@ -6363,6 +6478,7 @@ async function novaAsk() {
   const inp = document.getElementById('novaInput');
   const q = (inp.value || '').trim();
   if (!q) return;
+  _novaCargarHist();
   const chips = document.getElementById('novaChips'); if (chips) chips.remove();
   const msgs = document.getElementById('novaMsgs');
   msgs.insertAdjacentHTML('beforeend', `<div class="nova-u">${_escHtml(q)}</div><div class="nova-b" id="novaWait">Déjame revisar tus datos…</div>`);
