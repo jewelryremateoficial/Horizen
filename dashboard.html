@@ -419,7 +419,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .proc-spinner{width:52px;height:52px;border:4px solid var(--border);border-top-color:var(--p);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1.25rem}
 @keyframes spin{to{transform:rotate(360deg)}}
 .proc-msg{font-size:.75rem;color:var(--muted)}
-.tx-rev-grid{display:grid;grid-template-columns:105px 1fr 110px 130px 100px 36px;gap:.4rem;align-items:center;padding:.45rem .25rem;border-bottom:1px solid var(--border)}
+.tx-rev-grid{display:grid;grid-template-columns:26px 105px 1fr 110px 130px 100px 36px;gap:.4rem;align-items:center;padding:.45rem .25rem;border-bottom:1px solid var(--border)}
+.tx-sel-chk{width:16px;height:16px;cursor:pointer;accent-color:var(--p)}
 .tx-rev-hdr{font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:.5rem .25rem}
 .rev-inp{background:var(--bg3);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:.28rem .45rem;font-size:.75rem;width:100%;font-variant-numeric:tabular-nums}
 .rev-inp:focus{border-color:var(--p);outline:none;background:var(--bg3)}
@@ -1500,8 +1501,10 @@ select.mod-inp{cursor:pointer}
         </button>
         <div id="estadosTxWrap" style="display:none">
           <div class="tx-rev-grid tx-rev-hdr" style="margin-top:.5rem">
+            <span><input type="checkbox" class="tx-sel-chk" id="selAllTx" onchange="toggleSelAll(this.checked)" title="Seleccionar todos"></span>
             <span>Fecha</span><span>Descripción</span><span>Monto</span><span>Categoría</span><span>Tipo</span><span></span>
           </div>
+          <div id="selBar" style="display:none"></div>
           <div id="estadosTxList"></div>
         </div>
       </div>
@@ -4642,6 +4645,7 @@ function applyEstadoFile(file) {
 
 function resetEstados() {
   _stmtView = null;
+  _limpiarSeleccion();   // que una selección de este estado JAMÁS sobreviva hacia otro
   const _bg = document.getElementById('btnGuardar'); if (_bg) { _bg.style.display = ''; _bg.disabled = false; _bg.textContent = 'Guardar'; }
   const _bo = document.getElementById('btnSubirOtro'); if (_bo) _bo.textContent = '← Subir otro';
   const _ni = document.getElementById('stmtName'); if (_ni) _ni.value = '';
@@ -5039,6 +5043,7 @@ async function procesarEstado() {
         };
       });
     }
+    _limpiarSeleccion();   // análisis nuevo = _id nuevos; ninguna selección previa es válida
     _estadoTxs = txList.map((tx, i) => ({ ...tx, _id: i, _remove: false }));
 
     document.getElementById('estadosStep2').style.display = 'none';
@@ -5265,9 +5270,13 @@ function renderEstadosTxs() {
   // NOVA insights
   document.getElementById('erInsights').innerHTML = generateNovaInsights(visible, totalIn, totalOut, neto, ahorro);
 
+  // Selección múltiple: limpiar ids que ya no existen (se borró el movimiento o se cambió de estado)
+  _estadoSel = new Set([..._estadoSel].filter(id => visible.some(t => t._id === id)));
+
   // Lista de transacciones
   document.getElementById('estadosTxList').innerHTML = visible.map(tx => `
     <div class="tx-rev-grid" id="txrow-${tx._id}">
+      <input type="checkbox" class="tx-sel-chk" ${_estadoSel.has(tx._id)?'checked':''} onchange="toggleSelTx(${tx._id}, this.checked)">
       <input class="rev-inp" type="date" value="${tx.date}" onchange="updEstadoTx(${tx._id},'date',this.value)">
       <input class="rev-inp" type="text" value="${_escHtml(tx.description)}" onchange="updEstadoTx(${tx._id},'description',this.value)">
       <input class="rev-inp" type="number" value="${tx.amount}" min="0" step="0.01" onchange="updEstadoTx(${tx._id},'amount',parseFloat(this.value)||0)">
@@ -5277,12 +5286,123 @@ function renderEstadosTxs() {
       <select class="rev-inp" onchange="setTypeLearn(${tx._id}, this.value)">
         <option ${tx.type==='ingreso'?'selected':''} value="ingreso">Ingreso</option>
         <option ${tx.type==='egreso'?'selected':''} value="egreso">Egreso</option>
-        ${tx.type==='transferencia'?'<option selected value="transferencia">Transferencia</option>':''}
+        <option ${tx.type==='transferencia'?'selected':''} value="transferencia">Entre mis cuentas</option>
       </select>
       <button class="rev-del" onclick="removeEstadoTx(${tx._id})" title="Eliminar">${icon('cerrar')}</button>
       ${(() => { const p = String(tx.description || '').split(' · '); return p.length > 1 && p[1].trim()
         ? `<div style="grid-column:1/-1;font-size:.74rem;color:var(--muted);margin:-2px 0 2px;padding-left:.15rem;line-height:1.45;white-space:normal;word-break:break-word">Concepto: <b style="color:var(--p)">${_escHtml(p.slice(1).join(' · '))}</b></div>` : ''; })()}
     </div>`).join('');
+
+  _renderSelBar();
+}
+
+// ══ Selección múltiple: casillas para cambiar varios movimientos de un jalón ══
+let _estadoSel = new Set();
+
+// Borra la selección Y la barra. Obligatorio al cambiar de estado: los _id son
+// índices 0..n que se repiten entre estados, y una selección vieja aplicaría
+// cambios a movimientos equivocados del estado nuevo.
+function _limpiarSeleccion() {
+  _estadoSel = new Set();
+  const bar = document.getElementById('selBar');
+  if (bar) { bar.style.display = 'none'; bar.innerHTML = ''; }
+  const master = document.getElementById('selAllTx');
+  if (master) { master.checked = false; master.indeterminate = false; }
+}
+
+function toggleSelTx(id, on) {
+  if (on) _estadoSel.add(id); else _estadoSel.delete(id);
+  _renderSelBar();
+}
+
+function toggleSelAll(on) {
+  const visibles = _estadoTxs.filter(t => !t._remove);
+  _estadoSel = on ? new Set(visibles.map(t => t._id)) : new Set();
+  document.querySelectorAll('#estadosTxList .tx-sel-chk').forEach(c => { c.checked = on; });
+  _renderSelBar();
+}
+
+function _renderSelBar() {
+  const bar = document.getElementById('selBar');
+  if (!bar) return;
+  const n = _estadoSel.size;
+  const master = document.getElementById('selAllTx');
+  if (master) {
+    const total = _estadoTxs.filter(t => !t._remove).length;
+    master.checked = n > 0 && n === total;
+    master.indeterminate = n > 0 && n < total;
+  }
+  if (!n) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+  // Se reconstruye siempre (así trae categorías recién creadas) pero conservando lo ya elegido
+  const catPrev  = (document.getElementById('selCat')  || {}).value || '';
+  const tipoPrev = (document.getElementById('selTipo') || {}).value || '';
+  bar.style.display = '';
+  bar.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;background:var(--bg3);border:1px solid var(--p);border-radius:var(--r-md);padding:.55rem .7rem;margin:.4rem 0">
+      <b style="color:var(--ink);font-size:.875rem"><span id="selBarN">${n}</span> seleccionados</b>
+      <select id="selCat" class="rev-inp" style="max-width:170px">
+        <option value="">Categoría: sin cambio</option>
+        ${getAllCats().map(c => `<option value="${_escHtml(c)}">${_escHtml(c)}</option>`).join('')}
+      </select>
+      <select id="selTipo" class="rev-inp" style="max-width:200px">
+        <option value="">Tipo: sin cambio</option>
+        <option value="ingreso">Ingreso</option>
+        <option value="egreso">Egreso</option>
+        <option value="transferencia">Entre mis cuentas (no cuenta)</option>
+      </select>
+      <button class="tb-btn tb-primary" onclick="aplicarSeleccion()">${icon('check')}Aplicar a los seleccionados</button>
+      <button class="tb-btn tb-ghost" onclick="toggleSelAll(false)">Quitar selección</button>
+    </div>`;
+  const selCatEl = document.getElementById('selCat');
+  if (selCatEl && catPrev && getAllCats().includes(catPrev)) selCatEl.value = catPrev;
+  const selTipoEl = document.getElementById('selTipo');
+  if (selTipoEl && tipoPrev) selTipoEl.value = tipoPrev;
+}
+
+// Aplica el cambio elegido a TODOS los palomeados. Es una acción manual y puntual:
+// aquí NO se guardan reglas de aprendizaje (el usuario eligió filas a mano, no un comercio).
+async function aplicarSeleccion() {
+  const txs = _estadoTxs.filter(t => _estadoSel.has(t._id) && !t._remove);
+  if (!txs.length) return;
+  const cat  = (document.getElementById('selCat')  || {}).value || '';
+  const tipo = (document.getElementById('selTipo') || {}).value || '';
+  if (!cat && !tipo) { toast('Elige a qué Categoría o Tipo quieres cambiarlos', 'error'); return; }
+  txs.forEach(t => { if (cat) t.category = cat; if (tipo) t.type = tipo; });
+
+  // Persistir si el estado ya está guardado (el signo del monto depende del tipo)
+  if (_stmtView) {
+    const conDb = txs.filter(t => t.dbId);
+    let falla = null;
+    try {
+      if (tipo) {
+        const rs = await Promise.all(conDb.map(t => {
+          const amt = Math.abs(parseFloat(t.amount) || 0);
+          const upd = { type: tipo, amount: tipo === 'egreso' ? -amt : amt };
+          if (cat) upd.category = cat;
+          return db.from('transactions').update(upd).eq('id', t.dbId).eq('user_id', _user.id);
+        }));
+        falla = (rs.find(r => r.error) || {}).error;
+      } else if (conDb.length) {
+        const { error } = await db.from('transactions').update({ category: cat })
+          .in('id', conDb.map(t => t.dbId)).eq('user_id', _user.id);
+        falla = error;
+      }
+    } catch (e) { falla = e; }
+    if (falla) {
+      // NO decir "✓ listo" cuando la nube falló: se avisa, se conserva la selección
+      // (para que "Aplicar" de nuevo sí sea reintentar) y se repinta lo que hay.
+      renderEstadosTxs();
+      toast('No se guardó en la nube: ' + (falla.message || falla) + '. Revisa tu conexión y vuelve a dar "Aplicar".', 'error');
+      return;
+    }
+  }
+
+  const partes = [];
+  if (cat) partes.push('categoría → ' + cat);
+  if (tipo) partes.push('tipo → ' + (tipo === 'ingreso' ? 'Ingreso' : tipo === 'egreso' ? 'Egreso' : 'Entre mis cuentas'));
+  _estadoSel = new Set();
+  renderEstadosTxs();
+  toast(`✓ Cambié ${txs.length} movimiento${txs.length === 1 ? '' : 's'}: ${partes.join(' y ')}`, 'success');
 }
 
 function renderERChart(txs) {
@@ -5559,7 +5679,7 @@ async function setTypeLearn(id, value) {
   const tx = _estadoTxs.find(t => t._id === id);
   if (!tx) return;
   const kw = extractKeyword(tx.description);
-  const lbl = value === 'ingreso' ? 'Ingreso' : value === 'egreso' ? 'Egreso' : 'Transferencia';
+  const lbl = value === 'ingreso' ? 'Ingreso' : value === 'egreso' ? 'Egreso' : 'Entre mis cuentas';
   const kwLbl2 = kw.length > 34 ? kw.slice(0, 34) + '…' : kw;
   const iguales = _estadoTxs.filter(t => !t._remove && extractKeyword(t.description) === kw);
 
@@ -5864,6 +5984,7 @@ function clearStmtFilter() { _txStmtFilter = null; _txStmtName = ''; loadTx(); }
 
 // ── Reabrir el ANÁLISIS de un estado guardado (edición en vivo) ──
 async function openSavedStatement(id) {
+  _limpiarSeleccion();   // los _id se regeneran 0..n: una selección vieja apuntaría a filas equivocadas
   try {
     const [stmtRes, txRes] = await Promise.all([
       db.from('statements').select('*').eq('id', id).eq('user_id', _user.id).single(),
